@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
 import random
-import math as m
-
-import sys
-import os
-import csv
 
 from bayes_opt import BayesianOptimization
 
@@ -23,9 +18,7 @@ import tensorflow as tf
 # TODO: see about resetting the graph on each iteration of bayesian optimization
 # TODO: add l2 regularization and gaussian noise in training
 
-# Input/Output Window size.
-from numpy.core.multiarray import dtype
-
+# Input/Output Window sizes
 INPUT_SIZE = 15
 OUTPUT_SIZE = 12
 
@@ -36,23 +29,17 @@ BIAS = False
 
 # Training and Validation file paths.
 # TODO: change the way the file paths are taken
-train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/Time-series-forecasting-using-CNTK/src/data/stl_12i15.txt'
-validate_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/Time-series-forecasting-using-CNTK/src/data/stl_12i15v.txt'
-# test_file_path = '/home/hban0001/Documents/cntk/cntk2.2/Baysian/baysianoptimization/Code/LSTM_all/cifcluster1test.txt'
+train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/stl_12i15.txt'
+validate_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/stl_12i15v.txt'
 
 # global lists for storing the data from files
 list_of_trainig_inputs = []
 list_of_training_labels = []
-list_of_test_inputs = []
-list_of_test_labels = []
+list_of_validation_inputs = []
+list_of_validation_labels = []
 list_of_levels = []
 list_of_true_values = []
 list_of_true_seasonality = []
-
-# Custom error measure.
-def sMAPELoss(z, t):
-    loss = tf.reduce_mean(tf.abs(t - z) / (t + z)) * 2
-    return loss
 
 def L1Loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -104,8 +91,8 @@ def create_train_data():
             oneSeries_df.shape[0] - 1, range((INPUT_SIZE + 2), (INPUT_SIZE + OUTPUT_SIZE + 2))]
         trueSeasonailty_df = oneSeries_df.iloc[
             oneSeries_df.shape[0] - 1, range((INPUT_SIZE + OUTPUT_SIZE + 4), oneSeries_df.shape[1])]
-        list_of_test_inputs.append(np.ascontiguousarray(inputs_df_test, dtype=np.float32))
-        list_of_test_labels.append(np.ascontiguousarray(labels_df_test, dtype=np.float32))
+        list_of_validation_inputs.append(np.ascontiguousarray(inputs_df_test, dtype=np.float32))
+        list_of_validation_labels.append(np.ascontiguousarray(labels_df_test, dtype=np.float32))
         list_of_levels.append(level)
         list_of_true_values.append(np.ascontiguousarray(trueValues_df, dtype=np.float32))
         list_of_true_seasonality.append(np.ascontiguousarray(trueSeasonailty_df, dtype=np.float32))
@@ -150,8 +137,6 @@ def train_model(learningRate, lstmCellDimension, mbSize, maxEpochSize, maxNumOfE
     # create the adagrad optimizer
     optimizer = tf.train.AdagradOptimizer(learning_rate = learningRate).minimize(total_loss) # TODO: gaussian_noise_injection_std_dev=gaussianNoise
 
-    # progress_printer = ProgressPrinter(1)
-
     # create the Dataset objects for the training input and label data
     training_inputs = tf.data.Dataset.from_generator(generator=lambda: list_of_trainig_inputs, output_types=tf.float32)
     training_labels = tf.data.Dataset.from_generator(generator=lambda: list_of_training_labels, output_types=tf.float32)
@@ -160,8 +145,8 @@ def train_model(learningRate, lstmCellDimension, mbSize, maxEpochSize, maxNumOfE
     training_dataset = tf.data.Dataset.zip((training_inputs, training_labels))
 
     # create the Dataset objects for the validation input and label data with padded values
-    validation_inputs = tf.data.Dataset.from_generator(generator=lambda: list_of_test_inputs, output_types=tf.float32)
-    validation_labels = tf.data.Dataset.from_generator(generator=lambda: list_of_test_labels, output_types=tf.float32)
+    validation_inputs = tf.data.Dataset.from_generator(generator=lambda: list_of_validation_inputs, output_types=tf.float32)
+    validation_labels = tf.data.Dataset.from_generator(generator=lambda: list_of_validation_labels, output_types=tf.float32)
 
     # zip the validation input and label data
     validation_input_label_dataset = tf.data.Dataset.zip((validation_inputs, validation_labels))
@@ -192,7 +177,7 @@ def train_model(learningRate, lstmCellDimension, mbSize, maxEpochSize, maxNumOfE
             print("Epoch->", iscan)
 
             # randomly shuffle the time series within the dataset
-            training_dataset.shuffle(5) # TODO: buffer size
+            training_dataset.shuffle(mbSize)
 
             for epochsize in range(int(maxEpochSize)):
                 sMAPE_list = []
@@ -209,66 +194,63 @@ def train_model(learningRate, lstmCellDimension, mbSize, maxEpochSize, maxNumOfE
                 while True:
                     try:
                         next_training_batch_value = session.run(next_training_data_batch)
+
+                        # model training
                         session.run(optimizer,
                                     feed_dict={input: next_training_batch_value[0],
                                                label: next_training_batch_value[1]})
-                        # next_label_batch_value = session.run(next_label_batch)
                     except tf.errors.OutOfRangeError:
                         break
 
                 if iscan % INFO_FREQ == 0:
 
-                    # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
-                    padded_validation_input_label_data_batches = validation_input_label_dataset.padded_batch(batch_size = int(mbSize), padded_shapes = padded_shapes)
+                    # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
+                    padded_validation_input_label_data = validation_input_label_dataset.padded_batch(batch_size = len(list_of_validation_inputs), padded_shapes = padded_shapes)
 
-                    # create the batches for the rest of the validation data without padding
-                    validation_data_batches = validation_dataset.batch(batch_size = int(mbSize))
+                    # create a single batch for the rest of the validation data without padding
+                    validation_data_batches = validation_dataset.batch(batch_size = len(list_of_levels))
 
-                    # get an iterator to the validation input, label data batches
-                    validation_input_label_data_batch_iterator = padded_validation_input_label_data_batches.make_one_shot_iterator()
+                    # get an iterator to the validation input, label data batch
+                    validation_input_label_data_iterator = padded_validation_input_label_data.make_one_shot_iterator()
 
-                    # get an iterator to the validation data batches
+                    # get an iterator to the validation data batch
                     validation_data_batch_iterator = validation_data_batches.make_one_shot_iterator()
 
-                    # access each validation input, label batch using the iterator
-                    next_validation_input_label_data_batch = validation_input_label_data_batch_iterator.get_next()
+                    # access the validation input, label batch using the iterator
+                    validation_input_label_data_batch = validation_input_label_data_iterator.get_next()
 
-                    # access each validation data batch using the iterator
-                    next_validation_data_batch = validation_data_batch_iterator.get_next()
+                    # access the validation data batch using the iterator
+                    validation_data_batch = validation_data_batch_iterator.get_next()
 
-                    # loop for the validation
-                    while True:
-                        try:
-                            # get the next batch of validation inputs
-                            next_validation_input_label_batch_value = session.run(next_validation_input_label_data_batch)
+                    # get the batch of validation inputs
+                    validation_input_label_batch_value = session.run(validation_input_label_data_batch)
 
-                            # get the next batch of the other validation data
-                            next_validation_data_batch_value = session.run(next_validation_data_batch)
+                    # get the next batch of the other validation data
+                    validation_data_batch_value = session.run(validation_data_batch)
 
-                            # get the output of the network for the validation input data batch
-                            validation_output = session.run(dense_layer, feed_dict={input: next_validation_input_label_batch_value[0]})
+                    # get the output of the network for the validation input data batch
+                    validation_output = session.run(dense_layer, feed_dict={input: validation_input_label_batch_value[0]})
 
-                            # get the lengths of the output data
-                            output_sequence_lengths = session.run(length(validation_output))
+                    # get the lengths of the output data
+                    output_sequence_lengths = session.run(length(validation_output))
 
-                            # iterate across the different time series
-                            for i in range(validation_output.shape[0]) :
+                    # iterate across the different time series
+                    for i in range(validation_output.shape[0]) :
 
-                                true_seasonality_values = next_validation_data_batch_value[2][i]
-                                level = next_validation_data_batch_value[1][i]
-                                last_index = output_sequence_lengths[i] - 1
-                                last_validation_output = validation_output[i, last_index]
+                        # convert the data to remove the preprocessing
+                        true_seasonality_values = validation_data_batch_value[2][i]
+                        level = validation_data_batch_value[1][i]
+                        last_index = output_sequence_lengths[i] - 1
+                        last_validation_output = validation_output[i, last_index]
 
-                                converted_validation_output = true_seasonality_values + level + last_validation_output
-                                actual_values = next_validation_input_label_batch_value[1][i, last_index]
-                                converted_actual_values = actual_values + true_seasonality_values + level
+                        converted_validation_output = true_seasonality_values + level + last_validation_output
+                        actual_values = validation_input_label_batch_value[1][i, last_index]
+                        converted_actual_values = actual_values + true_seasonality_values + level
 
-                                sMAPE = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                                (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                                sMAPE_list.append(sMAPE)
-
-                        except tf.errors.OutOfRangeError:
-                            break
+                        # calculate the smape
+                        sMAPE = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                        (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                        sMAPE_list.append(sMAPE)
 
                 sMAPEprint = np.mean(sMAPE_list)
                 sMAPE_epoch_list.append(sMAPEprint)

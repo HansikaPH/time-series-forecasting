@@ -77,4 +77,4 @@ final_prediction_matrix = (pred_12matrix)
 sMAPEPerSeries1 <- rowMeans(2*abs(final_prediction_matrix-final_forcast_actual)/(abs(final_prediction_matrix)+abs(final_forcast_actual)), na.rm=TRUE)
 
 mean(sMAPEPerSeries1)
-sd(sMAPEPerSeries)
+sd(sMAPEPerSeries1)
