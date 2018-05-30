@@ -18,6 +18,7 @@ BIAS = False
 train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/stl_12i15.txt'
 validate_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/stl_12i15v.txt'
 test_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif12test.txt'
+forecast_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/forecasts.txt'
 
 # global lists for storing the data from files
 list_of_trainig_inputs = []
@@ -26,11 +27,6 @@ list_of_levels = []
 list_of_true_values = []
 list_of_true_seasonality = []
 list_of_test_inputs = []
-
-
-# TODO: move the common parts of the evaluation and training script to separate script
-# TODO: see how to get the same trained model in the training script to here as well
-# TODO: issue with
 
 def L1Loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -117,12 +113,12 @@ def length(batch):
 def train_model():
 
     # optimized hyperparameters
-    maxNumOfEpochs =20
+    maxNumOfEpochs = 12
     maxEpochSize = 1
-    learningRate = 0.0013262220421187676
-    lstmCellDimension = 23
-    l2_regularization = 0.00015753660121731034
-    mbSize =10
+    learningRate = 0.00010856423333348673
+    lstmCellDimension = 74
+    l2_regularization = 0.0007914357666665133
+    mbSize = 30.0
 
     # reset the tensorflow graph
     tf.reset_default_graph()
@@ -200,7 +196,7 @@ def train_model():
             print("Epoch->", iscan)
 
             # randomly shuffle the time series within the dataset
-            training_dataset.shuffle(mbSize)
+            training_dataset.shuffle(int(mbSize))
 
             for epochsize in range(int(maxEpochSize)):
                 # sMAPE_list = []
@@ -307,6 +303,6 @@ if __name__ == '__main__':
         forecast = test_output[time_series][last_output_index]
         list_of_forecasts.append(forecast)
 
-    with open("Forecasts/forecasts.txt", "w") as output:
+    with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)

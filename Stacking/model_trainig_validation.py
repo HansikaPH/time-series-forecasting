@@ -6,18 +6,6 @@ from bayes_opt import BayesianOptimization
 
 import tensorflow as tf
 
-# TODO: init_points in bayesian optimization
-
-# TODO: see the tensorflow way of batching the input data - the fifo queues etc...
-# ** TODO: understand the length calculation step of the sequences - see better way to get the length(using protocol buffers)
-# ** TODO: make the code more efficient
-# TODO: get the results and keep improving, run the cntk code and compare the results
-# TODO: make the code proper(variable names, what variables to actually create)
-# ** TODO: see if the matrix, tuple indices are correct, see if the code is correct as a whole
-# ** TODO: see about integrating the progress printer
-# TODO: see about resetting the graph on each iteration of bayesian optimization
-# TODO: add l2 regularization and gaussian noise in training
-
 # Input/Output Window sizes
 INPUT_SIZE = 15
 OUTPUT_SIZE = 12
@@ -177,7 +165,7 @@ def train_model(learningRate, lstmCellDimension, mbSize, maxEpochSize, maxNumOfE
             print("Epoch->", iscan)
 
             # randomly shuffle the time series within the dataset
-            training_dataset.shuffle(mbSize)
+            training_dataset.shuffle(int(mbSize))
 
             for epochsize in range(int(maxEpochSize)):
                 sMAPE_list = []
