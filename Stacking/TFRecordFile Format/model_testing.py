@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import random
 import csv
 
 import tensorflow as tf
@@ -17,9 +15,9 @@ BIAS = False
 # Training and Validation file paths.
 binary_train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
 binary_test_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
-forecast_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/forecasts.txt'
+forecast_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/forecast/forecasts.txt'
 
-def L1Loss(z, t):
+def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
     return loss
 
@@ -56,26 +54,33 @@ def test_data_parser(serialized_example):
 def train_model():
 
     # optimized hyperparameters
-    maxNumOfEpochs = 5.0381
-    maxEpochSize = 1
-    learningRate = 0.0007
-    lstmCellDimension = 55.3103
+    max_no_of_epochs = 17
+    max_epoch_size = 2.3325038383204104
+    learning_rate = 0.0001
+    lstm_cell_dimension = 84
     l2_regularization = 0.0001
-    mbSize = 14.3145
+    minibatch_size = 14.339093051247275
+    gaussian_noise_std = 0.0001
 
     # reset the tensorflow graph
     tf.reset_default_graph()
 
+    tf.set_random_seed(1)
+
     # declare the input and output placeholders
     input = tf.placeholder(dtype=tf.float32, shape=[None, None, INPUT_SIZE])
+
+    # adding the gassian noise to the input layer
+    noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_std, dtype=tf.float32)
+    input = input + noise
+
     label = tf.placeholder(dtype=tf.float32, shape=[None, None, OUTPUT_SIZE])
     sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
     # create the model architecture
 
     # RNN with the LSTM layer
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstmCellDimension),
-                                        use_peepholes=LSTM_USE_PEEPHOLES)  # TODO: self stabilization - not quite needed
+    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=LSTM_USE_PEEPHOLES)
 
     rnn_outputs, states = tf.nn.dynamic_rnn(cell=lstm_cell, inputs=input, sequence_length=sequence_lengths,
                                             dtype=tf.float32)
@@ -84,8 +89,8 @@ def train_model():
     dense_layer = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32), units=OUTPUT_SIZE,
                                   use_bias=BIAS)
 
-    # error that should be minimized the training process
-    error = L1Loss(dense_layer, label)
+    # error that should be minimized in the training process
+    error = l1_loss(dense_layer, label)
 
     # l2 regularization of the trainable model parameters
     l2_loss = 0.0
@@ -97,16 +102,16 @@ def train_model():
     total_loss = error + l2_loss
 
     # create the adagrad optimizer
-    optimizer = tf.train.AdagradOptimizer(learning_rate=learningRate).minimize(
-        total_loss)  # TODO: gaussian_noise_injection_std_dev=gaussianNoise
+    optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(
+        total_loss)
 
     # create the Dataset objects for the training and test data
-    training_dataset = tf.data.TFRecordDataset([binary_train_file_path])
-    test_dataset = tf.data.TFRecordDataset([binary_test_file_path])
+    training_dataset = tf.data.TFRecordDataset(filenames = [binary_train_file_path], compression_type = "ZLIB")
+    test_dataset = tf.data.TFRecordDataset([binary_test_file_path], compression_type = "ZLIB")
 
     # parse the records
-    training_dataset = training_dataset.map(train_data_parser)  # TODO: optimize this more with the variables in the function
-    test_dataset = test_dataset.map(test_data_parser)  # TODO: optimize this more with the variables in the function
+    training_dataset = training_dataset.map(train_data_parser)
+    test_dataset = test_dataset.map(test_data_parser)
 
     # setup variable initialization
     init_op = tf.global_variables_initializer()
@@ -114,16 +119,16 @@ def train_model():
     with tf.Session() as session:
         session.run(init_op)
 
-        for iscan in range(int(maxNumOfEpochs)):
-            print("Epoch->", iscan)
+        for epoch in range(int(max_no_of_epochs)):
+            print("Epoch->", epoch)
 
             # randomly shuffle the time series within the dataset
-            training_dataset.shuffle(int(mbSize))
+            training_dataset.shuffle(int(minibatch_size))
 
-            for epochsize in range(int(maxEpochSize)):
+            for epochsize in range(int(max_epoch_size)):
 
                 # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
-                padded_training_data_batches = training_dataset.padded_batch(batch_size = int(mbSize),
+                padded_training_data_batches = training_dataset.padded_batch(batch_size = int(minibatch_size),
                                       padded_shapes = ([], [tf.Dimension(None), INPUT_SIZE], [tf.Dimension(None), OUTPUT_SIZE], [tf.Dimension(None), OUTPUT_SIZE + 1]))
 
                 # get an iterator to the batches
@@ -147,7 +152,7 @@ def train_model():
         # applying the model to the test data
 
         # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
-        padded_test_input_data = test_dataset.padded_batch(batch_size=int(mbSize), padded_shapes = ([], [tf.Dimension(None), INPUT_SIZE], [tf.Dimension(None), OUTPUT_SIZE + 1]))
+        padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes = ([], [tf.Dimension(None), INPUT_SIZE], [tf.Dimension(None), OUTPUT_SIZE + 1]))
 
         # get an iterator to the test input data batch
         test_input_iterator = padded_test_input_data.make_one_shot_iterator()
@@ -173,22 +178,12 @@ def train_model():
 
             except tf.errors.OutOfRangeError:
                 break
-        tf.truncated_normal
 
         return list_of_forecasts
 
 
 if __name__ == '__main__':
-    np.random.seed(1)
-    random.seed(1)
-
     list_of_forecasts = train_model()
-
-    # # Writes the last test output(i.e Forecast) of each time series to a file
-    # for time_series in range(len(test_output)):
-    #     last_output_index = output_sequence_lengths[time_series] - 1
-    #     forecast = test_output[time_series][last_output_index]
-    #     list_of_forecasts.append(forecast)
 
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
