@@ -13,8 +13,8 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
-binary_validation_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
+binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
+binary_validation_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -187,13 +187,13 @@ if __name__ == '__main__':
     num_iter = 30
 
     # using bayesian optimizer for hyperparameter optimization
-    bayesian_optimization = BayesianOptimization(train_model, {'learningRate': (0.0001, 0.0008),
-                                                                'lstmCellDimension': (50, 100),
-                                                                'mbSize': (10, 30),
-                                                                'maxEpochSize': (1, 3),
-                                                                'maxNumOfEpochs': (3, 20),
+    bayesian_optimization = BayesianOptimization(train_model, {'learning_rate': (0.0001, 0.0008),
+                                                                'lstm_cell_dimension': (50, 100),
+                                                                'minibatch_size': (10, 30),
+                                                                'max_epoch_size': (1, 3),
+                                                                'max_num_of_epochs': (3, 20),
                                                                 'l2_regularization': (0.0001, 0.0008),
-                                                                'gaussianNoise': (0.0001, 0.0008)
+                                                                'gaussian_noise_stdev': (0.0001, 0.0008)
                                                             })
 
     bayesian_optimization.maximize(init_points = init_points, n_iter = num_iter)

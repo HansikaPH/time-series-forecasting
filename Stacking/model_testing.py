@@ -13,9 +13,9 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
-binary_test_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
-forecast_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/forecast/forecasts.txt'
+binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
+binary_test_file_path = '../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
+forecast_file_path = '../DataSets/CIF 2016/forecast/forecasts.txt'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
