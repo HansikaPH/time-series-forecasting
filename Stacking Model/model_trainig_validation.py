@@ -1,6 +1,9 @@
 import numpy as np
 from bayes_opt import BayesianOptimization
 
+# import the config space and the different types of parameters
+from smac.facade.func_facade import fmin_smac
+
 import tensorflow as tf
 
 # Input/Output Window sizes
@@ -38,6 +41,27 @@ def parser(serialized_example):
 def gaussian_noise(input_layer, std):
     noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32)
     return input_layer + noise
+
+def create_encoder_decoder_model(lstm_cell_dimension, gaussian_noise_stdev):
+    # declare the input and output placeholders
+    input = tf.placeholder(dtype=tf.float32, shape=[None, None, INPUT_SIZE])
+    noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
+    input = input + noise
+
+    label = tf.placeholder(dtype=tf.float32, shape=[None, None, OUTPUT_SIZE])
+    sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
+
+    # create the encoder network
+    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = int(lstm_cell_dimension), use_peepholes = LSTM_USE_PEEPHOLES)
+    rnn_outputs, states = tf.nn.dynamic_rnn(cell=encoder_cell, inputs=input, sequence_length=sequence_lengths,
+                                            dtype=tf.float32)
+
+    # create the decoder network
+
+
+
+# def create_stacking_model():
+
 
 # Training the time series
 def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev):
@@ -177,24 +201,34 @@ def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_si
             smape_final_list.append(smape_epoch)
 
         smape_final = np.mean(smape_final_list)
-        max_value = 1 / (smape_final)
+        # max_value = 1 / (smape_final)
 
-    return max_value
+    return smape_final
+    # return max_value
 
 if __name__ == '__main__':
 
     init_points = 2
     num_iter = 30
 
-    # using bayesian optimizer for hyperparameter optimization
-    bayesian_optimization = BayesianOptimization(train_model, {'learning_rate': (0.0001, 0.0008),
-                                                                'lstm_cell_dimension': (50, 100),
-                                                                'minibatch_size': (10, 30),
-                                                                'max_epoch_size': (1, 3),
-                                                                'max_num_of_epochs': (3, 20),
-                                                                'l2_regularization': (0.0001, 0.0008),
-                                                                'gaussian_noise_stdev': (0.0001, 0.0008)
-                                                            })
+    x, cost, _ = fmin_smac(func = train_model, # function to minimize
+                           x0 = [0.0001, 50, 10, 1, 3, 0.0001, 0.0001], # initial configurations for the parameters
+                           bounds = [(0.0001, 0.0008), (50, 100), (10, 30), (1, 3), (3, 20), (0.0001, 0.0008), (0.0001, 0.0008)], # value ranges for the different parameters
+                           rng = np.random.RandomState(0)
+                           )
 
-    bayesian_optimization.maximize(init_points = init_points, n_iter = num_iter)
+    # create the configspace which defines the hyperparameters and their ranges
+    # configuration_space = ConfigurationSpace()
+
+    # using bayesian optimizer for hyperparameter optimization
+    # bayesian_optimization = BayesianOptimization(train_model, {'learning_rate': (0.0001, 0.0008),
+    #                                                             'lstm_cell_dimension': (50, 100),
+    #                                                             'minibatch_size': (10, 30),
+    #                                                             'max_epoch_size': (1, 3),
+    #                                                             'max_num_of_epochs': (3, 20),
+    #                                                             'l2_regularization': (0.0001, 0.0008),
+    #                                                             'gaussian_noise_stdev': (0.0001, 0.0008)
+    #                                                         })
+
+    # bayesian_optimization.maximize(init_points = init_points, n_iter = num_iter)
 
