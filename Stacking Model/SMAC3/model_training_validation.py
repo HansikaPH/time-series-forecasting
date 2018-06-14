@@ -134,11 +134,10 @@ def train_model(configs):
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch)
-                        total_loss_value, _ = session.run([total_loss, optimizer],
+                        session.run(optimizer,
                                     feed_dict={input: training_data_batch_value[1],
                                                label: training_data_batch_value[2],
                                                sequence_lengths: training_data_batch_value[0]})
-                        print("Total Loss: ", total_loss_value)
                     except tf.errors.OutOfRangeError:
                         break
 
