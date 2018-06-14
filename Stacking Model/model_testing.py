@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import csv
 
@@ -13,9 +15,8 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
+binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
 binary_test_file_path = '../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
-forecast_file_path = '../DataSets/CIF 2016/forecast/forecasts.txt'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -54,13 +55,13 @@ def test_data_parser(serialized_example):
 def train_model():
 
     # optimized hyperparameters
-    max_no_of_epochs = 17
-    max_epoch_size = 2.3325038383204104
+    max_no_of_epochs = 10.015803056063524
+    max_epoch_size = 2
     learning_rate = 0.0001
-    lstm_cell_dimension = 84
-    l2_regularization = 0.0001
-    minibatch_size = 14.339093051247275
-    gaussian_noise_std = 0.0001
+    lstm_cell_dimension = 64
+    l2_regularization = 0.0008
+    minibatch_size = 29
+    gaussian_noise_std = 0.0008
 
     # reset the tensorflow graph
     tf.reset_default_graph()
@@ -184,6 +185,7 @@ def train_model():
 
 if __name__ == '__main__':
     list_of_forecasts = train_model()
+    forecast_file_path = sys.argv[1]
 
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
