@@ -125,7 +125,7 @@ def train_model(configs):
 
             for epochsize in range(int(max_epoch_size)):
                 smape_epochsize__list = []
-                padded_training_data_batches = training_dataset.padded_batch(batch_size=10, padded_shapes=padded_shapes)
+                padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=padded_shapes)
 
                 training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
                 next_training_data_batch = training_data_batch_iterator.get_next()

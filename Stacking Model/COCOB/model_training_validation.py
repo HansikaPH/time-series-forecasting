@@ -59,11 +59,13 @@ def train_model(configs):
     minibatch_size = configs["minibatch_size"]
     max_epoch_size = configs["max_epoch_size"]
     max_num_of_epochs = configs["max_num_of_epochs"]
-    l2_regularization = configs["l2_regularization"]
-    gaussian_noise_stdev = configs["gaussian_noise_stdev"]
+    # l2_regularization = configs["l2_regularization"]
+    # gaussian_noise_stdev = configs["gaussian_noise_stdev"]
 
-    print("LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, "
-          "l2_regularization: {}, gaussian_noise_std: {}".format(lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev))
+    print("LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, ".
+          # "l2_regularization: {}, gaussian_noise_std: {}".
+          format(lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs))
+                                                                 # l2_regularization, gaussian_noise_stdev))
 
     tf.reset_default_graph()
 
@@ -71,8 +73,8 @@ def train_model(configs):
 
     # declare the input and output placeholders
     input = tf.placeholder(dtype = tf.float32, shape = [None, None, INPUT_SIZE])
-    noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-    input = input + noise
+    # noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
+    # input = input + noise
 
     label = tf.placeholder(dtype = tf.float32, shape = [None, None, OUTPUT_SIZE])
     sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
@@ -90,13 +92,13 @@ def train_model(configs):
     error = l1_loss(dense_layer, label)
 
     # l2 regularization of the trainable model parameters
-    l2_loss = 0.0
-    for var in tf.trainable_variables() :
-        l2_loss += tf.nn.l2_loss(var)
+    # l2_loss = 0.0
+    # for var in tf.trainable_variables() :
+    #     l2_loss += tf.nn.l2_loss(var)
 
-    l2_loss = tf.multiply(l2_regularization, l2_loss)
+    # l2_loss = tf.multiply(l2_regularization, l2_loss)
 
-    total_loss = error + l2_loss
+    total_loss = error #+ l2_loss
 
     # create the cocob optimizer
     optimizer = cocob_optimizer.COCOB().minimize(loss = total_loss)
@@ -130,7 +132,7 @@ def train_model(configs):
 
             for epochsize in range(int(max_epoch_size)):
                 smape_epochsize__list = []
-                padded_training_data_batches = training_dataset.padded_batch(batch_size=10, padded_shapes=padded_shapes)
+                padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=padded_shapes)
 
                 training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
                 next_training_data_batch = training_data_batch_iterator.get_next()
@@ -198,7 +200,6 @@ def train_model(configs):
         smape_final = np.mean(smape_final_list)
         print("SMAPE value: {}".format(smape_final))
 
-
     return smape_final
 
 if __name__ == '__main__':
@@ -206,14 +207,15 @@ if __name__ == '__main__':
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
 
-    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 50, 100, default_value = 50)
+    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 50)
     minibatch_size = UniformIntegerHyperparameter("minibatch_size", 10, 30, default_value = 10)
     max_epoch_size = UniformIntegerHyperparameter("max_epoch_size", 1, 3, default_value = 1)
     max_num_of_epochs = UniformIntegerHyperparameter("max_num_of_epochs", 3, 20, default_value = 3)
     l2_regularization = UniformFloatHyperparameter("l2_regularization", 0.0001, 0.0008, default_value = 0.0001)
     gaussian_noise_stdev = UniformFloatHyperparameter("gaussian_noise_stdev", 0.0001, 0.0008, default_value = 0.0001)
 
-    configuration_space.add_hyperparameters([lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev])
+    configuration_space.add_hyperparameters([lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs])
+                                             # l2_regularization, gaussian_noise_stdev])
 
     # creating the scenario object
     scenario = Scenario({

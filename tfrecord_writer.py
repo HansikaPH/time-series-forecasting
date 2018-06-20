@@ -2,13 +2,13 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 
-train_file_path = '../DataSets/CIF 2016/stl_12i15.txt'
-validate_file_path = '../DataSets/CIF 2016/stl_12i15v.txt'
-test_file_path = '../DataSets/CIF 2016/cif12test.txt'
+train_file_path = 'DataSets/CIF 2016/stl_12i15.txt'
+validate_file_path = 'DataSets/CIF 2016/stl_12i15v.txt'
+test_file_path = 'DataSets/CIF 2016/cif12test.txt'
 
-binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
-binary_validation_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
-binary_test_file_path = '../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
+binary_train_file_path = 'DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
+binary_validation_file_path = 'DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
+binary_test_file_path = 'DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
 
 # global lists for storing the data from files
 list_of_trainig_inputs = []
