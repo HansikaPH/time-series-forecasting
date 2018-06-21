@@ -31,8 +31,9 @@ binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
 binary_validation_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
 
 # TODO: lstm cell dimension for encoder and decoder
-# TODO: different helper for model inference
+# TODO: why decoder_outputs[0]?
 # TODO: integrate the attention mechanism
+# TODO: see if the model architecture is reused
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -76,14 +77,14 @@ def train_model(configs):
 
     tf.set_random_seed(1)
 
-    # declare the input and output placeholders
-    input = tf.placeholder(dtype = tf.float32, shape = [None, None, INPUT_SIZE])
+    # adding noise to the input
+    input = tf.placeholder(dtype=tf.float32, shape=[None, None, INPUT_SIZE])
     noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
     input = input + noise
-    sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
+    target = tf.placeholder(dtype=tf.float32, shape=[None, None, OUTPUT_SIZE])
 
-    target = tf.placeholder(dtype = tf.float32, shape = [None, None, OUTPUT_SIZE])
-    # decoder_sequence_lengths = tf.placeholder(dtype=tf.int32, shape=[None])
+    # placeholder for the sequence lengths
+    sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
     # create the model architecture
 
@@ -99,24 +100,24 @@ def train_model(configs):
 
     # building the decoder network for training
     with tf.variable_scope('decode'):
-        training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 0.0)
-        training_decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = training_helper, initial_state = encoder_state, output_layer = dense_layer)
+        helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 0.0)
+        decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
 
         # perform the decoding
-        training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = training_decoder)
+        training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
 
     # building the decoder network for inference
     with tf.variable_scope('decode', reuse = tf.AUTO_REUSE):
-        inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 1.0)
-        inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = inference_helper,
+        helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 1.0)
+        decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = helper,
                                                   initial_state = encoder_state, output_layer = dense_layer)
 
         # perform the decoding
-        inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = inference_decoder)
+        inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
 
 
     # error that should be minimized in the training process
-    error = l1_loss(training_decoder_outputs[0], target) # TODO: why decoder_outputs[0]?
+    error = l1_loss(training_decoder_outputs[0], target)
 
     # l2 regularization of the trainable model parameters
     l2_loss = 0.0
@@ -190,9 +191,12 @@ def train_model(configs):
                             # get the batch of validation inputs
                             validation_data_batch_value = session.run(next_validation_data_batch)
 
+                            # shape for the target data
+                            target_data_shape = [np.shape(validation_data_batch_value[1])[0], np.shape(validation_data_batch_value[1])[1], OUTPUT_SIZE]
+
                             # get the output of the network for the validation input data batch
                             validation_output = session.run(inference_decoder_outputs[0], feed_dict={input: validation_data_batch_value[1],
-                                                                                                     target: validation_data_batch_value[2],
+                                                                                                     target: np.zeros(target_data_shape),
                                                                                                      sequence_length: validation_data_batch_value[0]
                                                                                                     })
 
@@ -263,13 +267,4 @@ if __name__ == '__main__':
 
     print("Optimized configuration: {}".format(incumbent))
     print("Optimized Value: {}".format(smape_error))
-
-    # train_model({
-    #     "lstm_cell_dimension" : 50,
-    #     "minibatch_size" : 20,
-    #     "max_epoch_size" : 1,
-    #     "max_num_of_epochs" : 3,
-    #     "l2_regularization" : 0.0008,
-    #     "gaussian_noise_stdev" : 0.0008
-    # })
 

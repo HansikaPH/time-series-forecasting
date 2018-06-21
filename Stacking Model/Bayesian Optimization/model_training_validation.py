@@ -177,7 +177,7 @@ def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_si
             smape_final_list.append(smape_epoch)
 
         smape_final = np.mean(smape_final_list)
-        max_value = 1 / (smape_final)
+        max_value = -1 * smape_final
 
     return max_value
 

@@ -4,9 +4,10 @@ import numpy as np
 import csv
 
 import tensorflow as tf
+from tensorflow.python.layers.core import Dense
 
 # import the cocob optimizer
-sys.path.insert(0, '../../External Packages/cocob_optimizer/')
+sys.path.insert(0, '../External Packages/cocob_optimizer/')
 import cocob_optimizer
 
 # Input/Output Window size.
@@ -19,8 +20,8 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '../../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
-binary_test_file_path = '../../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
+binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
+binary_test_file_path = '../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -62,9 +63,9 @@ def train_model():
     max_no_of_epochs = 7
     max_epoch_size = 3
     lstm_cell_dimension = 24
-    # l2_regularization = 0.0005707363209984838
+    l2_regularization = 0.0005707363209984838
     minibatch_size = 27
-    # gaussian_noise_std = 0.00015699946725595746
+    gaussian_noise_stdev = 0.00015699946725595746
 
     # reset the tensorflow graph
     tf.reset_default_graph()
@@ -72,38 +73,60 @@ def train_model():
     tf.set_random_seed(1)
 
     # declare the input and output placeholders
+
+    # adding noise to the input
     input = tf.placeholder(dtype=tf.float32, shape=[None, None, INPUT_SIZE])
+    noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
+    input = input + noise
+    target = tf.placeholder(dtype=tf.float32, shape=[None, None, OUTPUT_SIZE])
 
-    # adding the gassian noise to the input layer
-    # noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_std, dtype=tf.float32)
-    # input = input + noise
-
-    label = tf.placeholder(dtype=tf.float32, shape=[None, None, OUTPUT_SIZE])
-    sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
+    # placeholder for the sequence lengths
+    sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
     # create the model architecture
 
-    # RNN with the LSTM layer
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=LSTM_USE_PEEPHOLES)
+    # building the encoder network
+    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=LSTM_USE_PEEPHOLES)
+    encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell=encoder_cell, inputs=input, sequence_length=sequence_length,
+                                                       dtype=tf.float32)
 
-    rnn_outputs, states = tf.nn.dynamic_rnn(cell=lstm_cell, inputs=input, sequence_length=sequence_lengths,
-                                            dtype=tf.float32)
+    # decoder cell of the decoder network
+    decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes=LSTM_USE_PEEPHOLES)
 
-    # connect the dense layer to the RNN
-    dense_layer = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32), units=OUTPUT_SIZE,
-                                  use_bias=BIAS)
+    # the final projection layer to convert the output to the desired dimension
+    dense_layer = Dense(units=OUTPUT_SIZE, use_bias=BIAS)
+
+    # building the decoder network for training
+    with tf.variable_scope('decode'):
+        helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
+                                                                  sampling_probability=0.0)
+        decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper, initial_state=encoder_state,
+                                                  output_layer=dense_layer)
+
+        # perform the decoding
+        training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=decoder)
+
+    # building the decoder network for inference
+    with tf.variable_scope('decode', reuse=tf.AUTO_REUSE):
+        helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
+                                                                  sampling_probability=1.0)
+        decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper,
+                                                  initial_state=encoder_state, output_layer=dense_layer)
+
+        # perform the decoding
+        inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=decoder)
 
     # error that should be minimized in the training process
-    error = l1_loss(dense_layer, label)
+    error = l1_loss(training_decoder_outputs[0], target)
 
     # l2 regularization of the trainable model parameters
-    # l2_loss = 0.0
-    # for var in tf.trainable_variables():
-    #     l2_loss += tf.nn.l2_loss(var)
+    l2_loss = 0.0
+    for var in tf.trainable_variables():
+        l2_loss += tf.nn.l2_loss(var)
 
-    # l2_loss = tf.multiply(l2_regularization, l2_loss)
+    l2_loss = tf.multiply(l2_regularization, l2_loss)
 
-    total_loss = error #+ l2_loss
+    total_loss = error + l2_loss
 
     # create the adagrad optimizer
     # optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(
@@ -150,8 +173,8 @@ def train_model():
                         # model training
                         session.run(optimizer,
                                     feed_dict={input: next_training_batch_value[1],
-                                               label: next_training_batch_value[2],
-                                               sequence_lengths: next_training_batch_value[0]})
+                                               target: next_training_batch_value[2],
+                                               sequence_length: next_training_batch_value[0].astype(np.int32)})
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -172,10 +195,14 @@ def train_model():
                 # get the batch of test inputs
                 test_input_batch_value = session.run(test_input_data_batch)
 
+                # shape for the target data
+                target_data_shape = [np.shape(test_input_batch_value[1])[0], np.shape(test_input_batch_value[1])[1], OUTPUT_SIZE]
+
                 # get the output of the network for the test input data batch
-                test_output = session.run(dense_layer,
+                test_output = session.run(inference_decoder_outputs[0],
                                           feed_dict={input: test_input_batch_value[1],
-                                                     sequence_lengths: test_input_batch_value[0]})
+                                                     target: np.zeros(shape = target_data_shape),
+                                                     sequence_length: test_input_batch_value[0]})
 
                 last_output_index = test_input_batch_value[0] - 1
                 array_first_dimension = np.array(range(0, test_input_batch_value[0].shape[0]))
