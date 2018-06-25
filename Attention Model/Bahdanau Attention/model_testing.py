@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 
 # import the cocob optimizer
-sys.path.insert(0, '../External Packages/cocob_optimizer/')
+sys.path.insert(0, '../../External Packages/cocob_optimizer/')
 import cocob_optimizer
 
 # Input/Output Window size.
@@ -20,8 +20,8 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
-binary_test_file_path = '../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
+binary_train_file_path = '../../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
+binary_test_file_path = '../../DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -60,12 +60,12 @@ def test_data_parser(serialized_example):
 def train_model():
 
     # optimized hyperparameters
-    max_no_of_epochs = 6
+    max_no_of_epochs = 5
     max_epoch_size = 1
-    lstm_cell_dimension = 45
-    l2_regularization = 0.0005603678972718693
+    num_units = 39
+    l2_regularization = 0.0004130172104364264
     minibatch_size = 30
-    gaussian_noise_stdev = 0.00015828513395074406
+    gaussian_noise_stdev = 0.0002668904926730885
 
     # reset the tensorflow graph
     tf.reset_default_graph()
@@ -86,21 +86,32 @@ def train_model():
     # create the model architecture
 
     # building the encoder network
-    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=LSTM_USE_PEEPHOLES)
+    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(num_units), use_peepholes=LSTM_USE_PEEPHOLES)
     encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell=encoder_cell, inputs=input, sequence_length=sequence_length,
                                                        dtype=tf.float32)
 
-    # decoder cell of the decoder network
-    decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes=LSTM_USE_PEEPHOLES)
+    # creating an attention mechanism
+    attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=num_units, memory=encoder_outputs,
+                                                               memory_sequence_length=sequence_length)
 
+    # decoder cell of the decoder network
+    decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=num_units, use_peepholes=LSTM_USE_PEEPHOLES)
+
+    # using the attention wrapper to wrap the decoding cell
+    decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=decoder_cell, attention_mechanism=attention_mechanism,
+                                                       attention_layer_size=num_units)
     # the final projection layer to convert the output to the desired dimension
     dense_layer = Dense(units=OUTPUT_SIZE, use_bias=BIAS)
+
+    # create the initial state for the decoder
+    decoder_initial_state = decoder_cell.zero_state(batch_size=tf.shape(input)[0], dtype=tf.float32).clone(
+        cell_state=encoder_state)
 
     # building the decoder network for training
     with tf.variable_scope('decode'):
         helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
                                                                   sampling_probability=0.0)
-        decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper, initial_state=encoder_state,
+        decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper, initial_state=decoder_initial_state,
                                                   output_layer=dense_layer)
 
         # perform the decoding
@@ -111,7 +122,7 @@ def train_model():
         helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
                                                                   sampling_probability=1.0)
         decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper,
-                                                  initial_state=encoder_state, output_layer=dense_layer)
+                                                  initial_state=decoder_initial_state, output_layer=dense_layer)
 
         # perform the decoding
         inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=decoder)

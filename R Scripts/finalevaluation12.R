@@ -15,10 +15,10 @@ value <- t(text_df_12[1])
 indexes <- length(value) - match(unique(value), rev(value)) + 1
 
 uniqueindexes <- unique(indexes)
-print(uniqueindexes)
+# print(uniqueindexes)
 
 forcast12_DF <- cif_df[rowSums(is.na(cif_df)) == 0,]
-print(forcast12_DF)
+# print(forcast12_DF)
 
 final_forcast_actual <- (forcast12_DF)
 
@@ -43,7 +43,7 @@ for(k in 1 :nrow(forecast_df_12)){
 }
 
 final_prediction_matrix = (pred_12matrix)
-print(final_prediction_matrix)
+# print(final_prediction_matrix)
 
 sMAPEPerSeries1 <- rowMeans(2*abs(final_prediction_matrix-final_forcast_actual)/(abs(final_prediction_matrix)+abs(final_forcast_actual)), na.rm=TRUE)
 # print(sMAPEPerSeries1)
