@@ -12,10 +12,10 @@ binary_test_file_path = 'DataSets/CIF 2016/Binary Files/cif12test.tfrecords'
 
 # global lists for storing the data from files
 list_of_trainig_inputs = []
-list_of_training_labels = []
+list_of_training_outputs = []
 list_of_training_metadata = []
 list_of_validation_inputs = []
-list_of_validation_labels = []
+list_of_validation_outputs = []
 list_of_validation_metadata = []
 list_of_test_inputs = []
 list_of_test_metadata = []
@@ -43,10 +43,10 @@ def read_text_data():
     for ser in series:
         one_series_df = train_df[train_df['series'] == ser]
         inputs_df = one_series_df.iloc[:, range(1, (INPUT_SIZE + 1))]
-        labels_df = one_series_df.iloc[:, range((INPUT_SIZE + 2), (INPUT_SIZE + OUTPUT_SIZE + 2))]
+        outputs_df = one_series_df.iloc[:, range((INPUT_SIZE + 2), (INPUT_SIZE + OUTPUT_SIZE + 2))]
         metadata_df = one_series_df.iloc[:, range((INPUT_SIZE + OUTPUT_SIZE + 3), one_series_df.shape[1])]
         list_of_trainig_inputs.append(np.ascontiguousarray(inputs_df, dtype=np.float32))
-        list_of_training_labels.append(np.ascontiguousarray(labels_df, dtype=np.float32))
+        list_of_training_outputs.append(np.ascontiguousarray(outputs_df, dtype=np.float32))
         list_of_training_metadata.append(np.ascontiguousarray(metadata_df, dtype=np.float32))
 
     # Reading the validation dataset.
@@ -65,9 +65,9 @@ def read_text_data():
         one_series_df = val_df[val_df['series'] == ser]
         inputs_df_test = one_series_df.iloc[:, range(1, (INPUT_SIZE + 1))]
         metadata_df = one_series_df.iloc[:, range((INPUT_SIZE + OUTPUT_SIZE + 3), one_series_df.shape[1])]
-        labels_df_test = one_series_df.iloc[:, range((INPUT_SIZE + 2), (INPUT_SIZE + OUTPUT_SIZE + 2))]
+        outputs_df_test = one_series_df.iloc[:, range((INPUT_SIZE + 2), (INPUT_SIZE + OUTPUT_SIZE + 2))]
         list_of_validation_inputs.append(np.ascontiguousarray(inputs_df_test, dtype=np.float32))
-        list_of_validation_labels.append(np.ascontiguousarray(labels_df_test, dtype=np.float32))
+        list_of_validation_outputs.append(np.ascontiguousarray(outputs_df_test, dtype=np.float32))
         list_of_validation_metadata.append(np.ascontiguousarray(metadata_df, dtype=np.float32))
 
     # Reading the test file.
@@ -146,6 +146,6 @@ def write_test_data_to_tfrecord_file(tfrecord_file_path, list_of_inputs, list_of
 read_text_data()
 
 # write the train, validation, test data to the files
-write_to_tfrecord_file(binary_train_file_path, list_of_trainig_inputs, list_of_training_metadata, list_of_training_labels)
-write_to_tfrecord_file(binary_validation_file_path, list_of_validation_inputs, list_of_validation_metadata, list_of_validation_labels)
+write_to_tfrecord_file(binary_train_file_path, list_of_trainig_inputs, list_of_training_metadata, list_of_training_outputs)
+write_to_tfrecord_file(binary_validation_file_path, list_of_validation_inputs, list_of_validation_metadata, list_of_validation_outputs)
 write_test_data_to_tfrecord_file(binary_test_file_path, list_of_test_inputs, list_of_test_metadata)
