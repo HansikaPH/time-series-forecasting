@@ -1,20 +1,7 @@
-import sys
-
 import numpy as np
-
-# import the config space and the different types of parameters
-from smac.configspace import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
-
-#import SMAC utilities
-from smac.scenario.scenario import Scenario
-from smac.facade.smac_facade import SMAC
+from bayes_opt import BayesianOptimization
 
 import tensorflow as tf
-
-# import the cocob optimizer
-sys.path.insert(0, '../../External Packages/cocob_optimizer/')
-import cocob_optimizer
 
 # Input/Output Window sizes
 INPUT_SIZE = 15
@@ -26,8 +13,8 @@ LSTM_USE_STABILIZATION = True
 BIAS = False
 
 # Training and Validation file paths.
-binary_train_file_path = '../../DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
-binary_validation_file_path = '../../DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
+binary_train_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15.tfrecords'
+binary_validation_file_path = '/home/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/Binary Files/stl_12i15v.tfrecords'
 
 def l1_loss(z, t):
     loss = tf.reduce_mean(tf.abs(t - z))
@@ -53,19 +40,10 @@ def gaussian_noise(input_layer, std):
     return input_layer + noise
 
 # Training the time series
-def train_model(configs):
+def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev):
 
-    lstm_cell_dimension = configs["lstm_cell_dimension"]
-    minibatch_size = configs["minibatch_size"]
-    max_epoch_size = configs["max_epoch_size"]
-    max_num_of_epochs = configs["max_num_of_epochs"]
-    # l2_regularization = configs["l2_regularization"]
-    # gaussian_noise_stdev = configs["gaussian_noise_stdev"]
-
-    print("LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, ".
-          # "l2_regularization: {}, gaussian_noise_std: {}".
-          format(lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs))
-                                                                 # l2_regularization, gaussian_noise_stdev))
+    print("Learning Rate: {}, LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, "
+          "l2_regularization: {}, gaussian_noise_std: {}".format(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev))
 
     tf.reset_default_graph()
 
@@ -73,8 +51,8 @@ def train_model(configs):
 
     # declare the input and output placeholders
     input = tf.placeholder(dtype = tf.float32, shape = [None, None, INPUT_SIZE])
-    # noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-    # input = input + noise
+    noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
+    input = input + noise
 
     label = tf.placeholder(dtype = tf.float32, shape = [None, None, OUTPUT_SIZE])
     sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
@@ -92,16 +70,16 @@ def train_model(configs):
     error = l1_loss(dense_layer, label)
 
     # l2 regularization of the trainable model parameters
-    # l2_loss = 0.0
-    # for var in tf.trainable_variables() :
-    #     l2_loss += tf.nn.l2_loss(var)
+    l2_loss = 0.0
+    for var in tf.trainable_variables() :
+        l2_loss += tf.nn.l2_loss(var)
 
-    # l2_loss = tf.multiply(l2_regularization, l2_loss)
+    l2_loss = tf.multiply(l2_regularization, tf.cast(l2_loss, tf.float64))
 
-    total_loss = error #+ l2_loss
+    total_loss = tf.cast(error, tf.float64) + l2_loss
 
-    # create the cocob optimizer
-    optimizer = cocob_optimizer.COCOB().minimize(loss = total_loss)
+    # create the adagrad optimizer
+    optimizer = tf.train.AdagradOptimizer(learning_rate = learning_rate).minimize(total_loss)
 
     # create the training and validation datasets from the tfrecord files
     training_dataset = tf.data.TFRecordDataset(filenames = [binary_train_file_path], compression_type = "ZLIB")
@@ -132,7 +110,7 @@ def train_model(configs):
 
             for epochsize in range(max_epoch_size):
                 smape_epochsize__list = []
-                padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size, padded_shapes=padded_shapes)
+                padded_training_data_batches = training_dataset.padded_batch(batch_size=10, padded_shapes=padded_shapes)
 
                 training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
                 next_training_data_batch = training_data_batch_iterator.get_next()
@@ -141,10 +119,11 @@ def train_model(configs):
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch)
-                        session.run(optimizer,
+                        total_loss_value, _ = session.run([total_loss, optimizer],
                                     feed_dict={input: training_data_batch_value[1],
                                                label: training_data_batch_value[2],
                                                sequence_lengths: training_data_batch_value[0]})
+                        print("Total Loss: ", total_loss_value)
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -198,41 +177,24 @@ def train_model(configs):
             smape_final_list.append(smape_epoch)
 
         smape_final = np.mean(smape_final_list)
-        print("SMAPE value: {}".format(smape_final))
+        max_value = 1 / (smape_final)
 
-    return smape_final
+    return max_value
 
 if __name__ == '__main__':
 
-    # Build Configuration Space which defines all parameters and their ranges
-    configuration_space = ConfigurationSpace()
+    init_points = 2
+    num_iter = 30
 
-    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 50)
-    minibatch_size = UniformIntegerHyperparameter("minibatch_size", 10, 30, default_value = 10)
-    max_epoch_size = UniformIntegerHyperparameter("max_epoch_size", 1, 3, default_value = 1)
-    max_num_of_epochs = UniformIntegerHyperparameter("max_num_of_epochs", 3, 20, default_value = 3)
-    l2_regularization = UniformFloatHyperparameter("l2_regularization", 0.0001, 0.0008, default_value = 0.0001)
-    gaussian_noise_stdev = UniformFloatHyperparameter("gaussian_noise_stdev", 0.0001, 0.0008, default_value = 0.0001)
+    # using bayesian optimizer for hyperparameter optimization
+    bayesian_optimization = BayesianOptimization(train_model, {'learningRate': (0.0001, 0.0008),
+                                                                'lstmCellDimension': (50, 100),
+                                                                'mbSize': (10, 30),
+                                                                'maxEpochSize': (1, 3),
+                                                                'maxNumOfEpochs': (3, 20),
+                                                                'l2_regularization': (0.0001, 0.0008),
+                                                                'gaussianNoise': (0.0001, 0.0008)
+                                                            })
 
-    configuration_space.add_hyperparameters([lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs])
-                                             # l2_regularization, gaussian_noise_stdev])
-
-    # creating the scenario object
-    scenario = Scenario({
-        "run_obj": "quality",
-        "runcount-limit": 50,
-        "cs": configuration_space,
-        "deterministic": True,
-        "output_dir": "Logs"
-    })
-
-    # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(0), tae_runner=train_model)
-
-    incumbent = smac.optimize()
-
-    smape_error = train_model(incumbent)
-
-    print("Optimized configuration: {}".format(incumbent))
-    print("Optimized Value: {}".format(smape_error))
+    bayesian_optimization.maximize(init_points = init_points, n_iter = num_iter)
 

@@ -41,10 +41,10 @@ def gaussian_noise(input_layer, std):
 
 
 # Training the time series
-def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev):
+def train_model(learning_rate, no_hidden_layers, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev):
 
-    print("Learning Rate: {}, LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, "
-          "l2_regularization: {}, gaussian_noise_std: {}".format(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev))
+    print("Learning Rate: {}, No of Hidden Layers: {}, LSTM Cell Dimension: {}, mbSize: {}, maxEpochSize: {}, maxNumOfEpochs: {}, "
+          "l2_regularization: {}, gaussian_noise_std: {}".format(learning_rate, no_hidden_layers, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_of_epochs, l2_regularization, gaussian_noise_stdev))
 
     tf.reset_default_graph()
 
@@ -61,8 +61,12 @@ def train_model(learning_rate, lstm_cell_dimension, minibatch_size, max_epoch_si
     # create the model architecture
 
     # RNN with the LSTM layer
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = int(lstm_cell_dimension), use_peepholes = LSTM_USE_PEEPHOLES)
-    rnn_outputs, states = tf.nn.dynamic_rnn(cell = lstm_cell, inputs = input, sequence_length = sequence_lengths, dtype = tf.float32)
+    def lstm_cell():
+        lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = int(lstm_cell_dimension), use_peepholes = LSTM_USE_PEEPHOLES)
+        return lstm_cell
+
+    multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells = [lstm_cell() for _ in range(int(no_hidden_layers))] )
+    rnn_outputs, states = tf.nn.dynamic_rnn(cell = multi_layered_cell, inputs = input, sequence_length = sequence_lengths, dtype = tf.float32)
 
     # connect the dense layer to the RNN
     dense_layer = tf.layers.dense(inputs = tf.convert_to_tensor(value = rnn_outputs, dtype = tf.float32), units = OUTPUT_SIZE, use_bias = BIAS)
@@ -188,6 +192,7 @@ if __name__ == '__main__':
 
     # using bayesian optimizer for hyperparameter optimization
     bayesian_optimization = BayesianOptimization(train_model, {'learning_rate': (0.0001, 0.0008),
+                                                               'no_hidden_layers': (1, 5),
                                                                 'lstm_cell_dimension': (50, 100),
                                                                 'minibatch_size': (10, 30),
                                                                 'max_epoch_size': (1, 3),

@@ -84,7 +84,7 @@ def train_model(configs):
     # create the model architecture
 
     # building the encoder network
-    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = int(num_units), use_peepholes = LSTM_USE_PEEPHOLES)
+    encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = num_units, use_peepholes = LSTM_USE_PEEPHOLES)
     encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
 
     # creating an attention mechanism
@@ -155,16 +155,16 @@ def train_model(configs):
     with tf.Session() as session :
         session.run(init_op)
 
-        for epoch in range(int(max_num_of_epochs)):
+        for epoch in range(max_num_of_epochs):
             smape_epoch_list = []
             print("Epoch->", epoch)
 
             # randomly shuffle the time series within the dataset
-            training_dataset.shuffle(int(minibatch_size))
+            training_dataset.shuffle(minibatch_size)
 
-            for epochsize in range(int(max_epoch_size)):
+            for epochsize in range(max_epoch_size):
                 smape_epochsize__list = []
-                padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=padded_shapes)
+                padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size, padded_shapes=padded_shapes)
 
                 training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
                 next_training_data_batch = training_data_batch_iterator.get_next()

@@ -1,9 +1,9 @@
 args <- commandArgs(trailingOnly = TRUE)
 forecast_file_path = args[1]
 
-cif_df=read.csv(file="/media/hansika/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif-results.txt",sep=';',header = FALSE)
+cif_df=read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif-results.txt",sep=';',header = FALSE)
 
-text_df_12=read.csv(file="/media/hansika/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif12test.txt",sep = " ",header = FALSE)
+text_df_12=read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif12test.txt",sep = " ",header = FALSE)
 
 names(cif_df)[1]="Series"
 
