@@ -130,7 +130,7 @@ class AttentionModelTester:
 
                     # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
                     padded_training_data_batches = training_dataset.padded_batch(batch_size = int(minibatch_size),
-                                          padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1]))
+                                          padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size]))
 
                     # get an iterator to the batches
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()

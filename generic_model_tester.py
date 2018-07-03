@@ -61,14 +61,14 @@ if __name__ == '__main__':
     elif model_type == "attention":
         model_class = AttentionModelTester
 
-    learning_rate = 0.0003426256821607555
-    num_hidden_layers = 4.2530405625473344
-    max_num_epochs = 3
-    max_epoch_size = 3
-    lstm_cell_dimension = 56.079257770813335
-    l2_regularization = 0.00079999991895750083
-    minibatch_size = 30
-    gaussian_noise_stdev = 0.00079999991895750083
+    learning_rate = 0.0004272551665711571
+    num_hidden_layers = 1.0238442965695507
+    max_num_epochs = 3.2710387228134241
+    max_epoch_size = 1.0071638165704657
+    lstm_cell_dimension = 99.223484277003337
+    l2_regularization = 0.0006427949512988456
+    minibatch_size = 26.580310196215663
+    gaussian_noise_stdev = 0.0002660405126857485
 
     model_tester = model_class(use_bias=BIAS,
                                 use_peepholes=LSTM_USE_PEEPHOLES,

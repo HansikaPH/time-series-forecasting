@@ -78,10 +78,11 @@ class StackingModelTrainer:
         # parse the records
         tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
-        validation_dataset = validation_dataset.map(tfrecord_reader.train_data_parser)
+        validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # define the expected shapes of data after padding
-        padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
+        train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
+        validation_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
 
         INFO_FREQ = 1
         smape_final_list = []
@@ -101,7 +102,7 @@ class StackingModelTrainer:
 
                 for epochsize in range(int(max_epoch_size)):
                     smape_epochsize__list = []
-                    padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=padded_shapes)
+                    padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=train_padded_shapes)
 
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
                     next_training_data_batch = training_data_batch_iterator.get_next()
@@ -119,7 +120,7 @@ class StackingModelTrainer:
 
                     if epoch % INFO_FREQ == 0:
                         # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                        padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = padded_shapes)
+                        padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = validation_padded_shapes)
 
                         # get an iterator to the validation data
                         validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()

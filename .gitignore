@@ -13,3 +13,6 @@ data/submission.csv.gz
 
 Logs/
 
+datasets/
+*.pyc
+
