@@ -1,148 +1,80 @@
-OUTPUT_DIR="datann5_validation"
-dir.create(OUTPUT_DIR, recursive = T)
+library(matrixStats)
 
-file <-read.csv(file="NN5_FINAL_DATASET_WITH_TEST_DATA_2.txt",sep=',',header = FALSE) 
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/"
+
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_DATASET_WITH_TEST_DATA.csv",sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(t(file[,-1]))
 
-sunday = vector()
-monday = vector()
-tuesday = vector()
-wednesday = vector()
-thursday= vector()
-friday = vector()
-saturday = vector()
-wrong= vector()
+# TODO: use easy method for replacing for the missing values
+max_forecast_horizon=56
+
+# calculating the time series median values to replace for missing values
+numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
+time_series_medians = rowMedians(x = numeric_dataset, na.rm = TRUE, hasNA = TRUE, keep.names=TRUE)
 
 #replacing missing values
-for (idr in 1: nrow(nn5_dataset)) {
-  oneLine_df=nn5_dataset[idr,]
-  numericvalue<-as.numeric(oneLine_df)
-  for(i in 1:length(numericvalue)){
-    if(i%%7==0){
-      sunday = append(sunday,numericvalue[i])
-    }else if(i%%7==1){
-      monday = append(monday,numericvalue[i])
-    }else if(i%%7==2){
-      tuesday = append(tuesday,numericvalue[i])
-    }else if(i%%7==3){
-      wednesday  = append(wednesday,numericvalue[i])
-    }else if(i%%7==4){
-      thursday= append(thursday,numericvalue[i])
-    }else if(i%%7==5){
-      friday= append(friday,numericvalue[i])
-    }else if(i%%7==6){
-      saturday= append(saturday,numericvalue[i]) 
-    }else{
-      wrong= append(wrong,numericvalue[i]) 
-    }
-  }
-  print(idr)
-} 
+na_elements = which(is.na(numeric_dataset), arr.ind=TRUE)
 
-sunday_median<-median(sunday,na.rm = TRUE)
-monday_median <-median(monday,na.rm = TRUE)
-tuesday_median <- median(tuesday,na.rm = TRUE)
-wednesday_median <-median(wednesday,na.rm = TRUE)
-thursday_median<-median(thursday,na.rm = TRUE)
-friday_median<-median(friday,na.rm = TRUE)
-saturday_median<-median(saturday,na.rm = TRUE)
-
-#replacing missing values
-for (idr in 1: nrow(nn5_dataset)) {
-  oneLine_df=nn5_dataset[idr,]
-  numericvalue<-as.numeric(oneLine_df)
-  for(i in 1:length(numericvalue)){
-    if(is.na(oneLine_df[i])){
-      if(i%%7==0){
-        nn5_dataset[idr,i] =sunday_median
-      }else if(i%%7==1){
-        nn5_dataset[idr,i]= monday_median
-      }else if(i%%7==2){
-        nn5_dataset[idr,i]= tuesday_median
-      }else if(i%%7==3){
-        nn5_dataset[idr,i] =wednesday_median
-      }else if(i%%7==4){
-        nn5_dataset[idr,i] =thursday_median
-      }else if(i%%7==5){
-        nn5_dataset[idr,i]= friday_median
-      }else if(i%%7==6){
-        nn5_dataset[idr,i]= saturday_median
-      }
-    }
-  }
+for(i in 1:nrow(na_elements)){
+  row = na_elements[i, 1]
+  column = na_elements[i, 2]
+  numeric_dataset[row, column] = time_series_medians[row]
 }
-
-
 
 INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-OUTPUT_P56=paste(OUTPUT_DIR,"str_56_seasonal",sep='/')
+OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_stl_56",sep='/')
 
-if (INPUT_SIZE_MULTIP!=1) {
-  inputSize=as.integer(INPUT_SIZE_MULTIP*56)
-  OUTPUT_P56=paste(OUTPUT_P56,'i',inputSize,sep='')
-}
+input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
+OUTPUT_PATH56=paste(OUTPUT_PATH56,'i', input_size, 'v', sep='')
 
-OUTPUT_PA56=OUTPUT_P56
-OUTPUT_PATH56=paste(OUTPUT_PA56,'txt',sep='.')
-
+OUTPUT_PATH56=paste(OUTPUT_PATH56,'txt',sep='.')
 unlink(OUTPUT_PATH56)
 
-firstTime=TRUE; save56_df=NULL;
-maxForecastHorizon=56
-for (idr in 1: nrow(nn5_dataset)) {
-  oneLine_df= nn5_dataset[idr,]
-  y=as.numeric(oneLine_df)
-  y=y+1
-  
-  ylog=log(y)
-  n=length(y)
-  ylog=ylog[1:n]
-  
-  stlAdj= tryCatch({
-    sstl=stl(ts(ylog,frequency=7),"period")
+numeric_dataset = numeric_dataset + 1
+
+numeric_dataset_log = log(numeric_dataset)
+
+time_series_length = ncol(numeric_dataset_log)
+
+for (idr in 1: nrow(numeric_dataset_log)) {
+  time_series_log = numeric_dataset_log[idr, ]
+
+  stl_result= tryCatch({
+    sstl=stl(ts(time_series_log,frequency=7),"period")
     seasonal_vect=as.numeric(sstl$time.series[,1])
-    nnLevels=as.numeric(sstl$time.series[,2])
-    nn_vect=as.numeric(sstl$time.series[,2]+sstl$time.series[,3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-    cbind(seasonal_vect,nnLevels,nn_vect)
-  }, error = function(e) { 
-    seasonal_vect=rep(0,length(ylog))   #stl() may fail, and then we would go on with the seasonality vector=0
-    nnLevels=ylog
-    nn_vect=ylog
-    cbind(seasonal_vect ,nnLevels,nn_vect)
+    levels_vect=as.numeric(sstl$time.series[,2])
+    values_vect=as.numeric(sstl$time.series[,2]+sstl$time.series[,3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
+    cbind(seasonal_vect,levels_vect,values_vect)
+  }, error = function(e) {
+    seasonal_vect=rep(0,length(time_series_log))   #stl() may fail, and then we would go on with the seasonality vector=0
+    levels_vect=time_series_log
+    values_vect=time_series_log
+    cbind(seasonal_vect, levels_vect, values_vect)
   })
-  
-  inputSize=as.integer(INPUT_SIZE_MULTIP*maxForecastHorizon)
-  
-  inn=inputSize
-  for (inn in inputSize:(n-maxForecastHorizon)) {
-    level=stlAdj[inn,2] #last "trend" point in the input window is the "level" (the value used for the normalization)
+
+  for (inn in input_size:(time_series_length-max_forecast_horizon)) {
+    level=stl_result[inn, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
     sav_df=data.frame(id=paste(idr,'|i',sep=''));
-    
-    for (ii in 1:inputSize) {
-      sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]-level  #inputs: past values normalized by the level
+
+    for (ii in 1:input_size) {
+      sav_df[,paste('r',ii,sep='')]=stl_result[inn-input_size+ii,3]-level  #inputs: past values normalized by the level
     }
-    
+
     sav_df[,'o']='|o'
-    for (ii in 1:maxForecastHorizon) {
-      sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]-level #outputs: future values normalized by the level.
+    for (ii in 1:max_forecast_horizon) {
+      sav_df[,paste('o',ii,sep='')]=stl_result[inn+ii,3]-level #outputs: future values normalized by the level.
     }
-    
-    sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar) 
+
+    sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
     #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
     sav_df[,'level']=level
-    
-    for (ii in 1:maxForecastHorizon) {
-     sav_df[,paste('s',ii,sep='')]=stlAdj[inn+ii,1]
-    } 
-    
-    if (is.null(save56_df)) {
-      save56_df=sav_df 
-    } else {
-      save56_df=rbind(save56_df, sav_df)
+
+    for (ii in 1:max_forecast_horizon) {
+      sav_df[,paste('s',ii,sep='')]=stl_result[inn+ii,1]
     }
+
+    write.table(sav_df, file=OUTPUT_PATH56, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
+
   } #steps
   print(idr)
 }#through all series from one file
-
-
-write.table(save56_df, file=OUTPUT_PATH56, row.names = F, col.names=F, sep=" ", quote=F)
