@@ -1,0 +1,34 @@
+# NN5
+stacking_smac_cocob
+stacking_smac_adagrad
+stacking_bayesian_cocob
+stacking_bayesian_adagrad
+
+seq2seq_smac_cocob
+seq2seq_smac_adagrad
+seq2seq_bayesian_cocob
+seq2seq_bayesian_adagrad
+
+attention_smac_cocob
+attention_smac_adagrad
+attention_bayesian_cocob
+attention_bayesian_adagrad
+
+
+# CIF2016
+stacking_smac_cocob
+stacking_smac_adagrad
+stacking_bayesian_cocob
+stacking_bayesian_adagrad
+
+seq2seq_smac_cocob
+seq2seq_smac_adagrad
+seq2seq_bayesian_cocob
+seq2seq_bayesian_adagrad
+
+attention_smac_cocob
+attention_smac_adagrad
+attention_bayesian_cocob
+attention_bayesian_adagrad
+
+--binary_test_file datasets/CIF_2016/binary_files/cif12test.tfrecords --txt_test_file datasets/CIF_2016/cif12test.txt --actual_results_file datasets/CIF_2016/cif-results.txt --input_size 15 --forecast_horizon 12 --optimizer cocob --hyperparameter_tuning smac --model_type attention
