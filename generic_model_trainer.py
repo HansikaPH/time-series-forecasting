@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 import argparse
 from bayes_opt import BayesianOptimization
+from persist_optimized_config_results import persist_results
+from generic_model_tester import testing
 
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -13,7 +15,7 @@ from smac.facade.smac_facade import SMAC
 
 # import the different model types
 from  stacking_model.stacking_model_trainer import StackingModelTrainer
-# from seq2seq_model_trainer import Seq2SeqModelTrainer
+from seq2seq_model.seq2seq_model_trainer import Seq2SeqModelTrainer
 from attention_model.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
@@ -23,14 +25,7 @@ LSTM_USE_PEEPHOLES = True
 LSTM_USE_STABILIZATION = True
 BIAS = False
 
-# Input/Output Window sizes
-INPUT_SIZE = 15
-OUTPUT_SIZE = 12
-
-# Training and Validation file paths.
-binary_train_file_path = 'datasets/CIF_2016/binary_files/stl_12i15.tfrecords'
-binary_validation_file_path = 'datasets/CIF_2016/binary_files/stl_12i15v.tfrecords'
-
+optimized_config_directory = 'results/optimized_configurations/'
 learning_rate = 0.0
 
 # function to create the optimizer
@@ -57,8 +52,8 @@ def train_model_smac(configs):
 
     model_trainer = model_class(use_bias = BIAS,
                                                 use_peepholes = LSTM_USE_PEEPHOLES,
-                                                input_size = INPUT_SIZE,
-                                                output_size = OUTPUT_SIZE,
+                                                input_size = input_size,
+                                                output_size = output_size,
                                                 binary_train_file_path = binary_train_file_path,
                                                 binary_validation_file_path = binary_validation_file_path)
 
@@ -81,8 +76,8 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
 
     model_trainer = model_class(use_bias=BIAS,
                                 use_peepholes=LSTM_USE_PEEPHOLES,
-                                input_size=INPUT_SIZE,
-                                output_size=OUTPUT_SIZE,
+                                input_size=input_size,
+                                output_size=output_size,
                                 binary_train_file_path=binary_train_file_path,
                                 binary_validation_file_path=binary_validation_file_path)
 
@@ -119,7 +114,10 @@ def bayesian_optimization():
     bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
 
     bayesian_optimization.maximize(init_points=init_points, n_iter=num_iter)
-    print(bayesian_optimization.res['max'])
+    optimized_configuration = bayesian_optimization.res['max']['max_params']
+    print(optimized_configuration)
+
+    return optimized_configuration
 
 def smac():
 
@@ -160,12 +158,22 @@ def smac():
     smape_error = train_model_smac(incumbent)
 
     print("Optimized configuration: {}".format(incumbent))
-    print("Optimized Value: {}".format(smape_error))
+    print("Optimized Value: {}\n".format(smape_error))
+    return incumbent.get_dictionary()
 
 
 if __name__ == '__main__':
 
     argument_parser = argparse.ArgumentParser("Train different forecasting models")
+    argument_parser.add_argument('--dataset_name', required = True, help = 'Unique string for the name of the dataset')
+    argument_parser.add_argument('--contain_zero_values', required = True, help = 'Whether the dataset contains zero values')
+    argument_parser.add_argument('--binary_train_file', required = True, help = 'The tfrecords file for train dataset')
+    argument_parser.add_argument('--binary_valid_file', required=True, help='The tfrecords file for validation dataset')
+    argument_parser.add_argument('--binary_test_file', required=True, help='The tfrecords file for test dataset')
+    argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
+    argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
+    argument_parser.add_argument('--input_size', required=True, help='The input size of the dataset')
+    argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
     argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/attention)')
@@ -173,9 +181,16 @@ if __name__ == '__main__':
     # parse the user arguments
     args = argument_parser.parse_args()
 
+    dataset_name = args.dataset_name
+    binary_train_file_path = args.binary_train_file
+    binary_validation_file_path = args.binary_valid_file
+    input_size = int(args.input_size)
+    output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
+
+    print("Model Training Started for {}_{}_{}_{}".format(dataset_name, model_type, hyperparameter_tuning, optimizer))
 
     # select the optimizer
     if optimizer == "cocob":
@@ -186,11 +201,19 @@ if __name__ == '__main__':
     # select the model type
     if model_type == "stacking":
         model_class = StackingModelTrainer
+    elif model_type == "seq2seq":
+        model_class = Seq2SeqModelTrainer
     elif model_type == "attention":
         model_class = AttentionModelTrainer
 
     # select the hyperparameter tuning method
     if hyperparameter_tuning == "bayesian":
-        bayesian_optimization()
+        optimized_configuration = bayesian_optimization()
     elif hyperparameter_tuning == "smac":
-        smac()
+        optimized_configuration = smac()
+
+    # persist the optimized configuration to a file
+    persist_results(optimized_configuration, optimized_config_directory + '/' + dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt')
+
+    # test the model
+    testing(args, optimized_configuration)

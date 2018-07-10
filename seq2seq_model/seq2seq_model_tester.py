@@ -18,7 +18,7 @@ class Seq2SeqModelTester:
         return loss
 
     # Training the time series
-    def train_model(self, **kwargs):
+    def test_model(self, **kwargs):
 
         # optimized hyperparameters
         num_hidden_layers = kwargs['num_hidden_layers']

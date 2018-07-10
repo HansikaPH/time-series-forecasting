@@ -1,4 +1,5 @@
-cif_df = read.csv(file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif-dataset.txt", sep = ';', header = FALSE)
+library(forecast)
+cif_df = read.csv(file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2016/cif-dataset.txt", sep = ';', header = FALSE)
 
 names(cif_df)[4:ncol(cif_df)] = paste('x', (1:(ncol(cif_df) - 3)), sep =
                                         '_')
@@ -44,14 +45,14 @@ for (idr in 1:nrow(cif_df_12)) {
   })
   
   seasonality_12 = tryCatch({
-    seasonality_12 = stlf(ts(ylog , frequency = 12), "period", h = 12)
-    seasonality_12_vector = as.numeric(seasonality_12$seasonal)
-    cbind(seasonality_12_vector)
+    forecast = stlf(ts(stlAdj[,1] , frequency = 12), "period", h = 12)
+    seasonality_12_vector = as.numeric(forecast$mean)
+    c(seasonality_12_vector)
   }, error = function(e) {
     seasonality_12_vector = rep(0, 12)   #stl() may fail, and then we would go on with the seasonality vector=0
-    cbind(seasonality_12_vector)
+    c(seasonality_12_vector)
   })
-  
+
   #stlAdj = tail(stlAdj , n = 15)
   #level = stlAdj[15, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
   #sav_df = data.frame(id = paste(idr, '|i', sep = ''))
@@ -88,7 +89,7 @@ for (idr in 1:nrow(cif_df_12)) {
 
 write.table(
   save12_df,
-  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/DataSets/CIF 2016/cif12test.txt",
+  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2016/cif12test.txt",
   row.names = F,
   col.names = F,
   sep = " ",

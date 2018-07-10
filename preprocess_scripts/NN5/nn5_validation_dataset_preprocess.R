@@ -1,35 +1,89 @@
-library(matrixStats)
-
 OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_DATASET_WITH_TEST_DATA.csv",sep=',',header = FALSE)
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(t(file[,-1]))
 
-# TODO: use easy method for replacing for the missing values
 max_forecast_horizon=56
 
-# calculating the time series median values to replace for missing values
-numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
-time_series_medians = rowMedians(x = numeric_dataset, na.rm = TRUE, hasNA = TRUE, keep.names=TRUE)
+sunday = vector()
+monday = vector()
+tuesday = vector()
+wednesday = vector()
+thursday= vector()
+friday = vector()
+saturday = vector()
+wrong= vector()
 
 #replacing missing values
-na_elements = which(is.na(numeric_dataset), arr.ind=TRUE)
+for (idr in 1: nrow(nn5_dataset)) {
+  oneLine_df=nn5_dataset[idr,]
+  numericvalue<-as.numeric(oneLine_df)
+  for(i in 1:length(numericvalue)){
+    if(i%%7==0){
+      sunday = append(sunday,numericvalue[i])
+    }else if(i%%7==1){
+      monday = append(monday,numericvalue[i])
+    }else if(i%%7==2){
+      tuesday = append(tuesday,numericvalue[i])
+    }else if(i%%7==3){
+      wednesday  = append(wednesday,numericvalue[i])
+    }else if(i%%7==4){
+      thursday= append(thursday,numericvalue[i])
+    }else if(i%%7==5){
+      friday= append(friday,numericvalue[i])
+    }else if(i%%7==6){
+      saturday= append(saturday,numericvalue[i])
+    }else{
+      wrong= append(wrong,numericvalue[i])
+    }
+  }
+  print(idr)
+}
 
-for(i in 1:nrow(na_elements)){
-  row = na_elements[i, 1]
-  column = na_elements[i, 2]
-  numeric_dataset[row, column] = time_series_medians[row]
+sunday_median<-median(sunday,na.rm = TRUE)
+monday_median <-median(monday,na.rm = TRUE)
+tuesday_median <- median(tuesday,na.rm = TRUE)
+wednesday_median <-median(wednesday,na.rm = TRUE)
+thursday_median<-median(thursday,na.rm = TRUE)
+friday_median<-median(friday,na.rm = TRUE)
+saturday_median<-median(saturday,na.rm = TRUE)
+
+#replacing missing values
+for (idr in 1: nrow(nn5_dataset)) {
+  oneLine_df=nn5_dataset[idr,]
+  numericvalue<-as.numeric(oneLine_df)
+  for(i in 1:length(numericvalue)){
+    if(is.na(oneLine_df[i])){
+      if(i%%7==0){
+        nn5_dataset[idr,i] =sunday_median
+      }else if(i%%7==1){
+        nn5_dataset[idr,i]= monday_median
+      }else if(i%%7==2){
+        nn5_dataset[idr,i]= tuesday_median
+      }else if(i%%7==3){
+        nn5_dataset[idr,i] =wednesday_median
+      }else if(i%%7==4){
+        nn5_dataset[idr,i] =thursday_median
+      }else if(i%%7==5){
+        nn5_dataset[idr,i]= friday_median
+      }else if(i%%7==6){
+        nn5_dataset[idr,i]= saturday_median
+      }
+    }
+  }
 }
 
 INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_stl_56",sep='/')
-
 input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
+
+OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_stl_",sep='/')
+OUTPUT_PATH56=paste(OUTPUT_PATH56,max_forecast_horizon,sep='')
 OUTPUT_PATH56=paste(OUTPUT_PATH56,'i', input_size, 'v', sep='')
 
 OUTPUT_PATH56=paste(OUTPUT_PATH56,'txt',sep='.')
 unlink(OUTPUT_PATH56)
 
+numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
 numeric_dataset = numeric_dataset + 1
 
 numeric_dataset_log = log(numeric_dataset)
