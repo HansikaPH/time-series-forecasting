@@ -14,7 +14,7 @@ from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
 
 # import the different model types
-from  stacking_model.stacking_model_trainer import StackingModelTrainer
+from stacking_model.stacking_model_trainer import StackingModelTrainer
 from seq2seq_model.seq2seq_model_trainer import Seq2SeqModelTrainer
 from attention_model.attention_model_trainer import AttentionModelTrainer
 
