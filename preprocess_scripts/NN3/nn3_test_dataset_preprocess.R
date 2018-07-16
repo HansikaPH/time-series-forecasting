@@ -1,43 +1,27 @@
 library(forecast)
 
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/M4/"
+OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN3/"
+TEST_DATA_FILE = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN3/NN3_DATASET.csv"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/M4/train_data/Monthly-train.csv",sep=',',header = FALSE)
-m4_dataset <-as.data.frame(t(file[,-1]))
+nn3_dataset <- readLines(TEST_DATA_FILE)
+nn3_dataset <- strsplit(nn3_dataset, ',')
 
 max_forecast_horizon=18
+input_size = 13 # since this is monthly data, to capture the effect of yearly seasonality, the input window size has been made slightly more than 12
 
-INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
-
-files <- dir(path=OUTPUT_DIR, pattern="m4_test_monthly*")
+files <- dir(path=OUTPUT_DIR, pattern="nn3_test*")
 file.remove(paste(OUTPUT_DIR, files, sep = ''))
 
-for (idr in 1: nrow(m4_dataset)) {
-  if(idr <= 10016 && idr >= 1){ #Macro Series
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_macro",sep='/')
-  }
-  else if(idr <= 20991 && idr > 10016) {
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_micro",sep='/')
-  }
-  else if(idr <= 26719 && idr > 20991) {
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_demo",sep='/')
-  }
-  else if(idr <= 36736 && idr > 26719) {
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_industry",sep='/')
-  }
-  else if(idr <= 47723 && idr > 36736) {
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_finance",sep='/')
-  }
-  else if(idr > 47723) {
-    OUTPUT_PATH=paste(OUTPUT_DIR,"m4_test_monthly_other",sep='/')
-  }
+for (idr in 1: length(nn3_dataset)) {
+  OUTPUT_PATH=paste(OUTPUT_DIR,"nn3_test_",sep='/')
+    OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
+    OUTPUT_PATH=paste(OUTPUT_PATH,'i',input_size,sep='')
 
-  OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
-  OUTPUT_PATH=paste(OUTPUT_PATH,'i',input_size,sep='')
-  OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
+    OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
 
-  time_series = m4_dataset[idr, ]
+
+  time_series = nn3_dataset[idr]
+  time_series = unlist(time_series, use.names=FALSE)
   time_series_log = log(as.numeric(time_series))
   time_series_length = length(time_series_log)
 

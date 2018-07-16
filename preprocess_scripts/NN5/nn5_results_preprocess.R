@@ -74,5 +74,4 @@ for (idr in 1: nrow(nn5_result_dataset)) {
 }
 
 # printing the results to the file
-# nn5_result_dataset = cbind(file[,1], nn5_result_dataset)
 write.table(nn5_result_dataset, output_file_full_name, sep = ";", row.names = TRUE, col.names = FALSE)
