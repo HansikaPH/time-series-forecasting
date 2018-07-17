@@ -11,6 +11,7 @@ class StackingModelTrainer:
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
+        self.__contain_zero_values = kwargs["contain_zero_values"]
 
 
     def __l1_loss(self, z, t):
@@ -148,10 +149,14 @@ class StackingModelTrainer:
                                 level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
                                 last_validation_outputs = validation_output[array_first_dimension, last_indices]
-                                converted_validation_output = true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs
+                                converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
 
                                 actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                                converted_actual_values = true_seasonality_values + level_values[:, np.newaxis] + actual_values
+                                converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
+
+                                if (self.__contain_zero_values): # to compensate for 0 values in data
+                                    converted_validation_output = converted_validation_output - 1
+                                    converted_actual_values = converted_actual_values - 1
 
                                 # calculate the smape
                                 smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /

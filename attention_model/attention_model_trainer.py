@@ -12,6 +12,7 @@ class AttentionModelTrainer:
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
+        self.__contain_zero_values = kwargs["contain_zero_values"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -20,6 +21,7 @@ class AttentionModelTrainer:
     # Training the time series
     def train_model(self, **kwargs):
 
+        num_hidden_layers = kwargs['num_hidden_layers']
         lstm_cell_dimension = kwargs["lstm_cell_dimension"]
         minibatch_size = kwargs["minibatch_size"]
         max_epoch_size = kwargs["max_epoch_size"]
@@ -43,19 +45,26 @@ class AttentionModelTrainer:
 
         # create the model architecture
 
+        # RNN with the LSTM layer
+        def lstm_cell():
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+            return lstm_cell
+
         # building the encoder network
-        encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = lstm_cell_dimension, use_peepholes = self.__use_peepholes)
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+        # encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = lstm_cell_dimension, use_peepholes = self.__use_peepholes)
+        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
 
         # creating an attention mechanism
         attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension, memory=encoder_outputs,
                                                                    memory_sequence_length=sequence_length)
 
         # decoder cell of the decoder network
-        decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes = self.__use_peepholes)
+        # decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes = self.__use_peepholes)
+        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # using the attention wrapper to wrap the decoding cell
-        decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell = decoder_cell, attention_mechanism = attention_mechanism, attention_layer_size = lstm_cell_dimension)
+        decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell = multi_layered_decoder_cell, attention_mechanism = attention_mechanism, attention_layer_size = lstm_cell_dimension)
 
         # the final projection layer to convert the output to the desired dimension
         dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias)
@@ -175,10 +184,14 @@ class AttentionModelTrainer:
                                 level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
                                 last_validation_outputs = validation_output[array_first_dimension, last_indices]
-                                converted_validation_output = true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs
+                                converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
 
                                 actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                                converted_actual_values = true_seasonality_values + level_values[:, np.newaxis] + actual_values
+                                converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
+
+                                if (self.__contain_zero_values): # to compensate for 0 values in data
+                                    converted_validation_output = converted_validation_output - 1
+                                    converted_actual_values = converted_actual_values - 1
 
                                 # calculate the smape
                                 smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /

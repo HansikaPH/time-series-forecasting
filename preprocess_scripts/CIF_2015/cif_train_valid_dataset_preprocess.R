@@ -1,8 +1,8 @@
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN3/"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2015/"
 
-DATA_FILE = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN3/NN3_DATASET.csv"
-nn3_dataset <- readLines(DATA_FILE)
-nn3_dataset <- strsplit(nn3_dataset, ',')
+DATA_FILE = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2015/cif-dataset.txt"
+cif_dataset <- readLines(DATA_FILE)
+cif_dataset <- strsplit(cif_dataset, ';')
 
 max_forecast_horizon = 18
 input_size = 13 # since this is monthly data, to capture the effect of yearly seasonality, the input window size has been made slightly more than 12

@@ -55,7 +55,8 @@ def train_model_smac(configs):
                                                 input_size = input_size,
                                                 output_size = output_size,
                                                 binary_train_file_path = binary_train_file_path,
-                                                binary_validation_file_path = binary_validation_file_path)
+                                                binary_validation_file_path = binary_validation_file_path,
+                                                contain_zero_values = contain_zero_values)
 
     # select the appropriate type of optimizer
 
@@ -79,7 +80,8 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
                                 input_size=input_size,
                                 output_size=output_size,
                                 binary_train_file_path=binary_train_file_path,
-                                binary_validation_file_path=binary_validation_file_path)
+                                binary_validation_file_path=binary_validation_file_path,
+                                contain_zero_values = contain_zero_values)
 
     error = model_trainer.train_model(learning_rate=learning_rate,
                                       num_hidden_layers=int(round(num_hidden_layers)),
@@ -184,6 +186,7 @@ if __name__ == '__main__':
     dataset_name = args.dataset_name
     binary_train_file_path = args.binary_train_file
     binary_validation_file_path = args.binary_valid_file
+    contain_zero_values = args.contain_zero_values
     input_size = int(args.input_size)
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer

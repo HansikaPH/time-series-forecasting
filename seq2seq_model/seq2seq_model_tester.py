@@ -49,12 +49,19 @@ class Seq2SeqModelTester:
         # create the model architecture
 
         # building the encoder network
-        encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell=encoder_cell, inputs=input, sequence_length=sequence_length,
+
+        # RNN with the LSTM layer
+        def lstm_cell():
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+            return lstm_cell
+
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+        # encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell, inputs=input, sequence_length=sequence_length,
                                                            dtype=tf.float32)
 
         # decoder cell of the decoder network
-        decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes=self.__use_peepholes)
+        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # the final projection layer to convert the output to the desired dimension
         dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias)
@@ -63,7 +70,7 @@ class Seq2SeqModelTester:
         with tf.variable_scope('decode'):
             helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
                                                                       sampling_probability=0.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper, initial_state=encoder_state,
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=helper, initial_state=encoder_state,
                                                       output_layer=dense_layer)
 
             # perform the decoding
@@ -73,7 +80,7 @@ class Seq2SeqModelTester:
         with tf.variable_scope('decode', reuse=tf.AUTO_REUSE):
             helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=sequence_length,
                                                                       sampling_probability=1.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell=decoder_cell, helper=helper,
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=helper,
                                                       initial_state=encoder_state, output_layer=dense_layer)
 
             # perform the decoding
