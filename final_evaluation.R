@@ -39,7 +39,7 @@ for(k in 1 :nrow(forecasts_df)){
   seasonal_values = one_line_test_data[input_size + 4:length(one_line_test_data)]
   
   for (ii in 1:output_size) {
-    converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii]) -1
+    converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii])
     if(contain_zero_values == 1){
       converted_value = converted_value -1
     }

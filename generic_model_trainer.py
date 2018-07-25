@@ -110,7 +110,7 @@ def bayesian_optimization():
 
     # adding the hyperparameter for learning rate if the optimization is not cocob
     if optimizer != 'cocob':
-        parameters['rate_of_learning'] = (0.0001, 0.0008)
+        parameters['rate_of_learning'] = (0.000001, 0.000008)
 
     # using bayesian optimizer for hyperparameter optimization
     bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
@@ -126,7 +126,7 @@ def smac():
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
 
-    rate_of_learning = UniformFloatHyperparameter("rate_of_learning", 0.0001, 0.0008, default_value = 0.0001)
+    rate_of_learning = UniformFloatHyperparameter("rate_of_learning", 0.000001, 0.000008, default_value = 0.000001)
     lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 50)
     no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers", 1, 5, default_value = 5)
     minibatch_size = UniformIntegerHyperparameter("minibatch_size", 10, 30, default_value = 10)
