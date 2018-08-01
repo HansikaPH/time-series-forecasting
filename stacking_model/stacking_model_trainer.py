@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tfrecords_handler.tfrecord_reader import TFRecordReader
+from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
 
 class StackingModelTrainer:
 
@@ -36,10 +36,13 @@ class StackingModelTrainer:
         tf.set_random_seed(1)
 
         # declare the input and output placeholders
+
+        #input format [batch_size, sequence_length, dimension]
         input = tf.placeholder(dtype = tf.float32, shape = [None, None, self.__input_size])
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         input = input + noise
 
+        # output format [batch_size, sequence_length, dimension]
         true_output = tf.placeholder(dtype = tf.float32, shape = [None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
@@ -99,7 +102,7 @@ class StackingModelTrainer:
                 print("Epoch->", epoch)
 
                 # randomly shuffle the time series within the dataset
-                training_dataset.shuffle(int(minibatch_size))
+                training_dataset.shuffle(int(minibatch_size)) # TODO
 
                 for epochsize in range(int(max_epoch_size)):
                     smape_epochsize__list = []

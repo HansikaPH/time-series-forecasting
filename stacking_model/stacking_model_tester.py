@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tfrecords_handler.tfrecord_reader import TFRecordReader
+from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
 
 class StackingModelTester:
 

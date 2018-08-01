@@ -163,11 +163,3 @@ class TFRecordWriter:
             )
             writer.write(sequence_example.SerializeToString())
         writer.close()
-
-#read the data from the text files
-# read_text_data()
-
-# write the train, validation, test data to the files
-# write_to_tfrecord_file(binary_train_file_path, list_of_trainig_inputs, list_of_training_metadata, list_of_training_outputs)
-# write_to_tfrecord_file(binary_validation_file_path, list_of_validation_inputs, list_of_validation_metadata, list_of_validation_outputs)
-# write_test_data_to_tfrecord_file(binary_test_file_path, list_of_test_inputs, list_of_test_metadata)

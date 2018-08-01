@@ -50,17 +50,7 @@ def train_model_smac(configs):
     global learning_rate
     learning_rate = rate_of_learning
 
-    model_trainer = model_class(use_bias = BIAS,
-                                                use_peepholes = LSTM_USE_PEEPHOLES,
-                                                input_size = input_size,
-                                                output_size = output_size,
-                                                binary_train_file_path = binary_train_file_path,
-                                                binary_validation_file_path = binary_validation_file_path,
-                                                contain_zero_values = contain_zero_values)
-
     # select the appropriate type of optimizer
-
-
     return model_trainer.train_model(learning_rate = learning_rate,
                         num_hidden_layers = num_hidden_layers,
                         lstm_cell_dimension = lstm_cell_dimension,
@@ -74,14 +64,6 @@ def train_model_smac(configs):
 def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_epochs, l2_regularization, gaussian_noise_stdev, rate_of_learning = 0.0):
     global learning_rate
     learning_rate = rate_of_learning
-
-    model_trainer = model_class(use_bias=BIAS,
-                                use_peepholes=LSTM_USE_PEEPHOLES,
-                                input_size=input_size,
-                                output_size=output_size,
-                                binary_train_file_path=binary_train_file_path,
-                                binary_validation_file_path=binary_validation_file_path,
-                                contain_zero_values = contain_zero_values)
 
     error = model_trainer.train_model(learning_rate=learning_rate,
                                       num_hidden_layers=int(round(num_hidden_layers)),
@@ -174,7 +156,7 @@ if __name__ == '__main__':
     argument_parser.add_argument('--binary_test_file', required=True, help='The tfrecords file for test dataset')
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
-    argument_parser.add_argument('--input_size', required=True, help='The input size of the dataset')
+    argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
@@ -187,7 +169,8 @@ if __name__ == '__main__':
     binary_train_file_path = args.binary_train_file
     binary_validation_file_path = args.binary_valid_file
     contain_zero_values = args.contain_zero_values
-    input_size = int(args.input_size)
+    if(args.input_size):
+        input_size = int(args.input_size)
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
@@ -203,11 +186,33 @@ if __name__ == '__main__':
 
     # select the model type
     if model_type == "stacking":
-        model_class = StackingModelTrainer
+        model_trainer = StackingModelTrainer(
+            use_bias = BIAS,
+            use_peepholes = LSTM_USE_PEEPHOLES,
+            input_size = input_size,
+            output_size = output_size,
+            binary_train_file_path = binary_train_file_path,
+            binary_validation_file_path = binary_validation_file_path,
+            contain_zero_values = contain_zero_values
+        )
     elif model_type == "seq2seq":
-        model_class = Seq2SeqModelTrainer
+        model_trainer = Seq2SeqModelTrainer(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_validation_file_path=binary_validation_file_path,
+            contain_zero_values=contain_zero_values
+        )
     elif model_type == "attention":
-        model_class = AttentionModelTrainer
+        model_trainer = AttentionModelTrainer(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_validation_file_path=binary_validation_file_path,
+            contain_zero_values=contain_zero_values
+        )
 
     # select the hyperparameter tuning method
     if hyperparameter_tuning == "bayesian":

@@ -1,4 +1,4 @@
-from tfrecords_handler.tfrecord_writer import TFRecordWriter
+from tfrecords_handler.moving_window.tfrecord_writer import TFRecordWriter
 
 if __name__ == '__main__':
     tfrecord_writer = TFRecordWriter(

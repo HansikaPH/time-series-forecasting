@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.layers.core import Dense
-from tfrecords_handler.tfrecord_reader import TFRecordReader
+from tfrecords_handler.seq2seq.tfrecord_reader import TFRecordReader
 
 class Seq2SeqModelTrainer:
 
@@ -35,10 +34,10 @@ class Seq2SeqModelTrainer:
         tf.set_random_seed(1)
 
         # adding noise to the input
-        input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
+        input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         input = input + noise
-        target = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
+        target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
         sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
@@ -53,28 +52,26 @@ class Seq2SeqModelTrainer:
             return lstm_cell
 
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        # encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units = lstm_cell_dimension, use_peepholes = self.__use_peepholes)
         encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
 
         # decoder cell of the decoder network
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # the final projection layer to convert the output to the desired dimension
-        dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias)
+        # dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias)
 
         # building the decoder network for training
         with tf.variable_scope('decode'):
-            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 0.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
+            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=self.__output_size, sampling_probability = 0.0)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state)
 
             # perform the decoding
             training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
 
         # building the decoder network for inference
         with tf.variable_scope('decode', reuse = tf.AUTO_REUSE):
-            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 1.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper,
-                                                      initial_state = encoder_state, output_layer = dense_layer)
+            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=self.__output_size, sampling_probability = 1.0)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state)
 
             # perform the decoding
             inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
@@ -100,13 +97,13 @@ class Seq2SeqModelTrainer:
         validation_dataset = tf.data.TFRecordDataset(filenames = [self.__binary_validation_file_path], compression_type = "ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
+        tfrecord_reader = TFRecordReader()
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
         validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # define the expected shapes of data after padding
-        train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
-        validation_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
+        train_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1])
+        validation_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1], [self.__output_size + 1, 1])
 
         INFO_FREQ = 1
         smape_final_list = []
@@ -134,7 +131,7 @@ class Seq2SeqModelTrainer:
                     while True:
                         try:
                             training_data_batch_value = session.run(next_training_data_batch)
-                            # sequence_length = session.run(tf.to_int32(next_training_data_batch[0]))
+
                             session.run(optimizer,
                                         feed_dict={input: training_data_batch_value[1],
                                                    target: training_data_batch_value[2],
@@ -158,7 +155,7 @@ class Seq2SeqModelTrainer:
                                 validation_data_batch_value = session.run(next_validation_data_batch)
 
                                 # shape for the target data
-                                target_data_shape = [np.shape(validation_data_batch_value[1])[0], np.shape(validation_data_batch_value[1])[1], self.__output_size]
+                                target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                                 # get the output of the network for the validation input data batch
                                 validation_output = session.run(inference_decoder_outputs[0], feed_dict={input: validation_data_batch_value[1],
