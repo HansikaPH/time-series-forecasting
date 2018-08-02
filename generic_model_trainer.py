@@ -109,8 +109,8 @@ def smac():
     configuration_space = ConfigurationSpace()
 
     rate_of_learning = UniformFloatHyperparameter("rate_of_learning", 0.000001, 0.000008, default_value = 0.000001)
-    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 50)
-    no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers", 1, 5, default_value = 5)
+    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 20)
+    no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers", 1, 5, default_value = 1)
     minibatch_size = UniformIntegerHyperparameter("minibatch_size", 10, 30, default_value = 10)
     max_epoch_size = UniformIntegerHyperparameter("max_epoch_size", 1, 3, default_value = 1)
     max_num_of_epochs = UniformIntegerHyperparameter("max_num_epochs", 3, 20, default_value = 3)
@@ -129,7 +129,7 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 50,
+        "runcount-limit": 1,
         "cs": configuration_space,
         "deterministic": True,
         "output_dir": "Logs"

@@ -48,7 +48,8 @@ def testing(args, config_dictionary):
     binary_test_file_path = args.binary_test_file
     txt_test_file_path = args.txt_test_file
     actual_results_file_path = args.actual_results_file
-    input_size = int(args.input_size)
+    if(args.input_size):
+        input_size = int(args.input_size)
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
@@ -64,11 +65,30 @@ def testing(args, config_dictionary):
 
     # select the model type
     if model_type == "stacking":
-        model_class = StackingModelTester
+        model_tester = StackingModelTester(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            input_size=input_size,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_test_file_path=binary_test_file_path
+        )
     elif model_type == "seq2seq":
-        model_class = Seq2SeqModelTester
+        model_tester = Seq2SeqModelTester(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_test_file_path=binary_test_file_path
+        )
     elif model_type == "attention":
-        model_class = AttentionModelTester
+        model_tester = AttentionModelTester(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_test_file_path=binary_test_file_path
+        )
 
     if 'learning_rate' in config_dictionary:
         learning_rate = config_dictionary['learning_rate']
@@ -79,13 +99,6 @@ def testing(args, config_dictionary):
     l2_regularization = config_dictionary['l2_regularization']
     minibatch_size = config_dictionary['minibatch_size']
     gaussian_noise_stdev = config_dictionary['gaussian_noise_stdev']
-
-    model_tester = model_class(use_bias=BIAS,
-                                use_peepholes=LSTM_USE_PEEPHOLES,
-                                input_size=input_size,
-                                output_size=output_size,
-                                binary_train_file_path=binary_train_file_path,
-                                binary_test_file_path=binary_test_file_path)
 
     list_of_forecasts = model_tester.test_model(num_hidden_layers = int(round(num_hidden_layers)),
                                       lstm_cell_dimension = int(round(lstm_cell_dimension)),
