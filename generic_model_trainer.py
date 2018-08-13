@@ -15,7 +15,7 @@ from smac.facade.smac_facade import SMAC
 
 # import the different model types
 from stacking_model.stacking_model_trainer import StackingModelTrainer
-from seq2seq_model.seq2seq_model_trainer import Seq2SeqModelTrainer
+from seq2seq_model.non_moving_window.BPTT.seq2seq_model_trainer import Seq2SeqModelTrainer
 from attention_model.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
@@ -31,6 +31,9 @@ learning_rate = 0.0
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
+
+def adam_optimizer_fn(total_loss):
+    return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
@@ -51,8 +54,7 @@ def train_model_smac(configs):
     learning_rate = rate_of_learning
 
     # select the appropriate type of optimizer
-    return model_trainer.train_model(learning_rate = learning_rate,
-                        num_hidden_layers = num_hidden_layers,
+    return model_trainer.train_model(num_hidden_layers = num_hidden_layers,
                         lstm_cell_dimension = lstm_cell_dimension,
                         minibatch_size = minibatch_size,
                         max_epoch_size = max_epoch_size,
@@ -65,8 +67,7 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
     global learning_rate
     learning_rate = rate_of_learning
 
-    error = model_trainer.train_model(learning_rate=learning_rate,
-                                      num_hidden_layers=int(round(num_hidden_layers)),
+    error = model_trainer.train_model(num_hidden_layers=int(round(num_hidden_layers)),
                                       lstm_cell_dimension=int(round(lstm_cell_dimension)),
                                       minibatch_size=int(round(minibatch_size)),
                                       max_epoch_size=int(round(max_epoch_size)),
@@ -160,7 +161,7 @@ if __name__ == '__main__':
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
-    argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/attention)')
+    argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/non_moving_window/attention)')
 
     # parse the user arguments
     args = argument_parser.parse_args()
@@ -171,6 +172,8 @@ if __name__ == '__main__':
     contain_zero_values = args.contain_zero_values
     if(args.input_size):
         input_size = int(args.input_size)
+    else:
+        input_size = 0
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning

@@ -1,13 +1,14 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
-from tfrecords_handler.seq2seq.tfrecord_reader import TFRecordReader
+from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 
 class Seq2SeqModelTrainer:
 
     def __init__(self, **kwargs):
         self.__use_bias = kwargs["use_bias"]
         self.__use_peepholes = kwargs["use_peepholes"]
+        self.__input_size = kwargs["input_size"]
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
@@ -34,7 +35,7 @@ class Seq2SeqModelTrainer:
         tf.set_random_seed(1)
 
         # adding noise to the input
-        input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
+        input = tf.placeholder(dtype=tf.float32, shape=[None, self.__input_size, 1])
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         input = input + noise
         target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
@@ -160,7 +161,7 @@ class Seq2SeqModelTrainer:
                                 target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                                 # get the output of the network for the validation input data batch
-                                validation_output = session.run(inference_decoder_outputs[0], feed_dict={input: validation_data_batch_value[1],
+                                encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input: validation_data_batch_value[1],
                                                                                                          target: np.zeros(target_data_shape),
                                                                                                          input_sequence_length: validation_data_batch_value[0],
                                                                                                          output_sequence_length: [self.__output_size] * np.shape(validation_data_batch_value[1])[0]

@@ -1,13 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
+from tensorflow.python.layers.core import Dense
+from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 
-class StackingModelTester:
+class Seq2SeqModelTester:
 
     def __init__(self, **kwargs):
         self.__use_bias = kwargs["use_bias"]
         self.__use_peepholes = kwargs["use_peepholes"]
-        self.__input_size = kwargs["input_size"]
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
@@ -19,13 +19,13 @@ class StackingModelTester:
     # Training the time series
     def test_model(self, **kwargs):
 
-        # extract the parameters from the kwargs
+        # optimized hyperparameters
         num_hidden_layers = kwargs['num_hidden_layers']
-        lstm_cell_dimension = kwargs['lstm_cell_dimension']
-        minibatch_size = kwargs['minibatch_size']
-        max_epoch_size = kwargs['max_epoch_size']
         max_num_epochs = kwargs['max_num_epochs']
+        max_epoch_size = kwargs['max_epoch_size']
+        lstm_cell_dimension = kwargs['lstm_cell_dimension']
         l2_regularization = kwargs['l2_regularization']
+        minibatch_size = kwargs['minibatch_size']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         optimizer_fn = kwargs['optimizer_fn']
 
@@ -35,33 +35,59 @@ class StackingModelTester:
         tf.set_random_seed(1)
 
         # declare the input and output placeholders
-        input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
 
-        # adding the gassian noise to the input layer
+        # adding noise to the input
+        input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         input = input + noise
+        target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
-        true_output = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
-        sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
+        # placeholder for the sequence lengths
+        input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
+        output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
         # create the model architecture
+
+        # building the encoder network
 
         # RNN with the LSTM layer
         def lstm_cell():
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
             return lstm_cell
 
-        multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths,
-                                                dtype=tf.float32)
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+        # encoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell, inputs=input, sequence_length=input_sequence_length,
+                                                           dtype=tf.float32)
 
-        # connect the dense layer to the RNN
-        prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32),
-                                      units=self.__output_size,
-                                      use_bias=self.__use_bias)
+        # decoder cell of the decoder network
+        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+
+        # the final projection layer to convert the output to the desired dimension
+        dense_layer = Dense(units=1, use_bias=self.__use_bias)
+
+        # building the decoder network for training
+        with tf.variable_scope('decode'):
+            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=output_sequence_length,
+                                                                      sampling_probability=0.0)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=helper, initial_state=encoder_state,
+                                                      output_layer=dense_layer)
+
+            # perform the decoding
+            training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=decoder)
+
+        # building the decoder network for inference
+        with tf.variable_scope('decode', reuse=tf.AUTO_REUSE):
+            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target, sequence_length=output_sequence_length,
+                                                                      sampling_probability=1.0)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=helper,
+                                                      initial_state=encoder_state, output_layer=dense_layer)
+
+            # perform the decoding
+            inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=decoder)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(prediction_output, true_output)
+        error = self.__l1_loss(training_decoder_outputs[0], target)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -72,7 +98,7 @@ class StackingModelTester:
 
         total_loss = tf.cast(error, dtype=tf.float64) + l2_loss
 
-        # create the adagrad optimizer
+        # create the optimizer
         optimizer = optimizer_fn(total_loss)
 
         # create the Dataset objects for the training and test data
@@ -80,7 +106,7 @@ class StackingModelTester:
         test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type = "ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
+        tfrecord_reader = TFRecordReader()
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
         test_dataset = test_dataset.map(tfrecord_reader.test_data_parser)
 
@@ -100,7 +126,7 @@ class StackingModelTester:
 
                     # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
                     padded_training_data_batches = training_dataset.padded_batch(batch_size = int(minibatch_size),
-                                          padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size]))
+                                          padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1]))
 
                     # get an iterator to the batches
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
@@ -115,16 +141,16 @@ class StackingModelTester:
                             # model training
                             session.run(optimizer,
                                         feed_dict={input: next_training_batch_value[1],
-                                                   true_output: next_training_batch_value[2],
-                                                   sequence_lengths: next_training_batch_value[0]})
+                                                   target: next_training_batch_value[2],
+                                                   input_sequence_length: next_training_batch_value[0],
+                                                   output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]})
                         except tf.errors.OutOfRangeError:
                             break
 
             # applying the model to the test data
 
             # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
-            padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes = ([], [tf.Dimension(None), self.__input_size],
-                                                                                                                [tf.Dimension(None), self.__output_size + 1]))
+            padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size + 1, 1]))
 
             # get an iterator to the test input data batch
             test_input_iterator = padded_test_input_data.make_one_shot_iterator()
@@ -139,14 +165,17 @@ class StackingModelTester:
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
-                    # get the output of the network for the test input data batch
-                    test_output = session.run(prediction_output,
-                                              feed_dict={input: test_input_batch_value[1],
-                                                         sequence_lengths: test_input_batch_value[0]})
+                    # shape for the target data
+                    target_data_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
 
-                    last_output_index = test_input_batch_value[0] - 1
-                    array_first_dimension = np.array(range(0, test_input_batch_value[0].shape[0]))
-                    forecasts = test_output[array_first_dimension, last_output_index]
+                    # get the output of the network for the test input data batch
+                    test_output = session.run(inference_decoder_outputs[0],
+                                              feed_dict={input: test_input_batch_value[1],
+                                                         target: np.zeros(shape = target_data_shape),
+                                                         input_sequence_length: test_input_batch_value[0],
+                                                         output_sequence_length: [self.__output_size] * np.shape(test_input_batch_value[1])[0]})
+
+                    forecasts = test_output
                     list_of_forecasts.extend(forecasts.tolist())
 
                 except tf.errors.OutOfRangeError:

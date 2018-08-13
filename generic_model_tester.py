@@ -1,10 +1,9 @@
 import csv
 import tensorflow as tf
-import argparse
 
 # import the different model types
 from stacking_model.stacking_model_tester import StackingModelTester
-from seq2seq_model.seq2seq_model_tester import Seq2SeqModelTester
+from seq2seq_model.non_moving_window.BPTT.seq2seq_model_tester import Seq2SeqModelTester
 from attention_model.attention_model_tester import AttentionModelTester
 
 # import the cocob optimizer
@@ -36,7 +35,7 @@ def testing(args, config_dictionary):
     # argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     # argument_parser.add_argument('--hyperparameter_tuning', required=True,
     #                              help='The method for hyperparameter tuning(bayesian/smac)')
-    # argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/attention)')
+    # argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/non_moving_window/attention)')
     #
     # # parse the user arguments
     # args = argument_parser.parse_args()
@@ -50,6 +49,8 @@ def testing(args, config_dictionary):
     actual_results_file_path = args.actual_results_file
     if(args.input_size):
         input_size = int(args.input_size)
+    else:
+        input_size = 0
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
@@ -117,6 +118,12 @@ def testing(args, config_dictionary):
 
     # invoke the final evaluation R script
     error_file_name = dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
-    invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), contain_zero_values))
+
+    if(model_type == "stacking"):
+        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), contain_zero_values), True)
+    else:
+        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), contain_zero_values), False)
+
+
 
 

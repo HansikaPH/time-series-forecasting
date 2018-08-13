@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
-from tfrecords_handler.seq2seq.tfrecord_reader import TFRecordReader
+from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 
 class Seq2SeqModelTester:
 
@@ -143,7 +143,7 @@ class Seq2SeqModelTester:
                                         feed_dict={input: next_training_batch_value[1],
                                                    target: next_training_batch_value[2],
                                                    input_sequence_length: next_training_batch_value[0],
-                                                   output_sequence_length: [self.__output_size] * np.shape(next_training_data_batch[1])[0]})
+                                                   output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]})
                         except tf.errors.OutOfRangeError:
                             break
 
@@ -155,17 +155,18 @@ class Seq2SeqModelTester:
             # get an iterator to the test input data batch
             test_input_iterator = padded_test_input_data.make_one_shot_iterator()
 
+            # access the test input batch using the iterator
+            test_input_data_batch = test_input_iterator.get_next()
+
             list_of_forecasts = []
             while True:
                 try:
-                    # access the test input batch using the iterator
-                    test_input_data_batch = test_input_iterator.get_next()
 
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
                     # shape for the target data
-                    target_data_shape = [np.shape(test_input_batch_value[1])[0], np.shape(test_input_batch_value[1])[1], self.__output_size]
+                    target_data_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
 
                     # get the output of the network for the test input data batch
                     test_output = session.run(inference_decoder_outputs[0],

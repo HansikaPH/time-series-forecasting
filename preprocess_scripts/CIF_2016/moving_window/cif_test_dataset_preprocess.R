@@ -1,5 +1,5 @@
 library(forecast)
-cif_df = read.csv(file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2016/cif-dataset.txt", sep = ';', header = FALSE)
+cif_df = read.csv(file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/cif-dataset.txt", sep = ';', header = FALSE)
 
 names(cif_df)[4:ncol(cif_df)] = paste('x', (1:(ncol(cif_df) - 3)), sep =
                                         '_')
@@ -144,7 +144,7 @@ for (idr in 1:nrow(cif_df_6)) {
 
 write.table(
   save12_df,
-  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2016/cif12test.txt",
+  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/cif12test.txt",
   row.names = F,
   col.names = F,
   sep = " ",
@@ -153,7 +153,7 @@ write.table(
 
 write.table(
   save6_df,
-  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/CIF_2016/cif6test.txt",
+  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/cif6test.txt",
   row.names = F,
   col.names = F,
   sep = " ",
