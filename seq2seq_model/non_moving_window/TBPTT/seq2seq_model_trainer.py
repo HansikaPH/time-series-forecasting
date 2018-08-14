@@ -8,6 +8,7 @@ class Seq2SeqModelTrainer:
     def __init__(self, **kwargs):
         self.__use_bias = kwargs["use_bias"]
         self.__use_peepholes = kwargs["use_peepholes"]
+        self.__subsequence_length = kwargs["subsequence_length"]
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
@@ -34,14 +35,39 @@ class Seq2SeqModelTrainer:
         tf.set_random_seed(1)
 
         # adding noise to the input
-        input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
-        noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-        input = input + noise
+        input_values = tf.placeholder(dtype=tf.float32, shape=[None, self.__subsequence_length, 1])
+        noise_values = tf.random_normal(shape=tf.shape(input_values), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
+        input_values = input_values + noise_values
+        input = {"input": input_values}
+
         target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
         output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
+
+        # define the placeholder for the initial state of the RNN
+        initial_state_values = tf.zeros(shape = [num_hidden_layers, 2, lstm_cell_dimension], dtype=tf.float32)
+        initial_states = {"lstm_state": initial_state_values}
+
+        # define the placeholder for the keys of the input sequences
+        input_key = tf.placeholder(shape = [None], dtype = tf.string)
+
+        # define the placeholder for the context information
+        input_context_values = tf.placeholder(shape = [None], dtype = tf.int32)
+        input_context = {"input_context" : input_context_values}
+
+        # Train batch with sequence state
+        batch = tf.contrib.training.batch_sequences_with_states(
+            input_key = input_key,
+            input_sequences = input,
+            input_context = input_context,
+            input_length = None,
+            initial_states = initial_states,
+            num_unroll = self.__subsequence_length,
+            batch_size = minibatch_size,
+            allow_small_batch = True,
+            pad=True)
 
         # create the model architecture
 
@@ -53,7 +79,8 @@ class Seq2SeqModelTrainer:
             return lstm_cell
 
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = input_sequence_length, dtype = tf.float32)
+        encoder_outputs, encoder_state = tf.nn.static_state_saving_rnn(cell = multi_layered_encoder_cell, inputs = input_values, sequence_length = input_sequence_length,
+                                                                       state_saver = batch, state_name = "lstm_state", dtype = tf.float32)
 
         # decoder cell of the decoder network
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
@@ -80,8 +107,6 @@ class Seq2SeqModelTrainer:
 
         # error that should be minimized in the training process
         error = self.__l1_loss(training_decoder_outputs[0], target)
-
-        tf.nn.static_state_saving_rnn
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -136,7 +161,7 @@ class Seq2SeqModelTrainer:
                             training_data_batch_value = session.run(next_training_data_batch)
 
                             session.run(optimizer,
-                                        feed_dict={input: training_data_batch_value[1],
+                                        feed_dict={input_values: training_data_batch_value[1],
                                                    target: training_data_batch_value[2],
                                                    input_sequence_length: training_data_batch_value[0],
                                                    output_sequence_length: [self.__output_size] * np.shape(training_data_batch_value[1])[0]})
@@ -162,7 +187,7 @@ class Seq2SeqModelTrainer:
                                 target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                                 # get the output of the network for the validation input data batch
-                                encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input: validation_data_batch_value[1],
+                                encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input_values: validation_data_batch_value[1],
                                                                                                          target: np.zeros(target_data_shape),
                                                                                                          input_sequence_length: validation_data_batch_value[0],
                                                                                                          output_sequence_length: [self.__output_size] * np.shape(validation_data_batch_value[1])[0]

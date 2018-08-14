@@ -15,7 +15,7 @@ from smac.facade.smac_facade import SMAC
 
 # import the different model types
 from stacking_model.stacking_model_trainer import StackingModelTrainer
-from seq2seq_model.non_moving_window.BPTT.seq2seq_model_trainer import Seq2SeqModelTrainer
+from seq2seq_model.non_moving_window.TBPTT.seq2seq_model_trainer import Seq2SeqModelTrainer
 from attention_model.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
@@ -130,7 +130,7 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 1,
+        "runcount-limit": 50,
         "cs": configuration_space,
         "deterministic": True,
         "output_dir": "Logs"
@@ -158,6 +158,7 @@ if __name__ == '__main__':
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
     argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window')
+    argument_parser.add_argument('--subsequence_length', required=False, help='The subsequence length to use truncated backpropagation')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
@@ -174,6 +175,10 @@ if __name__ == '__main__':
         input_size = int(args.input_size)
     else:
         input_size = 0
+    if(args.subsequence_length):
+        subsequence_length = int(args.subsequence_length)
+    else:
+        subsequence_length = 0
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
@@ -202,6 +207,7 @@ if __name__ == '__main__':
         model_trainer = Seq2SeqModelTrainer(
             use_bias=BIAS,
             use_peepholes=LSTM_USE_PEEPHOLES,
+            subsequence_length = subsequence_length,
             output_size=output_size,
             binary_train_file_path=binary_train_file_path,
             binary_validation_file_path=binary_validation_file_path,
