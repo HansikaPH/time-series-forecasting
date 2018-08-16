@@ -15,7 +15,7 @@ from smac.facade.smac_facade import SMAC
 
 # import the different model types
 from stacking_model.stacking_model_trainer import StackingModelTrainer
-from seq2seq_model.non_moving_window.TBPTT.seq2seq_model_trainer import Seq2SeqModelTrainer
+from seq2seq_model.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
 from attention_model.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
@@ -130,7 +130,7 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 50,
+        "runcount-limit": 1,
         "cs": configuration_space,
         "deterministic": True,
         "output_dir": "Logs"

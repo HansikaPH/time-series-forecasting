@@ -19,7 +19,7 @@ actual_results=read.csv(file=actual_results_file_full_name,sep=';',header = FALS
 
 # text test data file name
 txt_test_file_full_name = paste(root_directory, txt_test_file_name, sep="/")
-txt_test_df=read.csv(file=txt_test_file_name,sep = " ",header = FALSE)
+txt_test_df=read.csv(file=txt_test_file_full_name,sep = " ",header = FALSE)
 
 # forecasts file name
 forecasts_file_full_name = paste(root_directory, forecast_file_path, sep="/")

@@ -18,7 +18,8 @@ actual_results=read.csv(file=actual_results_file_full_name,sep=';',header = FALS
 
 # text test data file name
 txt_test_file_full_name = paste(root_directory, txt_test_file_name, sep="/")
-txt_test_df=read.csv(file=txt_test_file_name,sep = " ",header = FALSE)
+txt_test_df = readLines(txt_test_file_full_name)
+txt_test_df = strsplit(txt_test_df, " ")
 
 # forecasts file name
 forecasts_file_full_name = paste(root_directory, forecast_file_path, sep="/")
@@ -34,12 +35,14 @@ converted_forecasts_matrix = matrix(nrow = nrow(forecasts_df), ncol = output_siz
 
 for(k in 1 :nrow(forecasts_df)){
   one_ts_forecasts = as.numeric(forecasts_df[k,])
-  one_line_test_data = as.numeric(txt_test_df[k, ])
-  
+  one_line_test_data = as.numeric(unlist(txt_test_df[k]))
+
   level_value = one_line_test_data[length(one_line_test_data) - output_size]
+  seasonal_values = tail(one_line_test_data, output_size)
+
   print(level_value)
-  seasonal_values = one_line_test_data[input_size + 4:length(one_line_test_data)]
-  
+  print(seasonal_values)
+
   for (ii in 1:output_size) {
     converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii])
     if(contain_zero_values == 1){
