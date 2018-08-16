@@ -3,8 +3,6 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 
-# TODO: time_major
-
 class Seq2SeqModelTrainer:
 
     def __init__(self, **kwargs):
@@ -37,7 +35,7 @@ class Seq2SeqModelTrainer:
         tf.set_random_seed(1)
 
         # adding noise to the input
-        input = tf.placeholder(dtype=tf.float32, shape=[None, self.__subsequence_length, 1])
+        input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         input = input + noise
         target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
@@ -45,9 +43,6 @@ class Seq2SeqModelTrainer:
         # placeholder for the sequence lengths
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
         output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
-
-        # placeholder for the initial state
-        initial_state = tf.placeholder(dtype=tf.float32, shape=[num_hidden_layers, 2, None, lstm_cell_dimension])
 
         # create the model architecture
 
@@ -87,6 +82,7 @@ class Seq2SeqModelTrainer:
         # error that should be minimized in the training process
         error = self.__l1_loss(training_decoder_outputs[0], target)
 
+
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
         for var in tf.trainable_variables():
@@ -106,7 +102,6 @@ class Seq2SeqModelTrainer:
         # parse the records
         tfrecord_reader = TFRecordReader()
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
-
         validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # define the expected shapes of data after padding
@@ -138,89 +133,71 @@ class Seq2SeqModelTrainer:
 
                     while True:
                         try:
-                            # further split the batch to perform truncated backpropagation through time
-                            next_training_data_batch_value = session.run(next_training_data_batch)
-                            time_major_batch = np.transpose(next_training_data_batch_value[1], (1, 0, 2))
-                            time_major_batch_dataset = tf.data.Dataset.from_tensor_slices(time_major_batch)
-                            sub_sequence_batches = time_major_batch_dataset.batch(batch_size=self.__subsequence_length)
-                            sub_sequence_batches_iterator = sub_sequence_batches.make_one_shot_iterator()
-                            next_subsequence_batch = sub_sequence_batches_iterator.get_next()
-                            batch_major_sub_sequence_batch = tf.transpose(next_subsequence_batch, [1, 0, 2])
-                            # encoder_state = tf.zeros(shape = [np.shape(next_subsequence_batch)[1], ])
+                            training_data_batch_value = session.run(next_training_data_batch)
 
-                            while True:
-                                try:
-                                    _, encoder_state = session.run([optimizer, encoder_state],
-                                                feed_dict={input: batch_major_sub_sequence_batch,
-                                                           target: training_data_batch_value[2],
-                                                           input_sequence_length: training_data_batch_value[0],
-                                                           output_sequence_length: [self.__output_size] * np.shape(training_data_batch_value[1])[0]})
-                                    print(np.shape(encoder_state))
-                                except tf.errors.OutOfRangeError:
-                                    break
+                            session.run(optimizer,
+                                        feed_dict={input: training_data_batch_value[1],
+                                                   target: training_data_batch_value[2],
+                                                   input_sequence_length: training_data_batch_value[0],
+                                                   output_sequence_length: [self.__output_size] * np.shape(training_data_batch_value[1])[0]})
                         except tf.errors.OutOfRangeError:
                             break
 
                     if epoch % INFO_FREQ == 0:
-                        i = 0
                         # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                        # padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = validation_padded_shapes)
+                        padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = validation_padded_shapes)
 
                         # get an iterator to the validation data
-                        # validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
+                        validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
 
-                        # while True:
-                        #     try:
+                        while True:
+                            try:
                                 # access the validation data using the iterator
-                                # next_validation_data_batch = validation_data_iterator.get_next()
+                                next_validation_data_batch = validation_data_iterator.get_next()
 
                                 # get the batch of validation inputs
-                                # validation_data_batch_value = session.run(next_validation_data_batch)
+                                validation_data_batch_value = session.run(next_validation_data_batch)
 
                                 # shape for the target data
-                                # target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
+                                target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                                 # get the output of the network for the validation input data batch
-                                # encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input: validation_data_batch_value[1],
-                                #                                                                          target: np.zeros(target_data_shape),
-                                #                                                                          input_sequence_length: validation_data_batch_value[0],
-                                #                                                                          output_sequence_length: [self.__output_size] * np.shape(validation_data_batch_value[1])[0]
-                                #                                                                         })
+                                encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input: validation_data_batch_value[1],
+                                                                                                         target: np.zeros(target_data_shape),
+                                                                                                         input_sequence_length: validation_data_batch_value[0],
+                                                                                                         output_sequence_length: [self.__output_size] * np.shape(validation_data_batch_value[1])[0]
+                                                                                                        })
 
                                 # calculate the smape for the validation data using vectorization
 
                                 # convert the data to remove the preprocessing
-                                # true_seasonality_values = validation_data_batch_value[3][:, 1: , 0]
-                                # level_values = validation_data_batch_value[3][:, 0, 0]
+                                true_seasonality_values = validation_data_batch_value[3][:, 1: , 0]
+                                level_values = validation_data_batch_value[3][:, 0, 0]
 
-                                # converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output, axis = 2))
+                                converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output, axis = 2))
 
-                                # actual_values = validation_data_batch_value[2]
-                                # converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values, axis = 2))
+                                actual_values = validation_data_batch_value[2]
+                                converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values, axis = 2))
 
-                                # if (self.__contain_zero_values): # to compensate for 0 values in data
-                                #     converted_validation_output = converted_validation_output - 1
-                                #     converted_actual_values = converted_actual_values - 1
+                                if (self.__contain_zero_values): # to compensate for 0 values in data
+                                    converted_validation_output = converted_validation_output - 1
+                                    converted_actual_values = converted_actual_values - 1
 
                                 # calculate the smape
-                                # smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                #                     (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                                # smape_epochsize__list.append(smape)
+                                smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                                smape_epochsize__list.append(smape)
 
-                            # except tf.errors.OutOfRangeError:
-                            #     break
+                            except tf.errors.OutOfRangeError:
+                                break
 
-                    # smape_epoch_size = np.mean(smape_epochsize__list)
-                    # smape_epoch_list.append(smape_epoch_size)
+                    smape_epoch_size = np.mean(smape_epochsize__list)
+                    smape_epoch_list.append(smape_epoch_size)
 
-                # smape_epoch = np.mean(smape_epoch_list)
-                # smape_final_list.append(smape_epoch)
+                smape_epoch = np.mean(smape_epoch_list)
+                smape_final_list.append(smape_epoch)
 
-            # smape_final = np.mean(smape_final_list)
-            # print("SMAPE value: {}".format(smape_final))
-            # coord.request_stop()
-            # Wait for threads to finish.
-            # coord.join(threads)
-            session.close()
+            smape_final = np.mean(smape_final_list)
+            print("SMAPE value: {}".format(smape_final))
 
-        # return smape_final
+        return smape_final

@@ -177,5 +177,6 @@ class StackingModelTrainer:
                 smape_final_list.append(smape_epoch)
 
             smape_final = np.mean(smape_final_list)
+            session.close()
         return smape_final
 

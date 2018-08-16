@@ -3,7 +3,7 @@ import tensorflow as tf
 
 # import the different model types
 from stacking_model.stacking_model_tester import StackingModelTester
-from seq2seq_model.non_moving_window.TBPTT.seq2seq_model_tester import Seq2SeqModelTester
+from seq2seq_model.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
 from attention_model.attention_model_tester import AttentionModelTester
 
 # import the cocob optimizer
