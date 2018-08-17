@@ -22,6 +22,9 @@ learning_rate = 0.0
 def adagrad_optimizer_fn(total_loss):
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
+def adam_optimizer_fn(total_loss):
+    return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
+
 def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
 
@@ -63,6 +66,8 @@ def testing(args, config_dictionary):
         optimizer_fn = cocob_optimizer_fn
     elif optimizer == "adagrad":
         optimizer_fn = adagrad_optimizer_fn
+    elif optimizer == "adam":
+        optimizer_fn = adam_optimizer_fn
 
     # select the model type
     if model_type == "stacking":

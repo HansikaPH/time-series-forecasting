@@ -191,6 +191,8 @@ if __name__ == '__main__':
         optimizer_fn = cocob_optimizer_fn
     elif optimizer == "adagrad":
         optimizer_fn = adagrad_optimizer_fn
+    elif optimizer == "adam":
+        optimizer_fn = adam_optimizer_fn
 
     # select the model type
     if model_type == "stacking":
