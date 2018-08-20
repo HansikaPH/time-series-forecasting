@@ -10,7 +10,7 @@ cif_df=read.csv(file=INPUT_FILE,sep=';',header = FALSE)
 names(cif_df)[4:ncol(cif_df)]=paste('x',(1:(ncol(cif_df)-3)),sep='_')
 names(cif_df)[1]="Series"
 names(cif_df)[2]="maxPredHorizon"
-str(cif_df); #summary(cif_df); 
+str(cif_df); #summary(cif_df);
 
 OUTPUT_P6=paste(OUTPUT_DIR,"stl_6_seq2seq",sep='/')
 OUTPUT_P12=paste(OUTPUT_DIR,"stl_12_seq2seq",sep='/')

@@ -1,8 +1,8 @@
 library(forecast)
 
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/tex_data/NN5/moving_window/"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(t(file[,-1]))
 
 max_forecast_horizon=56

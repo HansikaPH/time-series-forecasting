@@ -1,6 +1,6 @@
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(t(file[,-1]))
 
 max_forecast_horizon=56
@@ -13,7 +13,7 @@ thursday= vector()
 friday = vector()
 saturday = vector()
 wrong= vector()
-
+"cif-dataset.txt"
 #replacing missing values
 for (idr in 1: nrow(nn5_dataset)) {
   oneLine_df=nn5_dataset[idr,]
@@ -84,6 +84,7 @@ OUTPUT_PATH56=paste(OUTPUT_PATH56,'txt',sep='.')
 unlink(OUTPUT_PATH56)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
+print(numeric_dataset)
 numeric_dataset = numeric_dataset + 1
 
 numeric_dataset_log = log(numeric_dataset)

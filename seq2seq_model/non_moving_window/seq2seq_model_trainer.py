@@ -125,7 +125,6 @@ class Seq2SeqModelTrainer:
                 training_dataset.shuffle(minibatch_size)
 
                 for epochsize in range(max_epoch_size):
-                    smape_epochsize__list = []
                     padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size, padded_shapes=train_padded_shapes)
 
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
@@ -143,56 +142,61 @@ class Seq2SeqModelTrainer:
                         except tf.errors.OutOfRangeError:
                             break
 
-                    if epoch % INFO_FREQ == 0:
-                        # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                        padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = validation_padded_shapes)
+                if epoch % INFO_FREQ == 0:
+                    # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
+                    padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+                                                                                padded_shapes=validation_padded_shapes)
 
-                        # get an iterator to the validation data
-                        validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
+                    # get an iterator to the validation data
+                    validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
 
-                        while True:
-                            try:
-                                # access the validation data using the iterator
-                                next_validation_data_batch = validation_data_iterator.get_next()
+                    while True:
+                        try:
+                            # access the validation data using the iterator
+                            next_validation_data_batch = validation_data_iterator.get_next()
 
-                                # get the batch of validation inputs
-                                validation_data_batch_value = session.run(next_validation_data_batch)
+                            # get the batch of validation inputs
+                            validation_data_batch_value = session.run(next_validation_data_batch)
 
-                                # shape for the target data
-                                target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
+                            # shape for the target data
+                            target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
-                                # get the output of the network for the validation input data batch
-                                encoder_state_value, validation_output = session.run([encoder_state, inference_decoder_outputs[0]], feed_dict={input: validation_data_batch_value[1],
-                                                                                                         target: np.zeros(target_data_shape),
-                                                                                                         input_sequence_length: validation_data_batch_value[0],
-                                                                                                         output_sequence_length: [self.__output_size] * np.shape(validation_data_batch_value[1])[0]
-                                                                                                        })
+                            # get the output of the network for the validation input data batch
+                            encoder_state_value, validation_output = session.run(
+                                [encoder_state, inference_decoder_outputs[0]],
+                                feed_dict={input: validation_data_batch_value[1],
+                                           target: np.zeros(target_data_shape),
+                                           input_sequence_length: validation_data_batch_value[0],
+                                           output_sequence_length: [self.__output_size] *
+                                                                   np.shape(validation_data_batch_value[1])[0]
+                                           })
 
-                                # calculate the smape for the validation data using vectorization
+                            # calculate the smape for the validation data using vectorization
 
-                                # convert the data to remove the preprocessing
-                                true_seasonality_values = validation_data_batch_value[3][:, 1: , 0]
-                                level_values = validation_data_batch_value[3][:, 0, 0]
+                            # convert the data to remove the preprocessing
+                            true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
+                            level_values = validation_data_batch_value[3][:, 0, 0]
 
-                                converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output, axis = 2))
+                            converted_validation_output = np.exp(
+                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
+                                                                                                   axis=2))
 
-                                actual_values = validation_data_batch_value[2]
-                                converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values, axis = 2))
+                            actual_values = validation_data_batch_value[2]
+                            converted_actual_values = np.exp(
+                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values,
+                                                                                                   axis=2))
 
-                                if (self.__contain_zero_values): # to compensate for 0 values in data
-                                    converted_validation_output = converted_validation_output - 1
-                                    converted_actual_values = converted_actual_values - 1
+                            if (self.__contain_zero_values):  # to compensate for 0 values in data
+                                converted_validation_output = converted_validation_output - 1
+                                converted_actual_values = converted_actual_values - 1
 
-                                # calculate the smape
-                                smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                                smape_epochsize__list.append(smape)
+                            # calculate the smape
+                            smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                            (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                            smape_epoch_list.append(smape)
 
-                            except tf.errors.OutOfRangeError:
-                                break
-
-                    smape_epoch_size = np.mean(smape_epochsize__list)
-                    smape_epoch_list.append(smape_epoch_size)
+                        except tf.errors.OutOfRangeError:
+                            break
 
                 smape_epoch = np.mean(smape_epoch_list)
                 smape_final_list.append(smape_epoch)

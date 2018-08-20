@@ -4,6 +4,7 @@ import argparse
 from bayes_opt import BayesianOptimization
 from persist_optimized_config_results import persist_results
 from generic_model_tester import testing
+import re
 
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -37,6 +38,21 @@ def adam_optimizer_fn(total_loss):
 
 def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
+
+def read_initial_hyperparameter_configurations():
+    # define dictionary to store the hyperparameter values
+    hyperparameter_configs_dic = {}
+
+    with open(initial_hyperparameter_configs_file) as configs_file:
+        configs = configs_file.readlines()
+        for config in configs:
+            if config.strip():
+                values = [value.strip() for value in (re.split("-|,", config))]
+                hyperparameter_configs_dic[values[0]] = [float(values[1]), float(values[2])]
+
+        configs_file.close()
+
+    return hyperparameter_configs_dic
 
 # Training the time series
 def train_model_smac(configs):
@@ -82,18 +98,18 @@ def bayesian_optimization():
     init_points = 2
     num_iter = 30
 
-    parameters = {'num_hidden_layers': (1, 5),
-                  'lstm_cell_dimension': (50, 100),
-                  'minibatch_size': (10, 30),
-                  'max_epoch_size': (1, 3),
-                  'max_num_epochs': (3, 20),
-                  'l2_regularization': (0.0001, 0.0008),
-                  'gaussian_noise_stdev': (0.0001, 0.0008)
+    parameters = {'num_hidden_layers': (hyperparameter_configs_dic['num_hidden_layers'][0], hyperparameter_configs_dic['num_hidden_layers'][1]),
+                  'lstm_cell_dimension': (hyperparameter_configs_dic['lstm_cell_dimension'][0], hyperparameter_configs_dic['lstm_cell_dimension'][1]),
+                  'minibatch_size': (hyperparameter_configs_dic['minibatch_size'][0], hyperparameter_configs_dic['minibatch_size'][1]),
+                  'max_epoch_size': (hyperparameter_configs_dic['max_epoch_size'][0], hyperparameter_configs_dic['max_epoch_size'][1]),
+                  'max_num_epochs': (hyperparameter_configs_dic['max_num_epochs'][0], hyperparameter_configs_dic['max_num_epochs'][1]),
+                  'l2_regularization': (hyperparameter_configs_dic['l2_regularization'][0], hyperparameter_configs_dic['l2_regularization'][1]),
+                  'gaussian_noise_stdev': (hyperparameter_configs_dic['gaussian_noise_stdev'][0], hyperparameter_configs_dic['gaussian_noise_stdev'][1])
                   }
 
     # adding the hyperparameter for learning rate if the optimization is not cocob
     if optimizer != 'cocob':
-        parameters['rate_of_learning'] = (0.000001, 0.000008)
+        parameters['rate_of_learning'] = (hyperparameter_configs_dic["rate_of_learning"][0], hyperparameter_configs_dic["rate_of_learning"][1])
 
     # using bayesian optimizer for hyperparameter optimization
     bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
@@ -109,14 +125,22 @@ def smac():
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
 
-    rate_of_learning = UniformFloatHyperparameter("rate_of_learning", 0.000001, 0.000008, default_value = 0.000001)
-    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", 20, 50, default_value = 20)
-    no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers", 1, 5, default_value = 1)
-    minibatch_size = UniformIntegerHyperparameter("minibatch_size", 10, 30, default_value = 10)
-    max_epoch_size = UniformIntegerHyperparameter("max_epoch_size", 1, 3, default_value = 1)
-    max_num_of_epochs = UniformIntegerHyperparameter("max_num_epochs", 3, 20, default_value = 3)
-    l2_regularization = UniformFloatHyperparameter("l2_regularization", 0.0001, 0.0008, default_value = 0.0001)
-    gaussian_noise_stdev = UniformFloatHyperparameter("gaussian_noise_stdev", 0.0001, 0.0008, default_value = 0.0001)
+    rate_of_learning = UniformFloatHyperparameter("rate_of_learning", hyperparameter_configs_dic['rate_of_learning'][0], hyperparameter_configs_dic['rate_of_learning'][1],
+                                                  default_value = hyperparameter_configs_dic['rate_of_learning'][0])
+    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension", hyperparameter_configs_dic['lstm_cell_dimension'][0], hyperparameter_configs_dic['lstm_cell_dimension'][1],
+                                                       default_value = hyperparameter_configs_dic['lstm_cell_dimension'][0])
+    no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers", hyperparameter_configs_dic['num_hidden_layers'][0], hyperparameter_configs_dic['num_hidden_layers'][1],
+                                                    default_value = hyperparameter_configs_dic['num_hidden_layers'][0])
+    minibatch_size = UniformIntegerHyperparameter("minibatch_size", hyperparameter_configs_dic['minibatch_size'][0], hyperparameter_configs_dic['minibatch_size'][1],
+                                                  default_value = hyperparameter_configs_dic['minibatch_size'][0])
+    max_epoch_size = UniformIntegerHyperparameter("max_epoch_size", hyperparameter_configs_dic['max_epoch_size'][0], hyperparameter_configs_dic['max_epoch_size'][1],
+                                                  default_value = hyperparameter_configs_dic['max_epoch_size'][0])
+    max_num_of_epochs = UniformIntegerHyperparameter("max_num_epochs", hyperparameter_configs_dic['max_num_epochs'][0], hyperparameter_configs_dic['max_num_epochs'][1],
+                                                     default_value = hyperparameter_configs_dic['max_num_epochs'][0])
+    l2_regularization = UniformFloatHyperparameter("l2_regularization", hyperparameter_configs_dic['l2_regularization'][0], hyperparameter_configs_dic['l2_regularization'][1],
+                                                   default_value = hyperparameter_configs_dic['l2_regularization'][0])
+    gaussian_noise_stdev = UniformFloatHyperparameter("gaussian_noise_stdev", hyperparameter_configs_dic['gaussian_noise_stdev'][0], hyperparameter_configs_dic['gaussian_noise_stdev'][1],
+                                                      default_value = hyperparameter_configs_dic['gaussian_noise_stdev'][0])
 
 
     # add the hyperparameter for learning rate only if the  optimization is not cocob
@@ -152,6 +176,7 @@ if __name__ == '__main__':
     argument_parser = argparse.ArgumentParser("Train different forecasting models")
     argument_parser.add_argument('--dataset_name', required = True, help = 'Unique string for the name of the dataset')
     argument_parser.add_argument('--contain_zero_values', required = True, help = 'Whether the dataset contains zero values')
+    argument_parser.add_argument('--initial_hyperparameter_configs_file', required=True, help='The file for the initial hyperparameter configurations')
     argument_parser.add_argument('--binary_train_file', required = True, help = 'The tfrecords file for train dataset')
     argument_parser.add_argument('--binary_valid_file', required=True, help='The tfrecords file for validation dataset')
     argument_parser.add_argument('--binary_test_file', required=True, help='The tfrecords file for test dataset')
@@ -168,6 +193,7 @@ if __name__ == '__main__':
     args = argument_parser.parse_args()
 
     dataset_name = args.dataset_name
+    initial_hyperparameter_configs_file = args.initial_hyperparameter_configs_file
     binary_train_file_path = args.binary_train_file
     binary_validation_file_path = args.binary_valid_file
     contain_zero_values = args.contain_zero_values
@@ -224,6 +250,9 @@ if __name__ == '__main__':
             binary_validation_file_path=binary_validation_file_path,
             contain_zero_values=contain_zero_values
         )
+
+    # read the initial hyperparamter configurations from the file
+    hyperparameter_configs_dic = read_initial_hyperparameter_configurations()
 
     # select the hyperparameter tuning method
     if hyperparameter_tuning == "bayesian":

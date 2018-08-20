@@ -1,8 +1,8 @@
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window/"
 output_file_name = 'nn5_results.txt'
 output_file_full_name = paste(OUTPUT_DIR, output_file_name, sep = '')
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/NN5/NN5_FINAL_TEST_DATASET.csv",sep=';',header = FALSE)
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_TEST_DATASET.csv",sep=';',header = FALSE)
 nn5_result_dataset <-as.data.frame(t(file[,-1]))
 
 sunday = vector()

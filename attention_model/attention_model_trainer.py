@@ -134,7 +134,6 @@ class AttentionModelTrainer:
                 training_dataset.shuffle(minibatch_size)
 
                 for epochsize in range(max_epoch_size):
-                    smape_epochsize__list = []
                     padded_training_data_batches = training_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = train_padded_shapes)
 
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
@@ -150,60 +149,62 @@ class AttentionModelTrainer:
                         except tf.errors.OutOfRangeError:
                             break
 
-                    if epoch % INFO_FREQ == 0:
-                        # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                        padded_validation_dataset = validation_dataset.padded_batch(batch_size = minibatch_size, padded_shapes = validation_padded_shapes)
+                if epoch % INFO_FREQ == 0:
+                    # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
+                    padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+                                                                                padded_shapes=validation_padded_shapes)
 
-                        # get an iterator to the validation data
-                        validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
+                    # get an iterator to the validation data
+                    validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
 
-                        while True:
-                            try:
-                                # access the validation data using the iterator
-                                next_validation_data_batch = validation_data_iterator.get_next()
+                    while True:
+                        try:
+                            # access the validation data using the iterator
+                            next_validation_data_batch = validation_data_iterator.get_next()
 
-                                # get the batch of validation inputs
-                                validation_data_batch_value = session.run(next_validation_data_batch)
+                            # get the batch of validation inputs
+                            validation_data_batch_value = session.run(next_validation_data_batch)
 
-                                # shape for the target data
-                                target_data_shape = [np.shape(validation_data_batch_value[1])[0], np.shape(validation_data_batch_value[1])[1], self.__output_size]
+                            # shape for the target data
+                            target_data_shape = [np.shape(validation_data_batch_value[1])[0],
+                                                 np.shape(validation_data_batch_value[1])[1], self.__output_size]
 
-                                # get the output of the network for the validation input data batch
-                                validation_output = session.run(inference_decoder_outputs[0], feed_dict={input: validation_data_batch_value[1],
-                                                                                                         target: np.zeros(target_data_shape),
-                                                                                                         sequence_length: validation_data_batch_value[0]
-                                                                                                        })
+                            # get the output of the network for the validation input data batch
+                            validation_output = session.run(inference_decoder_outputs[0],
+                                                            feed_dict={input: validation_data_batch_value[1],
+                                                                       target: np.zeros(target_data_shape),
+                                                                       sequence_length: validation_data_batch_value[0]
+                                                                       })
 
-                                # calculate the smape for the validation data using vectorization
+                            # calculate the smape for the validation data using vectorization
 
-                                # convert the data to remove the preprocessing
-                                last_indices = validation_data_batch_value[0] - 1
-                                array_first_dimension = np.array(range(0, validation_data_batch_value[0].shape[0]))
+                            # convert the data to remove the preprocessing
+                            last_indices = validation_data_batch_value[0] - 1
+                            array_first_dimension = np.array(range(0, validation_data_batch_value[0].shape[0]))
 
-                                true_seasonality_values = validation_data_batch_value[3][array_first_dimension, last_indices, 1:]
-                                level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
+                            true_seasonality_values = validation_data_batch_value[3][array_first_dimension,
+                                                      last_indices, 1:]
+                            level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
-                                last_validation_outputs = validation_output[array_first_dimension, last_indices]
-                                converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+                            last_validation_outputs = validation_output[array_first_dimension, last_indices]
+                            converted_validation_output = np.exp(
+                                true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
 
-                                actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                                converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
+                            actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
+                            converted_actual_values = np.exp(
+                                true_seasonality_values + level_values[:, np.newaxis] + actual_values)
 
-                                if (self.__contain_zero_values): # to compensate for 0 values in data
-                                    converted_validation_output = converted_validation_output - 1
-                                    converted_actual_values = converted_actual_values - 1
+                            if (self.__contain_zero_values):  # to compensate for 0 values in data
+                                converted_validation_output = converted_validation_output - 1
+                                converted_actual_values = converted_actual_values - 1
 
-                                # calculate the smape
-                                smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                                smape_epochsize__list.append(smape)
+                            # calculate the smape
+                            smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                            (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                            smape_epoch_list.append(smape)
 
-                            except tf.errors.OutOfRangeError:
-                                break
-
-                    smape_epoch_size = np.mean(smape_epochsize__list)
-                    smape_epoch_list.append(smape_epoch_size)
-
+                        except tf.errors.OutOfRangeError:
+                            break
                 smape_epoch = np.mean(smape_epoch_list)
                 smape_final_list.append(smape_epoch)
 
