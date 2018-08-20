@@ -14,4 +14,4 @@ data/submission.csv.gz
 Logs/
 
 datasets/
-*__pycache__*
+**/__pycache__/
