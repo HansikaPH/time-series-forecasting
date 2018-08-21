@@ -12,8 +12,8 @@ names(cif_df)[1]="Series"
 names(cif_df)[2]="maxPredHorizon"
 str(cif_df); #summary(cif_df);
 
-OUTPUT_P6=paste(OUTPUT_DIR,"stl_6_seq2seq",sep='/')
-OUTPUT_P12=paste(OUTPUT_DIR,"stl_12_seq2seq",sep='/')
+OUTPUT_P6=paste(OUTPUT_DIR,"cif_stl_6",sep='/')
+OUTPUT_P12=paste(OUTPUT_DIR,"cif_stl_12",sep='/')
 
 #The validation file constains the training file, although only last record per each series in the validation file is used for calculating the metrics. 
 #This is becasue we are using the recurrent networks with potentially long memory (LSTMs), so all the records are needed for "warm-up" or establishment of the state.  
@@ -64,7 +64,6 @@ for (validation in c(TRUE,FALSE)) {#
 		level=stlAdj[n-maxForecastHorizon,2]
 		normalized_values = stlAdj[,3]-level
 		sav_df=cbind(sav_df, t(normalized_values[1: (n-maxForecastHorizon)])) #inputs: past values normalized by the level
-		print(sav_df)
 		sav_df[,'o']='|o'
 		sav_df=cbind(sav_df, t(normalized_values[(n - maxForecastHorizon + 1) :length(normalized_values)])) #outputs: future values normalized by the level.
 		if(validation){

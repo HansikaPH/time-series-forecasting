@@ -69,8 +69,10 @@ def train_model_smac(configs):
     global learning_rate
     learning_rate = rate_of_learning
 
+    print(configs)
+
     # select the appropriate type of optimizer
-    return model_trainer.train_model(num_hidden_layers = num_hidden_layers,
+    error =  model_trainer.train_model(num_hidden_layers = num_hidden_layers,
                         lstm_cell_dimension = lstm_cell_dimension,
                         minibatch_size = minibatch_size,
                         max_epoch_size = max_epoch_size,
@@ -78,6 +80,9 @@ def train_model_smac(configs):
                         l2_regularization = l2_regularization,
                         gaussian_noise_stdev = gaussian_noise_stdev,
                         optimizer_fn = optimizer_fn)
+
+    print("Error: {}".format(error))
+    return error
 
 def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_epochs, l2_regularization, gaussian_noise_stdev, rate_of_learning = 0.0):
     global learning_rate
@@ -91,6 +96,7 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
                                       l2_regularization=l2_regularization,
                                       gaussian_noise_stdev=gaussian_noise_stdev,
                                       optimizer_fn=optimizer_fn)
+    print("Error: {}".format(error))
     return -1 * error
 
 
@@ -154,7 +160,7 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 1,
+        "runcount-limit": 50,
         "cs": configuration_space,
         "deterministic": True,
         "output_dir": "Logs"

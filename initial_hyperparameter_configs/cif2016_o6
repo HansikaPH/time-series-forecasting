@@ -6,10 +6,10 @@ lstm_cell_dimension - 20, 50
 
 max_epoch_size - 1, 3
 
-max_num_epochs - 3, 20
+max_num_epochs - 10, 30
 
-minibatch_size - 10, 30
+minibatch_size - 2, 5
 
-num_hidden_layers - 1, 5
+num_hidden_layers - 1, 3
 
 rate_of_learning - 0.000001, 0.000008

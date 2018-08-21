@@ -12,8 +12,8 @@ names(cif_df)[1]="Series"
 names(cif_df)[2]="maxPredHorizon"
 str(cif_df); #summary(cif_df);
 
-OUTPUT_P6=paste(OUTPUT_DIR,"cif_6_seq2seq_test.txt",sep='/')
-OUTPUT_P12=paste(OUTPUT_DIR,"cif_12_seq2seq_test.txt",sep='/')
+OUTPUT_P6=paste(OUTPUT_DIR,"cif_test_6.txt",sep='/')
+OUTPUT_P12=paste(OUTPUT_DIR,"cif_test_12.txt",sep='/')
 
 unlink(OUTPUT_P6);unlink(OUTPUT_P12)
 
@@ -56,7 +56,6 @@ for (idr in 1: nrow(cif_df)) {
     level=stlAdj[n,2]
     normalized_values = stlAdj[,3]-level
     sav_df=cbind(sav_df, t(normalized_values[1: n])) #inputs: past values normalized by the level
-    print(sav_df)
     sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
                  #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
     sav_df[,'level']=level

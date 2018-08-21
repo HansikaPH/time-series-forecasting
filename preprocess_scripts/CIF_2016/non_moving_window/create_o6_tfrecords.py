@@ -3,12 +3,12 @@ from tfrecords_handler.non_moving_window.tfrecord_writer import TFRecordWriter
 if __name__ == '__main__':
     tfrecord_writer = TFRecordWriter(
         output_size = 6,
-        train_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/stl_6_seq2seq.txt',
-        validate_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/stl_6_seq2seqv.txt',
-        test_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/cif_6_seq2seq_test.txt',
-        binary_train_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/stl_6_seq2seq.tfrecords',
-        binary_validation_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/stl_6_seq2seqv.tfrecords',
-        binary_test_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/cif_6_seq2seq_test.tfrecords'
+        train_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/cif_stl_6.txt',
+        validate_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/cif_stl_6v.txt',
+        test_file_path = '../../../datasets/text_data/CIF_2016/non_moving_window/cif_test_6.txt',
+        binary_train_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/cif_stl_6.tfrecords',
+        binary_validation_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/cif_stl_6v.tfrecords',
+        binary_test_file_path = '../../../datasets/binary_data/CIF_2016/non_moving_window/cif_test_6.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
