@@ -2,9 +2,10 @@ import numpy as np
 import tensorflow as tf
 import argparse
 from bayes_opt import BayesianOptimization
-from persist_optimized_config_results import persist_results
+from utility_scripts.persist_optimized_config_results import persist_results
 from generic_model_tester import testing
 import re
+import random
 
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -15,9 +16,9 @@ from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
 
 # import the different model types
-from stacking_model.stacking_model_trainer import StackingModelTrainer
-from seq2seq_model.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
-from attention_model.attention_model_trainer import AttentionModelTrainer
+from rnn_architectures.stacking_model.stacking_model_trainer import StackingModelTrainer
+from rnn_architectures.seq2seq_model.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
+from rnn_architectures.attention_model.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -101,6 +102,10 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
 
 
 def bayesian_optimization():
+    # to make the random number choices reproducible
+    np.random.seed(1)
+    random.seed(1)
+
     init_points = 2
     num_iter = 30
 
@@ -127,6 +132,9 @@ def bayesian_optimization():
     return optimized_configuration
 
 def smac():
+    # to make the random number choices reproduceable
+    np.random.rand(1)
+    random.seed(1)
 
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
@@ -160,14 +168,14 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 50,
+        "runcount-limit": 1,
         "cs": configuration_space,
         "deterministic": True,
         "output_dir": "Logs"
     })
 
     # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(0), tae_runner=train_model_smac)
+    smac = SMAC(scenario=scenario, rng=np.random.RandomState(1), tae_runner=train_model_smac)
 
     incumbent = smac.optimize()
     smape_error = train_model_smac(incumbent)

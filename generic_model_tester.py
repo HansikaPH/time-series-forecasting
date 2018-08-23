@@ -1,14 +1,16 @@
 import csv
 import tensorflow as tf
+import numpy as np
+import random
 
 # import the different model types
-from stacking_model.stacking_model_tester import StackingModelTester
-from seq2seq_model.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
-from attention_model.attention_model_tester import AttentionModelTester
+from rnn_architectures.stacking_model.stacking_model_tester import StackingModelTester
+from rnn_architectures.seq2seq_model.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
+from rnn_architectures.attention_model.attention_model_tester import AttentionModelTester
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
-from invoke_r_final_evaluation import invoke_r_script
+from utility_scripts.invoke_r_final_evaluation import invoke_r_script
 
 LSTM_USE_PEEPHOLES = True
 LSTM_USE_STABILIZATION = True
@@ -42,6 +44,11 @@ def testing(args, config_dictionary):
     #
     # # parse the user arguments
     # args = argument_parser.parse_args()
+
+    # to make the random number choices reproducible
+    np.random.seed(1)
+    random.seed(1)
+
     global learning_rate
 
     dataset_name = args.dataset_name
