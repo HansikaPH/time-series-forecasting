@@ -4,9 +4,9 @@ import numpy as np
 import random
 
 # import the different model types
-from rnn_architectures.stacking_model.stacking_model_tester import StackingModelTester
-from rnn_architectures.seq2seq_model.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
-from rnn_architectures.attention_model.attention_model_tester import AttentionModelTester
+from rnn_architectures.stacking_model.moving_window.stacking_model_tester import StackingModelTester
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
+from rnn_architectures.attention_model.non_moving_window.attention_model_tester import AttentionModelTester
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer

@@ -48,9 +48,7 @@ for(k in 1 :nrow(forecasts_df)){
     converted_forecasts_df[ii] =  converted_value
   }
   converted_forecasts_matrix[k,] = converted_forecasts_df
-  print(converted_forecasts_df)
 }
-print(actual_results_df)
 
 sMAPEPerSeries1 <- rowMeans(2*abs(converted_forecasts_matrix-actual_results_df)/(abs(converted_forecasts_matrix)+abs(actual_results_df)), na.rm=TRUE)
 
