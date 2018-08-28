@@ -130,12 +130,11 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
                     # get an iterator to the validation data
                     validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
+                    # access the validation data using the iterator
+                    next_validation_data_batch = validation_data_iterator.get_next()
 
                     while True:
                         try:
-                            # access the validation data using the iterator
-                            next_validation_data_batch = validation_data_iterator.get_next()
-
                             # get the batch of validation inputs
                             validation_data_batch_value = session.run(next_validation_data_batch)
 

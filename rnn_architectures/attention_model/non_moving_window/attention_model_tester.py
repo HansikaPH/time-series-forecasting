@@ -160,12 +160,12 @@ class AttentionModelTester:
             # get an iterator to the test input data batch
             test_input_iterator = padded_test_input_data.make_one_shot_iterator()
 
+            # access the test input batch using the iterator
+            test_input_data_batch = test_input_iterator.get_next()
+
             list_of_forecasts = []
             while True:
                 try:
-                    # access the test input batch using the iterator
-                    test_input_data_batch = test_input_iterator.get_next()
-
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
