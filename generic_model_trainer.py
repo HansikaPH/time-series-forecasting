@@ -18,6 +18,7 @@ from smac.facade.smac_facade import SMAC
 # import the different model types
 from rnn_architectures.stacking_model.moving_window.stacking_model_trainer import StackingModelTrainer
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer
 from rnn_architectures.attention_model.non_moving_window.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
@@ -170,8 +171,7 @@ def smac():
         "run_obj": "quality",
         "runcount-limit": 50,
         "cs": configuration_space,
-        "deterministic": True,
-        "output_dir": "Logs"
+        "deterministic": True
     })
 
     # optimize using an SMAC object
@@ -247,6 +247,15 @@ if __name__ == '__main__':
         )
     elif model_type == "seq2seq":
         model_trainer = Seq2SeqModelTrainer(
+            use_bias=BIAS,
+            use_peepholes=LSTM_USE_PEEPHOLES,
+            output_size=output_size,
+            binary_train_file_path=binary_train_file_path,
+            binary_validation_file_path=binary_validation_file_path,
+            contain_zero_values=contain_zero_values
+        )
+    elif model_type == "seq2seqwithdenselayer":
+        model_trainer = Seq2SeqModelTrainerWithDenseLayer(
             use_bias=BIAS,
             use_peepholes=LSTM_USE_PEEPHOLES,
             output_size=output_size,
