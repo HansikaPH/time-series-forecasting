@@ -19,7 +19,7 @@ from smac.facade.smac_facade import SMAC
 from rnn_architectures.stacking_model.moving_window.stacking_model_trainer import StackingModelTrainer
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer
-from rnn_architectures.attention_model.non_moving_window.attention_model_trainer import AttentionModelTrainer
+from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_trainer import AttentionModelTrainer
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -169,7 +169,7 @@ def smac():
     # creating the scenario object
     scenario = Scenario({
         "run_obj": "quality",
-        "runcount-limit": 50,
+        "runcount-limit": 50    ,
         "cs": configuration_space,
         "deterministic": True
     })

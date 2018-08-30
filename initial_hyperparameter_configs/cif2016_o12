@@ -2,7 +2,7 @@ gaussian_noise_stdev - 0.0001, 0.0008
 
 l2_regularization - 0.0001, 0.0008
 
-lstm_cell_dimension - 50, 100
+lstm_cell_dimension - 20, 50
 
 max_epoch_size - 5, 10
 

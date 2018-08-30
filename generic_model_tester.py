@@ -7,7 +7,7 @@ import random
 from rnn_architectures.stacking_model.moving_window.stacking_model_tester import StackingModelTester
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer
-from rnn_architectures.attention_model.non_moving_window.attention_model_tester import AttentionModelTester
+from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_tester import AttentionModelTester
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -95,7 +95,7 @@ def testing(args, config_dictionary):
             binary_train_file_path=binary_train_file_path,
             binary_test_file_path=binary_test_file_path
         )
-    elif model_type == "seq2seq_dense":
+    elif model_type == "seq2seqwithdenselayer":
         model_tester = Seq2SeqModelTesterWithDenseLayer(
             use_bias=BIAS,
             use_peepholes=LSTM_USE_PEEPHOLES,
