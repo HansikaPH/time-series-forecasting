@@ -1,27 +1,34 @@
 # Data preparation script
 # Slawek Smyl, Feb-Sep 2016
 # This script produces 4 files: training and validation files for 6 steps prediction horizon and, similarly, training and validation files for 12 steps prediction horizon. 
-
+args = commandArgs(trailingOnly=TRUE)
+DATA_FILE = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/cif-dataset.txt"
 OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/"
 
-download.file("http://irafm.osu.cz/cif/cif-dataset.txt", "cif-dataset.txt")
-cif_df=read.csv(file="cif-dataset.txt",sep=';',header = FALSE)
+cif_df=read.csv(file=DATA_FILE,sep=';',header = FALSE)
 
 names(cif_df)[4:ncol(cif_df)]=paste('x',(1:(ncol(cif_df)-3)),sep='_')
 names(cif_df)[1]="Series"
 names(cif_df)[2]="maxPredHorizon"
-str(cif_df); #summary(cif_df); 
+str(cif_df); #summary(cif_df);
 
-INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
 OUTPUT_P6=paste(OUTPUT_DIR,"stl_6",sep='/')
 OUTPUT_P12=paste(OUTPUT_DIR,"stl_12",sep='/')
- 
-if (INPUT_SIZE_MULTIP!=1) {
-	inputSize=as.integer(INPUT_SIZE_MULTIP*6)
-	OUTPUT_P6=paste(OUTPUT_P6,'i',inputSize,sep='')
-	inputSize=as.integer(INPUT_SIZE_MULTIP*12)
-	OUTPUT_P12=paste(OUTPUT_P12,'i',inputSize,sep='')
+
+if(length(args) == 0) {
+	INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
+
+	if (INPUT_SIZE_MULTIP!=1) {
+		inputSize_6=as.integer(INPUT_SIZE_MULTIP*6)
+		inputSize_12=as.integer(INPUT_SIZE_MULTIP*12)
+	}
+}else {
+	inputSize_6 = 1
+	inputSize_12 = 1
 }
+
+OUTPUT_P6=paste(OUTPUT_P6,'i',inputSize_6,sep='')
+OUTPUT_P12=paste(OUTPUT_P12,'i',inputSize_12,sep='')
 
 #The validation file constains the training file, although only last record per each series in the validation file is used for calculating the metrics. 
 #This is becasue we are using the recurrent networks with potentially long memory (LSTMs), so all the records are needed for "warm-up" or establishment of the state.  
@@ -65,33 +72,51 @@ for (validation in c(TRUE,FALSE)) {#
 				nn_vect=ylog
 				cbind(seasonal_vect,nnLevels,nn_vect)
 			})
-		#plot(ylog); lines(stlAdj[,3]); lines(stlAdj[,2],col='blue'); lines(stlAdj[,3]+stlAdj[,1],col=2)
-		
-		inputSize=as.integer(INPUT_SIZE_MULTIP*maxForecastHorizon)
-	
-	  print(series)
-		inn=inputSize
+
+		if(maxForecastHorizon == 6) {
+			inputSize = inputSize_6
+		}else {
+			inputSize = inputSize_12
+		}
+
+	  	print(series)
+
 		for (inn in inputSize:(n-maxForecastHorizon)) {
-			level=stlAdj[inn,2] #last "trend" point in the input window is the "level" (the value used for the normalization)
-			sav_df=data.frame(id=paste(idr,'|i',sep='')); #sav_df is the set of input values in the current window
-			
-			for (ii in 1:inputSize) {
-				sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]-level  #inputs: past values normalized by the level
-			}
-			
-			sav_df[,'o']='|o'
-			for (ii in 1:maxForecastHorizon) {
-				sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]-level #outputs: future values normalized by the level.
+
+			if(inputSize != 1) {
+				level=stlAdj[inn,2] #last "trend" point in the input window is the "level" (the value used for the normalization)
 			}
 
-            if(validation){
-                sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
-			                 #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-			    sav_df[,'level']=level
-			    for (ii in 1:maxForecastHorizon) {
-				    sav_df[,paste('s',ii,sep='')]=stlAdj[inn+ii,1]
-			    }
-            }
+			sav_df=data.frame(id=paste(idr,'|i',sep='')); #sav_df is the set of input values in the current window
+
+			for (ii in 1:inputSize) {
+				if(inputSize != 1) {
+					sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]-level  #inputs: past values normalized by the level
+				}else {
+					sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]
+				}
+			}
+
+			sav_df[,'o']='|o'
+			for (ii in 1:maxForecastHorizon) {
+				if(inputSize != 1) {
+					sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]-level #outputs: future values normalized by the level.
+				}else {
+					sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]
+				}
+			}
+
+			if(validation){
+				sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
+							 #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
+				if(inputSize != 1)
+				{
+					sav_df[,'level']=level
+				}
+				for (ii in 1:maxForecastHorizon) {
+					sav_df[,paste('s',ii,sep='')]=stlAdj[inn+ii,1]
+				}
+			}
 
 			if (maxForecastHorizon==6) {
 				if (is.null(save6_df)) {
