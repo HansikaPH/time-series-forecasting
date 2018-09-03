@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
+from configs.global_configs import model_training_configs
+from configs.global_configs import training_data_configs
 
 class StackingModelTrainer:
 
@@ -81,18 +83,40 @@ class StackingModelTrainer:
 
         # parse the records
         tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
-        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
-        validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # define the expected shapes of data after padding
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
         validation_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
 
-        INFO_FREQ = 1
-        smape_final_list = []
+        # prepare the training data into batches
+        # randomly shuffle the time series within the dataset
+        training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
+        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
+        training_dataset.repeat(int(max_epoch_size))
+
+        padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
+                                                                     padded_shapes=train_padded_shapes)
+
+        training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
+        next_training_data_batch = training_data_batch_iterator.get_next()
+
+        # prepare the validation data into batches
+        validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
+
+        # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
+        padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+                                                                    padded_shapes=validation_padded_shapes)
+
+        # get an iterator to the validation data
+        validation_data_iterator = padded_validation_dataset.make_initializable_iterator()
+
+        # access the validation data using the iterator
+        next_validation_data_batch = validation_data_iterator.get_next()
 
         # setup variable initialization
         init_op = tf.global_variables_initializer()
+
+        smape_final_list = []
 
         with tf.Session() as session :
             session.run(init_op)
@@ -101,37 +125,20 @@ class StackingModelTrainer:
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
-                # randomly shuffle the time series within the dataset
-                training_dataset.shuffle(int(minibatch_size)) # TODO
+                session.run(training_data_batch_iterator.initializer) #initialize the iterator to the beginning of the training dataset
 
-                for epochsize in range(int(max_epoch_size)):
-                    padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=train_padded_shapes)
+                while True:
+                    try:
+                        training_data_batch_value = session.run(next_training_data_batch)
+                        session.run(optimizer,
+                                    feed_dict={input: training_data_batch_value[1],
+                                               true_output: training_data_batch_value[2],
+                                               sequence_lengths: training_data_batch_value[0]})
+                    except tf.errors.OutOfRangeError:
+                        break
 
-                    training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
-                    next_training_data_batch = training_data_batch_iterator.get_next()
-
-
-                    while True:
-                        try:
-                            training_data_batch_value = session.run(next_training_data_batch)
-                            session.run(optimizer,
-                                        feed_dict={input: training_data_batch_value[1],
-                                                   true_output: training_data_batch_value[2],
-                                                   sequence_lengths: training_data_batch_value[0]})
-                        except tf.errors.OutOfRangeError:
-                            break
-
-
-                if epoch % INFO_FREQ == 0:
-                    # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                    padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
-                                                                                padded_shapes=validation_padded_shapes)
-
-                    # get an iterator to the validation data
-                    validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
-
-                    # access the validation data using the iterator
-                    next_validation_data_batch = validation_data_iterator.get_next()
+                if epoch % model_training_configs.INFO_FREQ == 0:
+                    session.run(validation_data_iterator.initializer) #initialize the iterator to the beginning of the training dataset
 
                     while True:
                         try:

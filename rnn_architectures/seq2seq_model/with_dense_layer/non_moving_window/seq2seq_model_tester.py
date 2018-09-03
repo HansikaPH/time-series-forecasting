@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
+from configs.global_configs import training_data_configs
 
 class Seq2SeqModelTesterWithDenseLayer:
 
@@ -89,8 +90,36 @@ class Seq2SeqModelTesterWithDenseLayer:
 
         # parse the records
         tfrecord_reader = TFRecordReader()
+
+        # preparing the training data
+        # randomly shuffle the time series within the dataset
+        training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
+        training_dataset.repeat(int(max_epoch_size))
+
+        # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
+        padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
+                                                                     padded_shapes=([], [tf.Dimension(None), 1],
+                                                                                    [self.__output_size, 1]))
+
+        # get an iterator to the batches
+        training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
+
+        # access each batch using the iterator
+        next_training_data_batch = training_data_batch_iterator.get_next()
+
+        # preparing the test data
         test_dataset = test_dataset.map(tfrecord_reader.test_data_parser)
+
+        # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
+        padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=(
+        [], [tf.Dimension(None), 1], [self.__output_size + 1, 1]))
+
+        # get an iterator to the test input data batch
+        test_input_iterator = padded_test_input_data.make_one_shot_iterator()
+
+        # access the test input batch using the iterator
+        test_input_data_batch = test_input_iterator.get_next()
 
         # setup variable initialization
         init_op = tf.global_variables_initializer()
@@ -101,44 +130,22 @@ class Seq2SeqModelTesterWithDenseLayer:
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
 
-                # randomly shuffle the time series within the dataset
-                training_dataset.shuffle(int(minibatch_size))
+                session.run(training_data_batch_iterator.initializer)
 
-                for epochsize in range(int(max_epoch_size)):
+                while True:
+                    try:
+                        next_training_batch_value = session.run(next_training_data_batch)
 
-                    # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
-                    padded_training_data_batches = training_dataset.padded_batch(batch_size = int(minibatch_size),
-                                          padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1]))
-
-                    # get an iterator to the batches
-                    training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
-
-                    # access each batch using the iterator
-                    next_training_data_batch = training_data_batch_iterator.get_next()
-
-                    while True:
-                        try:
-                            next_training_batch_value = session.run(next_training_data_batch)
-
-                            # model training
-                            session.run(optimizer,
-                                        feed_dict={input: next_training_batch_value[1],
-                                                   target: next_training_batch_value[2],
-                                                   input_sequence_length: next_training_batch_value[0],
-                                                   })
-                        except tf.errors.OutOfRangeError:
-                            break
+                        # model training
+                        session.run(optimizer,
+                                    feed_dict={input: next_training_batch_value[1],
+                                               target: next_training_batch_value[2],
+                                               input_sequence_length: next_training_batch_value[0],
+                                               })
+                    except tf.errors.OutOfRangeError:
+                        break
 
             # applying the model to the test data
-
-            # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
-            padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size + 1, 1]))
-
-            # get an iterator to the test input data batch
-            test_input_iterator = padded_test_input_data.make_one_shot_iterator()
-
-            # access the test input batch using the iterator
-            test_input_data_batch = test_input_iterator.get_next()
 
             list_of_forecasts = []
             while True:

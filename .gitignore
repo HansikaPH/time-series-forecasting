@@ -12,7 +12,7 @@ data/submission.csv.gz
 !data/2017-08-15_2017-09-11.csv.zip
 
 Logs/
-smac3_*/
+smac3-*/
 
 datasets/
 **/__pycache__/

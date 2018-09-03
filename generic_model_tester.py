@@ -13,12 +13,11 @@ from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.atte
 from external_packages import cocob_optimizer
 from utility_scripts.invoke_r_final_evaluation import invoke_r_script
 
+from configs.global_configs import model_testing_configs
+
 LSTM_USE_PEEPHOLES = True
-LSTM_USE_STABILIZATION = True
 BIAS = False
 
-# Directory to save the forecasts
-forecasts_directory = 'results/forecasts/'
 learning_rate = 0.0
 
 # function to create the optimizer
@@ -132,7 +131,7 @@ def testing(args, config_dictionary):
                                       optimizer_fn = optimizer_fn)
 
     # write the forecasting results to a file
-    forecast_file_path = forecasts_directory + dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)

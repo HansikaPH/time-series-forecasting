@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
+from configs.global_configs import model_training_configs
 
 class AttentionModelTrainer:
 
@@ -129,7 +130,6 @@ class AttentionModelTrainer:
         train_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1])
         validation_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1], [self.__output_size + 1, 1])
 
-        INFO_FREQ = 1
         smape_final_list = []
 
         # setup variable initialization
@@ -163,7 +163,7 @@ class AttentionModelTrainer:
                         except tf.errors.OutOfRangeError:
                             break
 
-                if epoch % INFO_FREQ == 0:
+                if epoch % model_training_configs.INFO_FREQ == 0:
                     # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
                     padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
                                                                                 padded_shapes=validation_padded_shapes)

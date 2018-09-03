@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
+from configs.global_configs import model_training_configs
+from configs.global_configs import training_data_configs
 
 class Seq2SeqModelTrainerWithDenseLayer:
 
@@ -83,14 +85,34 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
         # parse the records
         tfrecord_reader = TFRecordReader()
-        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
-        validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # define the expected shapes of data after padding
         train_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1])
         validation_padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1], [self.__output_size + 1, 1])
 
-        INFO_FREQ = 1
+        # preparing the training data
+        training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
+        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
+        training_dataset.repeat(int(max_epoch_size))
+
+        padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size,
+                                                                     padded_shapes=train_padded_shapes)
+
+        training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
+        next_training_data_batch = training_data_batch_iterator.get_next()
+
+        # preparing the validation data
+        validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
+
+        # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
+        padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+                                                                    padded_shapes=validation_padded_shapes)
+
+        # get an iterator to the validation data
+        validation_data_iterator = padded_validation_dataset.make_initializable_iterator()
+        # access the validation data using the iterator
+        next_validation_data_batch = validation_data_iterator.get_next()
+
         smape_final_list = []
 
         # setup variable initialization
@@ -103,35 +125,21 @@ class Seq2SeqModelTrainerWithDenseLayer:
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
-                # randomly shuffle the time series within the dataset
-                training_dataset.shuffle(minibatch_size)
+                session.run(training_data_batch_iterator.initializer)
 
-                for epochsize in range(max_epoch_size):
-                    padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size, padded_shapes=train_padded_shapes)
+                while True:
+                    try:
+                        training_data_batch_value = session.run(next_training_data_batch)
+                        session.run(optimizer,
+                                    feed_dict={input: training_data_batch_value[1],
+                                               target: training_data_batch_value[2],
+                                               input_sequence_length: training_data_batch_value[0]
+                                               })
+                    except tf.errors.OutOfRangeError:
+                        break
 
-                    training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()
-                    next_training_data_batch = training_data_batch_iterator.get_next()
-
-                    while True:
-                        try:
-                            training_data_batch_value = session.run(next_training_data_batch)
-                            session.run(optimizer,
-                                        feed_dict={input: training_data_batch_value[1],
-                                                   target: training_data_batch_value[2],
-                                                   input_sequence_length: training_data_batch_value[0]
-                                                   })
-                        except tf.errors.OutOfRangeError:
-                            break
-
-                if epoch % INFO_FREQ == 0:
-                    # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-                    padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
-                                                                                padded_shapes=validation_padded_shapes)
-
-                    # get an iterator to the validation data
-                    validation_data_iterator = padded_validation_dataset.make_one_shot_iterator()
-                    # access the validation data using the iterator
-                    next_validation_data_batch = validation_data_iterator.get_next()
+                if epoch % model_training_configs.INFO_FREQ == 0:
+                    session.run(validation_data_iterator.initializer)
 
                     while True:
                         try:
