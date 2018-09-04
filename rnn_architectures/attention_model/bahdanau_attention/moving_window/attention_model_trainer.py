@@ -2,10 +2,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
-from configs.global_configs import training_data_configs
 from configs.global_configs import model_training_configs
+from configs.global_configs import training_data_configs
 
-class Seq2SeqModelTrainer:
+class AttentionModelTrainer:
 
     def __init__(self, **kwargs):
         self.__use_bias = kwargs["use_bias"]
@@ -47,26 +47,35 @@ class Seq2SeqModelTrainer:
 
         # create the model architecture
 
-        # building the encoder network
-
         # RNN with the LSTM layer
         def lstm_cell():
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
             return lstm_cell
 
+        # building the encoder network
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
         encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
+
+        # creating an attention layer
+        attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension, memory=encoder_outputs,
+                                                                   memory_sequence_length=sequence_length)
 
         # decoder cell of the decoder network
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
+        # using the attention wrapper to wrap the decoding cell
+        decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell = multi_layered_decoder_cell, attention_mechanism = attention_mechanism, attention_layer_size = lstm_cell_dimension)
+
         # the final projection layer to convert the output to the desired dimension
         dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias)
+
+        # create the initial state for the decoder
+        decoder_initial_state = decoder_cell.zero_state(batch_size = tf.shape(input)[0], dtype = tf.float32).clone(cell_state = encoder_state)
 
         # building the decoder network for training
         with tf.variable_scope('decode'):
             helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 0.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = helper, initial_state = decoder_initial_state, output_layer = dense_layer)
 
             # perform the decoding
             training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
@@ -74,23 +83,23 @@ class Seq2SeqModelTrainer:
         # building the decoder network for inference
         with tf.variable_scope('decode', reuse = tf.AUTO_REUSE):
             helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 1.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
+            decoder = tf.contrib.seq2seq.BasicDecoder(cell = decoder_cell, helper = helper,
+                                                      initial_state = decoder_initial_state, output_layer = dense_layer)
 
             # perform the decoding
             inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
-
 
         # error that should be minimized in the training process
         error = self.__l1_loss(training_decoder_outputs[0], target)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
-        for var in tf.trainable_variables():
+        for var in tf.trainable_variables() :
             l2_loss += tf.nn.l2_loss(var)
 
         l2_loss = tf.multiply(tf.cast(l2_regularization, dtype=tf.float64), tf.cast(l2_loss, dtype=tf.float64))
 
-        total_loss = tf.cast(error, dtype=tf.float64) + l2_loss
+        total_loss = tf.cast(error, dtype = tf.float64)+ l2_loss
 
         # create the optimizer
         optimizer = optimizer_fn(total_loss)
@@ -147,17 +156,16 @@ class Seq2SeqModelTrainer:
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch)
-
                         session.run(optimizer,
                                     feed_dict={input: training_data_batch_value[1],
                                                target: training_data_batch_value[2],
-                                               sequence_length: training_data_batch_value[0]})
+                                               sequence_length: training_data_batch_value[0]
+                                               })
                     except tf.errors.OutOfRangeError:
                         break
 
                 if epoch % model_training_configs.INFO_FREQ == 0:
                     session.run(validation_data_iterator.initializer)
-
                     while True:
                         try:
                             # get the batch of validation inputs
@@ -167,12 +175,11 @@ class Seq2SeqModelTrainer:
                             target_data_shape = [np.shape(validation_data_batch_value[1])[0], np.shape(validation_data_batch_value[1])[1], self.__output_size]
 
                             # get the output of the network for the validation input data batch
-                            encoder_state_value, validation_output = session.run(
-                                [encoder_state, inference_decoder_outputs[0]],
-                                feed_dict={input: validation_data_batch_value[1],
-                                           target: np.zeros(target_data_shape),
-                                           sequence_length: validation_data_batch_value[0]
-                                           })
+                            validation_output = session.run(inference_decoder_outputs[0],
+                                                            feed_dict={input: validation_data_batch_value[1],
+                                                                       target: np.zeros(target_data_shape),
+                                                                       sequence_length: validation_data_batch_value[0]
+                                                                       })
 
                             # calculate the smape for the validation data using vectorization
 
@@ -180,7 +187,8 @@ class Seq2SeqModelTrainer:
                             last_indices = validation_data_batch_value[0] - 1
                             array_first_dimension = np.array(range(0, validation_data_batch_value[0].shape[0]))
 
-                            true_seasonality_values = validation_data_batch_value[3][array_first_dimension, last_indices, 1:]
+                            true_seasonality_values = validation_data_batch_value[3][array_first_dimension,
+                                                      last_indices, 1:]
                             level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
                             last_validation_outputs = validation_output[array_first_dimension, last_indices]
@@ -202,7 +210,6 @@ class Seq2SeqModelTrainer:
 
                         except tf.errors.OutOfRangeError:
                             break
-
                 smape_epoch = np.mean(smape_epoch_list)
                 smape_final_list.append(smape_epoch)
 
@@ -210,3 +217,6 @@ class Seq2SeqModelTrainer:
             print("SMAPE value: {}".format(smape_final))
 
         return smape_final
+
+
+

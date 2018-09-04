@@ -17,9 +17,11 @@ from smac.facade.smac_facade import SMAC
 
 # import the different model types
 from rnn_architectures.stacking_model.moving_window.stacking_model_trainer import StackingModelTrainer
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindow
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer
-from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_trainer import AttentionModelTrainer
+from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithMovingWindow
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -198,11 +200,11 @@ if __name__ == '__main__':
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
     argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window')
-    # argument_parser.add_argument('--subsequence_length', required=False, help='The subsequence length to use truncated backpropagation')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
-    argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/non_moving_window/attention)')
+    argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer/attention)')
+    argument_parser.add_argument('--input_format', required=True, help='Input format(moving_window/non_moving_window)')
 
     # parse the user arguments
     args = argument_parser.parse_args()
@@ -216,14 +218,12 @@ if __name__ == '__main__':
         input_size = int(args.input_size)
     else:
         input_size = 0
-    # if(args.subsequence_length):
-        # subsequence_length = int(args.subsequence_length)
-    # else:
-    #     subsequence_length = 0
+
     output_size = int(args.forecast_horizon)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
+    input_format = args.input_format
 
     print("Model Training Started for {}_{}_{}_{}".format(dataset_name, model_type, hyperparameter_tuning, optimizer))
 
@@ -247,14 +247,25 @@ if __name__ == '__main__':
             contain_zero_values = contain_zero_values
         )
     elif model_type == "seq2seq":
-        model_trainer = Seq2SeqModelTrainer(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_validation_file_path=binary_validation_file_path,
-            contain_zero_values=contain_zero_values
-        )
+        if input_format == "non_moving_window":
+            model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_validation_file_path=binary_validation_file_path,
+                contain_zero_values=contain_zero_values
+            )
+        elif input_format == "moving_window":
+            model_trainer = Seq2SeqModelTrainerWithMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_validation_file_path=binary_validation_file_path,
+                contain_zero_values=contain_zero_values
+            )
     elif model_type == "seq2seqwithdenselayer":
         model_trainer = Seq2SeqModelTrainerWithDenseLayer(
             use_bias=BIAS,
@@ -265,14 +276,25 @@ if __name__ == '__main__':
             contain_zero_values=contain_zero_values
         )
     elif model_type == "attention":
-        model_trainer = AttentionModelTrainer(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_validation_file_path=binary_validation_file_path,
-            contain_zero_values=contain_zero_values
-        )
+        if input_format == "non_moving_window":
+            model_trainer = AttentionModelTrainerWithNonMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_validation_file_path=binary_validation_file_path,
+                contain_zero_values=contain_zero_values
+            )
+        elif input_format == "moving_window":
+            model_trainer = AttentionModelTrainerWithMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_validation_file_path=binary_validation_file_path,
+                contain_zero_values=contain_zero_values
+            )
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values()

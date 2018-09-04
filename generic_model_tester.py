@@ -5,9 +5,11 @@ import random
 
 # import the different model types
 from rnn_architectures.stacking_model.moving_window.stacking_model_tester import StackingModelTester
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.moving_window.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithMovingWindow
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer
-from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_tester import AttentionModelTester
+from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -65,6 +67,7 @@ def testing(args, config_dictionary):
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
+    input_format = args.input_format
 
     print("Model Testing Started for {}_{}_{}_{}".format(dataset_name, model_type, hyperparameter_tuning, optimizer))
 
@@ -87,13 +90,23 @@ def testing(args, config_dictionary):
             binary_test_file_path=binary_test_file_path
         )
     elif model_type == "seq2seq":
-        model_tester = Seq2SeqModelTester(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_test_file_path=binary_test_file_path
-        )
+        if input_format == "non_moving_window":
+            model_tester = Seq2SeqModelTesterWithNonMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_test_file_path=binary_test_file_path
+            )
+        elif input_format == "moving_window":
+            model_tester = Seq2SeqModelTesterWithMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_test_file_path=binary_test_file_path
+            )
     elif model_type == "seq2seqwithdenselayer":
         model_tester = Seq2SeqModelTesterWithDenseLayer(
             use_bias=BIAS,
@@ -103,13 +116,23 @@ def testing(args, config_dictionary):
             binary_test_file_path=binary_test_file_path
         )
     elif model_type == "attention":
-        model_tester = AttentionModelTester(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_test_file_path=binary_test_file_path
-        )
+        if input_format == "non_moving_window":
+            model_tester = AttentionModelTesterWithNonMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_test_file_path=binary_test_file_path
+            )
+        elif input_format == "moving_window":
+            model_tester = AttentionModelTesterWithMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_test_file_path=binary_test_file_path
+            )
 
     if 'learning_rate' in config_dictionary:
         learning_rate = config_dictionary['learning_rate']
@@ -139,7 +162,7 @@ def testing(args, config_dictionary):
     # invoke the final evaluation R script
     error_file_name = dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
 
-    if(model_type == "stacking"):
+    if(input_format == "moving_window"):
         invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), contain_zero_values), True)
     else:
         invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), contain_zero_values), False)
