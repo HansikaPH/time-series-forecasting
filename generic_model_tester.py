@@ -154,13 +154,14 @@ def testing(args, config_dictionary):
                                       optimizer_fn = optimizer_fn)
 
     # write the forecasting results to a file
-    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + input_format + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)
 
     # invoke the final evaluation R script
-    error_file_name = dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+    error_file_name = dataset_name + '_' + model_type + '_' + input_format + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
 
     if(input_format == "moving_window"):
         invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), contain_zero_values), True)

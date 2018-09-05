@@ -306,7 +306,8 @@ if __name__ == '__main__':
         optimized_configuration = smac()
 
     # persist the optimized configuration to a file
-    persist_results(optimized_configuration, optimized_config_directory + '/' + dataset_name + '_' + model_type + '_' + hyperparameter_tuning + '_' + optimizer + '.txt')
+    persist_results(optimized_configuration, optimized_config_directory + '/' + dataset_name + '_' + model_type + '_' + input_format + '_' +
+                    hyperparameter_tuning + '_' + optimizer + '.txt')
 
     # test the model
     testing(args, optimized_configuration)
