@@ -15,11 +15,20 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformInteg
 from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
 
-# import the different model types
+## import the different model architectures
+
+# stacking model
 from rnn_architectures.stacking_model.moving_window.stacking_model_trainer import StackingModelTrainer
+
+# seq2seq model with decoder
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindow
-from rnn_architectures.seq2seq_model.with_decoder.moving_window.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.moving_window.window_per_step.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_step.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindowOneInputPerStep
+
+# seq2seq model with dense layer
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer
+
+# attention model
 from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindow
 from rnn_architectures.attention_model.bahdanau_attention.moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithMovingWindow
 
@@ -225,7 +234,7 @@ if __name__ == '__main__':
     model_type = args.model_type
     input_format = args.input_format
 
-    print("Model Training Started for {}_{}_{}_{}".format(dataset_name, model_type, hyperparameter_tuning, optimizer))
+    print("Model Training Started for {}_{}_{}_{}_{}".format(dataset_name, model_type, input_format, hyperparameter_tuning, optimizer))
 
     # select the optimizer
     if optimizer == "cocob":
@@ -258,6 +267,16 @@ if __name__ == '__main__':
             )
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path,
+                binary_validation_file_path=binary_validation_file_path,
+                contain_zero_values=contain_zero_values
+            )
+        elif input_format == "moving_window_one_input_per_step":
+            model_trainer = Seq2SeqModelTrainerWithMovingWindowOneInputPerStep(
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
