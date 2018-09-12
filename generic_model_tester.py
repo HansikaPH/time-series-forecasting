@@ -17,8 +17,8 @@ from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_st
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindow
-from rnn_architectures.attention_model.bahdanau_attention.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -64,7 +64,7 @@ def testing(args, config_dictionary):
 
     dataset_name = args.dataset_name
     contain_zero_values = args.contain_zero_values
-    binary_train_file_path = args.binary_train_file
+    binary_train_file_path = args.binary_valid_file
     binary_test_file_path = args.binary_test_file
     txt_test_file_path = args.txt_test_file
     actual_results_file_path = args.actual_results_file

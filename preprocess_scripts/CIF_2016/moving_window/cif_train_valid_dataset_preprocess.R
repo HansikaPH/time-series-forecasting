@@ -1,7 +1,8 @@
 # Data preparation script
 # Slawek Smyl, Feb-Sep 2016
 # This script produces 4 files: training and validation files for 6 steps prediction horizon and, similarly, training and validation files for 12 steps prediction horizon. 
-args = commandArgs(trailingOnly=TRUE)
+
+# args = commandArgs(trailingOnly=TRUE)
 DATA_FILE = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/cif-dataset.txt"
 OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/"
 
@@ -15,17 +16,17 @@ str(cif_df); #summary(cif_df);
 OUTPUT_P6=paste(OUTPUT_DIR,"stl_6",sep='/')
 OUTPUT_P12=paste(OUTPUT_DIR,"stl_12",sep='/')
 
-if(length(args) == 0) {
+# if(length(args) == 0) {
 	INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
 
 	if (INPUT_SIZE_MULTIP!=1) {
 		inputSize_6=as.integer(INPUT_SIZE_MULTIP*6)
 		inputSize_12=as.integer(INPUT_SIZE_MULTIP*12)
 	}
-}else {
-	inputSize_6 = 1
-	inputSize_12 = 1
-}
+# }else {
+# 	inputSize_6 = 1
+# 	inputSize_12 = 1
+# }
 
 OUTPUT_P6=paste(OUTPUT_P6,'i',inputSize_6,sep='')
 OUTPUT_P12=paste(OUTPUT_P12,'i',inputSize_12,sep='')
@@ -50,7 +51,7 @@ for (validation in c(TRUE,FALSE)) {#
 	  series=as.character(oneLine_df$Series) 
 	
 		maxForecastHorizon= oneLine_df$maxPredHorizon
-	  y=as.numeric(oneLine_df[4:(ncol(oneLine_df))])
+	  	y=as.numeric(oneLine_df[4:(ncol(oneLine_df))])
 		y=y[!is.na(y)]
 		ylog=log(y)
 		#str(y); plot(ylog)
@@ -83,36 +84,36 @@ for (validation in c(TRUE,FALSE)) {#
 
 		for (inn in inputSize:(n-maxForecastHorizon)) {
 
-			if(inputSize != 1) {
+			# if(inputSize != 1) {
 				level=stlAdj[inn,2] #last "trend" point in the input window is the "level" (the value used for the normalization)
-			}
+			# }
 
 			sav_df=data.frame(id=paste(idr,'|i',sep='')); #sav_df is the set of input values in the current window
 
 			for (ii in 1:inputSize) {
-				if(inputSize != 1) {
+				# if(inputSize != 1) {
 					sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]-level  #inputs: past values normalized by the level
-				}else {
-					sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]
-				}
+				# }else {
+				# 	sav_df[,paste('r',ii,sep='')]=stlAdj[inn-inputSize+ii,3]
+				# }
 			}
 
 			sav_df[,'o']='|o'
 			for (ii in 1:maxForecastHorizon) {
-				if(inputSize != 1) {
+				# if(inputSize != 1) {
 					sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]-level #outputs: future values normalized by the level.
-				}else {
-					sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]
-				}
+				# }else {
+				# 	sav_df[,paste('o',ii,sep='')]=stlAdj[inn+ii,3]
+				# }
 			}
 
 			if(validation){
 				sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
 							 #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-				if(inputSize != 1)
-				{
+				# if(inputSize != 1)
+				# {
 					sav_df[,'level']=level
-				}
+				# }
 				for (ii in 1:maxForecastHorizon) {
 					sav_df[,paste('s',ii,sep='')]=stlAdj[inn+ii,1]
 				}

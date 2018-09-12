@@ -107,7 +107,7 @@ class Seq2SeqModelTester:
 
         # parse the records
         tfrecord_reader = TFRecordReader()
-        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
+        training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
         test_dataset = test_dataset.map(tfrecord_reader.test_data_parser)
 
         # setup variable initialization
@@ -126,7 +126,7 @@ class Seq2SeqModelTester:
 
                     # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
                     padded_training_data_batches = training_dataset.padded_batch(batch_size = int(minibatch_size),
-                                          padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1]))
+                                          padded_shapes = ([], [tf.Dimension(None), 1], [self.__output_size, 1], [self.__output_size + 1, 1]))
 
                     # get an iterator to the batches
                     training_data_batch_iterator = padded_training_data_batches.make_one_shot_iterator()

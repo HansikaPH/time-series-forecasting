@@ -29,7 +29,7 @@ for (idr in 1:nrow(cif_df_12)) {
   y = y[!is.na(y)]
   ylog = log(y)
   n = length(y)
-  
+
   stlAdj = tryCatch({
     sstl = stl(ts(ylog, frequency = 12), "period")
     seasonal_vect = as.numeric(sstl$time.series[, 1])
@@ -42,41 +42,42 @@ for (idr in 1:nrow(cif_df_12)) {
     nn_vect = ylog
     cbind(seasonal_vect, nnLevels, nn_vect)
   })
-  
+
   seasonality_12 = tryCatch({
     forecast = stlf(ts(stlAdj[,1] , frequency = 12), "period", h = 12)
     seasonality_12_vector = as.numeric(forecast$mean)
     c(seasonality_12_vector)
   }, error = function(e) {
-    seasonality_12_vector = rep(0, 12)   #stl() may fail, and then we would go on with the seasonality vector=0
-    c(seasonality_12_vector)
-  })
+      seasonality_12_vector = rep(0, 12)   #stl() may fail, and then we would go on with the seasonality vector=0
+      c(seasonality_12_vector)
+    })
 
   inputSize = as.integer(INPUT_SIZE_MULTIP * maxForecastHorizon_12)
-  
+
   print(series)
   for (inn in inputSize:(n)) {
     level = stlAdj[inn, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
     sav_df = data.frame(id = paste(idr, '|i', sep = ''))
-    
-    
+
+
     for (ii in 1:inputSize) {
       sav_df[, paste('r', ii, sep = '')] = stlAdj[inn - inputSize + ii, 3] - level  #inputs: past values normalized by the level
     }
-    
+
     sav_df[, 'nyb'] = '|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
     #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-    
+
     sav_df[, 'level'] = level
-    
+
     for (ii in 1:maxForecastHorizon_12) {
       sav_df[, paste('s', ii, sep = '')] = seasonality_12[ii]
     }
-    
+
+
     if (is.null(save12_df)) {
-      save12_df = sav_df
+    save12_df = sav_df
     } else {
-      save12_df = rbind(save12_df, sav_df)
+    save12_df = rbind(save12_df, sav_df)
     }
   }
 }

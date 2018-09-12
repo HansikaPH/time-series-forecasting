@@ -116,12 +116,13 @@ class AttentionModelTester:
         # preparing the training data
         # randomly shuffle the time series within the dataset
         training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
-        training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
+        training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
         training_dataset.repeat(int(max_epoch_size))
 
         # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
-                                                                     padded_shapes=([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size]))
+                                                                     padded_shapes=([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size],
+                                                                                    [tf.Dimension(None), self.__output_size + 1]))
 
         # get an iterator to the batches
         training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
