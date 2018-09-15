@@ -64,8 +64,8 @@ def testing(args, config_dictionary):
 
     dataset_name = args.dataset_name
     contain_zero_values = args.contain_zero_values
-    binary_train_file_path = args.binary_valid_file
-    binary_test_file_path = args.binary_test_file
+    binary_train_file_path_test_mode = args.binary_train_file_test_mode
+    binary_test_file_path_test_mode = args.binary_test_file_test_mode
     txt_test_file_path = args.txt_test_file
     actual_results_file_path = args.actual_results_file
     if(args.input_size):
@@ -95,8 +95,8 @@ def testing(args, config_dictionary):
             use_peepholes=LSTM_USE_PEEPHOLES,
             input_size=input_size,
             output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_test_file_path=binary_test_file_path
+            binary_train_file_path=binary_train_file_path_test_mode,
+            binary_test_file_path=binary_test_file_path_test_mode
         )
     elif model_type == "seq2seq":
         if input_format == "non_moving_window":
@@ -104,8 +104,8 @@ def testing(args, config_dictionary):
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_test_file_path=binary_test_file_path
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
             )
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithMovingWindow(
@@ -113,8 +113,8 @@ def testing(args, config_dictionary):
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_test_file_path=binary_test_file_path
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
             )
         elif input_format == "moving_window_one_input_per_step":
             model_tester = Seq2SeqModelTesterWithMovingWindowOneInputPerStep(
@@ -122,8 +122,8 @@ def testing(args, config_dictionary):
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_test_file_path=binary_test_file_path
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
             )
 
     elif model_type == "seq2seqwithdenselayer":
@@ -131,8 +131,8 @@ def testing(args, config_dictionary):
             use_bias=BIAS,
             use_peepholes=LSTM_USE_PEEPHOLES,
             output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_test_file_path=binary_test_file_path
+            binary_train_file_path=binary_train_file_path_test_mode,
+            binary_test_file_path=binary_test_file_path_test_mode
         )
     elif model_type == "attention":
         if input_format == "non_moving_window":
@@ -140,8 +140,8 @@ def testing(args, config_dictionary):
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_test_file_path=binary_test_file_path
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
             )
         elif input_format == "moving_window":
             model_tester = AttentionModelTesterWithMovingWindow(
@@ -149,8 +149,8 @@ def testing(args, config_dictionary):
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_test_file_path=binary_test_file_path
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
             )
 
     if 'learning_rate' in config_dictionary:

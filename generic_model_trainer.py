@@ -203,9 +203,10 @@ if __name__ == '__main__':
     argument_parser.add_argument('--dataset_name', required = True, help = 'Unique string for the name of the dataset')
     argument_parser.add_argument('--contain_zero_values', required = True, help = 'Whether the dataset contains zero values')
     argument_parser.add_argument('--initial_hyperparameter_values_file', required=True, help='The file for the initial hyperparameter configurations')
-    argument_parser.add_argument('--binary_train_file', required = True, help = 'The tfrecords file for train dataset')
-    argument_parser.add_argument('--binary_valid_file', required=True, help='The tfrecords file for validation dataset')
-    argument_parser.add_argument('--binary_test_file', required=True, help='The tfrecords file for test dataset')
+    argument_parser.add_argument('--binary_train_file_train_mode', required = True, help = 'The tfrecords file for train dataset in the training mode')
+    argument_parser.add_argument('--binary_valid_file_train_mode', required=True, help='The tfrecords file for validation dataset in the training mode')
+    argument_parser.add_argument('--binary_train_file_test_mode', required=True, help='The tfrecords file for train dataset in the testing mode')
+    argument_parser.add_argument('--binary_test_file_test_mode', required=True, help='The tfrecords file for test dataset in the testing mode')
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
     argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window')
@@ -220,8 +221,8 @@ if __name__ == '__main__':
 
     dataset_name = args.dataset_name
     initial_hyperparameter_values_file = args.initial_hyperparameter_values_file
-    binary_train_file_path = args.binary_train_file
-    binary_validation_file_path = args.binary_valid_file
+    binary_train_file_path_train_mode = args.binary_train_file_train_mode
+    binary_validation_file_path_train_mode = args.binary_valid_file_train_mode
     contain_zero_values = args.contain_zero_values
     if(args.input_size):
         input_size = int(args.input_size)
@@ -251,8 +252,8 @@ if __name__ == '__main__':
             use_peepholes = LSTM_USE_PEEPHOLES,
             input_size = input_size,
             output_size = output_size,
-            binary_train_file_path = binary_train_file_path,
-            binary_validation_file_path = binary_validation_file_path,
+            binary_train_file_path = binary_train_file_path_train_mode,
+            binary_validation_file_path = binary_validation_file_path_train_mode,
             contain_zero_values = contain_zero_values
         )
     elif model_type == "seq2seq":
@@ -261,8 +262,8 @@ if __name__ == '__main__':
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_validation_file_path=binary_validation_file_path,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
         elif input_format == "moving_window":
@@ -271,8 +272,8 @@ if __name__ == '__main__':
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_validation_file_path=binary_validation_file_path,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
         elif input_format == "moving_window_one_input_per_step":
@@ -281,8 +282,8 @@ if __name__ == '__main__':
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_validation_file_path=binary_validation_file_path,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
     elif model_type == "seq2seqwithdenselayer":
@@ -290,8 +291,8 @@ if __name__ == '__main__':
             use_bias=BIAS,
             use_peepholes=LSTM_USE_PEEPHOLES,
             output_size=output_size,
-            binary_train_file_path=binary_train_file_path,
-            binary_validation_file_path=binary_validation_file_path,
+            binary_train_file_path=binary_train_file_path_train_mode,
+            binary_validation_file_path=binary_validation_file_path_train_mode,
             contain_zero_values=contain_zero_values
         )
     elif model_type == "attention":
@@ -300,8 +301,8 @@ if __name__ == '__main__':
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_validation_file_path=binary_validation_file_path,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
         elif input_format == "moving_window":
@@ -310,8 +311,8 @@ if __name__ == '__main__':
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 input_size=input_size,
                 output_size=output_size,
-                binary_train_file_path=binary_train_file_path,
-                binary_validation_file_path=binary_validation_file_path,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
 

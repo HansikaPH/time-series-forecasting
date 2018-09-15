@@ -145,8 +145,8 @@ class Seq2SeqModelTester:
 
         # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
-                                                                     padded_shapes=([], [tf.Dimension(None), 1],
-                                                                                    [self.__output_size, 1], [self.__output_size + 1, 1]))
+                                                                     padded_shapes=([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size],
+                                                                                    [tf.Dimension(None), self.__output_size + 1]))
 
         # get an iterator to the batches
         training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
@@ -189,8 +189,8 @@ class Seq2SeqModelTester:
                         for i in range(training_data_batch_value[1].shape[1]):
                             # check for the sequence length of each sequence to check if the sequence has ended
                             length_comparison_array = np.greater([i + 1] * np.shape(training_data_batch_value[1])[0], training_data_batch_value[0])
-                            input_sequence_length_values = np.where(length_comparison_array, 0, 15)
-                            output_sequence_length_values = np.where(length_comparison_array, 0, 12)
+                            input_sequence_length_values = np.where(length_comparison_array, 0, self.__input_size)
+                            output_sequence_length_values = np.where(length_comparison_array, 0, self.__output_size)
 
                             encoder_initial_state_value, _ = session.run([training_encoder_final_state, optimizer],
                                                                          feed_dict={training_input: np.expand_dims(training_data_batch_value[1][:, i, :], axis=2),

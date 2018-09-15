@@ -10,7 +10,7 @@ class model_testing_configs:
 class hyperparameter_tuning_configs:
     BAYESIAN_INIT_POINTS = 2
     BAYESIAN_NUM_ITER = 30
-    SMAC_RUNCOUNT_LIMIT = 1
+    SMAC_RUNCOUNT_LIMIT = 50
 
 class training_data_configs:
     SHUFFLE_BUFFER_SIZE = 10000
