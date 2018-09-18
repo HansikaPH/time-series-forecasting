@@ -130,6 +130,7 @@ class StackingModelTrainer:
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch)
+
                         session.run(optimizer,
                                     feed_dict={input: training_data_batch_value[1],
                                                true_output: training_data_batch_value[2],

@@ -1,3 +1,5 @@
+args <- commandArgs(trailingOnly = TRUE)
+
 OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window"
 
 file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
@@ -13,7 +15,7 @@ thursday= vector()
 friday = vector()
 saturday = vector()
 wrong= vector()
-"cif-dataset.txt"
+
 #replacing missing values
 for (idr in 1: nrow(nn5_dataset)) {
   oneLine_df=nn5_dataset[idr,]
@@ -73,8 +75,12 @@ for (idr in 1: nrow(nn5_dataset)) {
   }
 }
 
-INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
+if(length(args) != 0) {
+  input_size = as.integer(args[1])
+} else{
+  INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
+  input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
+}
 
 OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_stl_",sep='/')
 OUTPUT_PATH56=paste(OUTPUT_PATH56,max_forecast_horizon,sep='')
@@ -84,7 +90,6 @@ OUTPUT_PATH56=paste(OUTPUT_PATH56,'txt',sep='.')
 unlink(OUTPUT_PATH56)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
-print(numeric_dataset)
 numeric_dataset = numeric_dataset + 1
 
 numeric_dataset_log = log(numeric_dataset)

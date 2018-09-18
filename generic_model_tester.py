@@ -153,8 +153,8 @@ def testing(args, config_dictionary):
                 binary_test_file_path=binary_test_file_path_test_mode
             )
 
-    if 'learning_rate' in config_dictionary:
-        learning_rate = config_dictionary['learning_rate']
+    if 'rate_of_learning' in config_dictionary:
+        learning_rate = config_dictionary['rate_of_learning']
     num_hidden_layers = config_dictionary['num_hidden_layers']
     max_num_epochs = config_dictionary['max_num_epochs']
     max_epoch_size = config_dictionary['max_epoch_size']
