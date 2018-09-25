@@ -254,97 +254,40 @@ if __name__ == '__main__':
     elif optimizer == "adam":
         optimizer_fn = adam_optimizer_fn
 
+    # define the key word arguments for the different model types
+    model_kwargs = {
+        'use_bias' : BIAS,
+        'use_peepholes' : LSTM_USE_PEEPHOLES,
+        'input_size' : input_size,
+        'output_size' : output_size,
+        'binary_train_file_path' : binary_train_file_path_train_mode,
+        'binary_validation_file_path' : binary_validation_file_path_train_mode,
+        'contain_zero_values' : contain_zero_values
+    }
+
     # select the model type
     if model_type == "stacking":
-        model_trainer = StackingModelTrainer(
-            use_bias = BIAS,
-            use_peepholes = LSTM_USE_PEEPHOLES,
-            input_size = input_size,
-            output_size = output_size,
-            binary_train_file_path = binary_train_file_path_train_mode,
-            binary_validation_file_path = binary_validation_file_path_train_mode,
-            contain_zero_values = contain_zero_values
-        )
+        model_trainer = StackingModelTrainer(**model_kwargs)
     elif model_type == "seq2seq":
         if input_format == "non_moving_window":
-            model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(**model_kwargs)
         elif input_format == "moving_window":
-            model_trainer = Seq2SeqModelTrainerWithMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = Seq2SeqModelTrainerWithMovingWindow(**model_kwargs)
         elif input_format == "moving_window_one_input_per_step":
-            model_trainer = Seq2SeqModelTrainerWithMovingWindowOneInputPerStep(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = Seq2SeqModelTrainerWithMovingWindowOneInputPerStep(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindow(**model_kwargs)
         elif input_format == "moving_window":
-            model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
         if input_format == "non_moving_window":
             if without_stl_decomposition:
-                model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(
-                    use_bias=BIAS,
-                    use_peepholes=LSTM_USE_PEEPHOLES,
-                    output_size=output_size,
-                    binary_train_file_path=binary_train_file_path_train_mode,
-                    binary_validation_file_path=binary_validation_file_path_train_mode,
-                    contain_zero_values=contain_zero_values
-                )
+                model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(**model_kwargs)
             else:
-                model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(
-                    use_bias=BIAS,
-                    use_peepholes=LSTM_USE_PEEPHOLES,
-                    output_size=output_size,
-                    binary_train_file_path=binary_train_file_path_train_mode,
-                    binary_validation_file_path=binary_validation_file_path_train_mode,
-                    contain_zero_values=contain_zero_values
-                )
+                model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(**model_kwargs)
         elif input_format == "moving_window":
-            model_trainer = AttentionModelTrainerWithMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_train_mode,
-                binary_validation_file_path=binary_validation_file_path_train_mode,
-                contain_zero_values=contain_zero_values
-            )
+            model_trainer = AttentionModelTrainerWithMovingWindow(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values()

@@ -95,89 +95,40 @@ def testing(args, config_dictionary):
     elif optimizer == "adam":
         optimizer_fn = adam_optimizer_fn
 
+    # define the key word arguments for the different model types
+    model_kwargs = {
+        'use_bias': BIAS,
+        'use_peepholes': LSTM_USE_PEEPHOLES,
+        'input_size': input_size,
+        'output_size': output_size,
+        'binary_train_file_path': binary_train_file_path_test_mode,
+        'binary_test_file_path': binary_test_file_path_test_mode
+    }
+
     # select the model type
     if model_type == "stacking":
-        model_tester = StackingModelTester(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            input_size=input_size,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path_test_mode,
-            binary_test_file_path=binary_test_file_path_test_mode
-        )
+        model_tester = StackingModelTester(**model_kwargs)
     elif model_type == "seq2seq":
         if input_format == "non_moving_window":
-            model_tester = Seq2SeqModelTesterWithNonMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = Seq2SeqModelTesterWithNonMovingWindow(**model_kwargs)
         elif input_format == "moving_window":
-            model_tester = Seq2SeqModelTesterWithMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = Seq2SeqModelTesterWithMovingWindow(**model_kwargs)
         elif input_format == "moving_window_one_input_per_step":
-            model_tester = Seq2SeqModelTesterWithMovingWindowOneInputPerStep(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = Seq2SeqModelTesterWithMovingWindowOneInputPerStep(**model_kwargs)
 
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindow(**model_kwargs)
         elif input_format == "moving_window":
-            model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
         if input_format == "non_moving_window":
             if without_stl_decomposition:
-                model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(
-                    use_bias=BIAS,
-                    use_peepholes=LSTM_USE_PEEPHOLES,
-                    output_size=output_size,
-                    binary_train_file_path=binary_train_file_path_test_mode,
-                    binary_test_file_path=binary_test_file_path_test_mode
-                )
+                model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
             else:
-                model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(
-                    use_bias=BIAS,
-                    use_peepholes=LSTM_USE_PEEPHOLES,
-                    output_size=output_size,
-                    binary_train_file_path=binary_train_file_path_test_mode,
-                    binary_test_file_path=binary_test_file_path_test_mode
-                )
+                model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
         elif input_format == "moving_window":
-            model_tester = AttentionModelTesterWithMovingWindow(
-                use_bias=BIAS,
-                use_peepholes=LSTM_USE_PEEPHOLES,
-                input_size=input_size,
-                output_size=output_size,
-                binary_train_file_path=binary_train_file_path_test_mode,
-                binary_test_file_path=binary_test_file_path_test_mode
-            )
+            model_tester = AttentionModelTesterWithMovingWindow(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
