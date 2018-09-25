@@ -13,6 +13,7 @@ class TFRecordWriter:
         self.__binary_train_file_path = kwargs['binary_train_file_path']
         self.__binary_validation_file_path = kwargs['binary_validation_file_path']
         self.__binary_test_file_path = kwargs['binary_test_file_path']
+        self.__without_stl_decomposition = kwargs['without_stl_decomposition']
 
     # read the text data from text files
     def read_text_data(self):
@@ -42,7 +43,10 @@ class TFRecordWriter:
             validate_data_list = list(validate_file_reader)
 
         for series in validate_data_list:
-            last_validate_output_index = len(series) - self.__output_size - 3
+            if self.__without_stl_decomposition:
+                last_validate_output_index = len(series) - 3
+            else:
+                last_validate_output_index = len(series) - self.__output_size - 3
             last_validate_input_index = last_validate_output_index - self.__output_size - 1
             validate_input_data = series[1: last_validate_input_index + 1]
             validate_output_data = series[last_validate_input_index + 2 : last_validate_output_index + 1]
@@ -57,7 +61,10 @@ class TFRecordWriter:
             test_data_list = list(test_file_reader)
 
         for series in test_data_list:
-            last_test_input_index = len(series) - self.__output_size - 3
+            if self.__without_stl_decomposition:
+                last_test_input_index = len(series) - 3
+            else:
+                last_test_input_index = len(series) - self.__output_size - 3
             test_input_data = series[1: last_test_input_index + 1]
             test_meta_data = series[last_test_input_index + 2 : len(series)]
             self.__list_of_test_inputs.append(np.ascontiguousarray(test_input_data, dtype=np.float32))

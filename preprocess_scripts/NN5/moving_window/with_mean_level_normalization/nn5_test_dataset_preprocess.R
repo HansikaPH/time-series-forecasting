@@ -2,7 +2,7 @@ library(forecast)
 
 args <- commandArgs(trailingOnly = TRUE)
 
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window/with_mean_level_normalization"
 
 file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(t(file[,-1]))
@@ -100,10 +100,6 @@ time_series_length = ncol(numeric_dataset_log)
 
 for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
-  print(time_series_log)
-
-  write.table(t(time_series_log), file="nikan_test", row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
-
 
   stl_result= tryCatch({
     sstl=stl(ts(time_series_log,frequency=7),"period")
@@ -134,7 +130,7 @@ for (idr in 1: nrow(numeric_dataset_log)) {
     sav_df=data.frame(id=paste(idr,'|i',sep=''));
 
     for (ii in 1:input_size) {
-      sav_df[,paste('r',ii,sep='')]=stl_result[inn-input_size+ii,3]-level  #inputs: past values normalized by the level
+      sav_df[,paste('r',ii,sep='')]=stl_result[inn-input_size+ii,3] - level  #inputs: past values normalized by the mean_level
     }
 
 

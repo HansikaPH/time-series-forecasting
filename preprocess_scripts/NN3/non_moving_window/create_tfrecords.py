@@ -8,7 +8,8 @@ if __name__ == '__main__':
         test_file_path = '../../../datasets/text_data/NN3/non_moving_window/nn3_test_18.txt',
         binary_train_file_path = '../../../datasets/binary_data/NN3/non_moving_window/nn3_stl_18.tfrecords',
         binary_validation_file_path = '../../../datasets/binary_data/NN3/non_moving_window/nn3_stl_18v.tfrecords',
-        binary_test_file_path = '../../../datasets/binary_data/NN3/non_moving_window/nn3_test_18.tfrecords'
+        binary_test_file_path = '../../../datasets/binary_data/NN3/non_moving_window/nn3_test_18.tfrecords',
+        without_stl_decomposition=False
     )
 
     tfrecord_writer.read_text_data()

@@ -8,7 +8,8 @@ if __name__ == '__main__':
         test_file_path='../../../datasets/text_data/CIF_2016/non_moving_window/cif_test_12.txt',
         binary_train_file_path='../../../datasets/binary_data/CIF_2016/non_moving_window/cif_stl_12.tfrecords',
         binary_validation_file_path='../../../datasets/binary_data/CIF_2016/non_moving_window/cif_stl_12v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/CIF_2016/non_moving_window/cif_test_12.tfrecords'
+        binary_test_file_path='../../../datasets/binary_data/CIF_2016/non_moving_window/cif_test_12.tfrecords',
+        without_stl_decomposition=False
     )
 
     tfrecord_writer.read_text_data()

@@ -26,11 +26,13 @@ from rnn_architectures.seq2seq_model.with_decoder.moving_window.window_per_step.
 from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_step.seq2seq_model_trainer import Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindowOneInputPerStep
 
 # seq2seq model with dense layer
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindow
+from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_trainer import Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerMovingWindow
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.non_moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindow
-from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithoutSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_trainer import AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithSeasonality
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -201,7 +203,7 @@ if __name__ == '__main__':
 
     argument_parser = argparse.ArgumentParser("Train different forecasting models")
     argument_parser.add_argument('--dataset_name', required = True, help = 'Unique string for the name of the dataset')
-    argument_parser.add_argument('--contain_zero_values', required = True, help = 'Whether the dataset contains zero values')
+    argument_parser.add_argument('--contain_zero_values', required = True, help = 'Whether the dataset contains zero values(0/1)')
     argument_parser.add_argument('--initial_hyperparameter_values_file', required=True, help='The file for the initial hyperparameter configurations')
     argument_parser.add_argument('--binary_train_file_train_mode', required = True, help = 'The tfrecords file for train dataset in the training mode')
     argument_parser.add_argument('--binary_valid_file_train_mode', required=True, help='The tfrecords file for validation dataset in the training mode')
@@ -215,6 +217,7 @@ if __name__ == '__main__':
     argument_parser.add_argument('--hyperparameter_tuning', required=True, help='The method for hyperparameter tuning(bayesian/smac)')
     argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer/attention)')
     argument_parser.add_argument('--input_format', required=True, help='Input format(moving_window/non_moving_window)')
+    argument_parser.add_argument('--without_stl_decomposition', required=False, help='Whether not to use stl decomposition(0/1). Default is 0')
 
     # parse the user arguments
     args = argument_parser.parse_args()
@@ -223,8 +226,9 @@ if __name__ == '__main__':
     initial_hyperparameter_values_file = args.initial_hyperparameter_values_file
     binary_train_file_path_train_mode = args.binary_train_file_train_mode
     binary_validation_file_path_train_mode = args.binary_valid_file_train_mode
-    contain_zero_values = args.contain_zero_values
-    if(args.input_size):
+    contain_zero_values = int(args.contain_zero_values)
+
+    if args.input_size:
         input_size = int(args.input_size)
     else:
         input_size = 0
@@ -235,7 +239,12 @@ if __name__ == '__main__':
     model_type = args.model_type
     input_format = args.input_format
 
-    print("Model Training Started for {}_{}_{}_{}_{}".format(dataset_name, model_type, input_format, hyperparameter_tuning, optimizer))
+    if args.without_stl_decomposition:
+        without_stl_decomposition = int(args.without_stl_decomposition)
+    else:
+        without_stl_decomposition = 0
+
+    print("Model Training Started for {}_{}_{}_without_stl_decomposition{}_{}_{}".format(dataset_name, model_type, input_format, str(without_stl_decomposition), hyperparameter_tuning, optimizer))
 
     # select the optimizer
     if optimizer == "cocob":
@@ -287,17 +296,8 @@ if __name__ == '__main__':
                 contain_zero_values=contain_zero_values
             )
     elif model_type == "seq2seqwithdenselayer":
-        model_trainer = Seq2SeqModelTrainerWithDenseLayer(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path_train_mode,
-            binary_validation_file_path=binary_validation_file_path_train_mode,
-            contain_zero_values=contain_zero_values
-        )
-    elif model_type == "attention":
         if input_format == "non_moving_window":
-            model_trainer = AttentionModelTrainerWithNonMovingWindow(
+            model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindow(
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
@@ -305,6 +305,36 @@ if __name__ == '__main__':
                 binary_validation_file_path=binary_validation_file_path_train_mode,
                 contain_zero_values=contain_zero_values
             )
+        elif input_format == "moving_window":
+            model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path_train_mode,
+                binary_validation_file_path=binary_validation_file_path_train_mode,
+                contain_zero_values=contain_zero_values
+            )
+    elif model_type == "attention":
+        if input_format == "non_moving_window":
+            if without_stl_decomposition:
+                model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(
+                    use_bias=BIAS,
+                    use_peepholes=LSTM_USE_PEEPHOLES,
+                    output_size=output_size,
+                    binary_train_file_path=binary_train_file_path_train_mode,
+                    binary_validation_file_path=binary_validation_file_path_train_mode,
+                    contain_zero_values=contain_zero_values
+                )
+            else:
+                model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(
+                    use_bias=BIAS,
+                    use_peepholes=LSTM_USE_PEEPHOLES,
+                    output_size=output_size,
+                    binary_train_file_path=binary_train_file_path_train_mode,
+                    binary_validation_file_path=binary_validation_file_path_train_mode,
+                    contain_zero_values=contain_zero_values
+                )
         elif input_format == "moving_window":
             model_trainer = AttentionModelTrainerWithMovingWindow(
                 use_bias=BIAS,
@@ -326,8 +356,8 @@ if __name__ == '__main__':
         optimized_configuration = smac()
 
     # persist the optimized configuration to a file
-    persist_results(optimized_configuration, optimized_config_directory + '/' + dataset_name + '_' + model_type + '_' + input_format + '_' +
-                    hyperparameter_tuning + '_' + optimizer + '.txt')
+    persist_results(optimized_configuration, optimized_config_directory + '/' + dataset_name + '_' + model_type + '_' + input_format + '_' + "without_stl_decomposition" + str(without_stl_decomposition) +
+                    "_" + hyperparameter_tuning + '_' + optimizer + '.txt')
 
     # test the model
     testing(args, optimized_configuration)

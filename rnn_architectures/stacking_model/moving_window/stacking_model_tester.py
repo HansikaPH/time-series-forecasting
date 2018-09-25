@@ -30,6 +30,7 @@ class StackingModelTester:
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         optimizer_fn = kwargs['optimizer_fn']
 
+
         # reset the tensorflow graph
         tf.reset_default_graph()
 

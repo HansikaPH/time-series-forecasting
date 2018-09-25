@@ -6,9 +6,8 @@ forecast_file_path = args[1]
 errors_file_name = args[2]
 txt_test_file_name = args[3]
 actual_results_file_name = args[4]
-input_size = as.numeric(args[5])
-output_size = as.numeric(args[6])
-contain_zero_values = as.numeric(args[7])
+output_size = as.numeric(args[5])
+contain_zero_values = as.numeric(args[6])
 
 root_directory = paste(dirname(getwd()), "time-series-forecasting", sep="/")
 
@@ -25,82 +24,41 @@ actual_results=read.csv(file=actual_results_file_full_name,sep=';',header = FALS
 
 # text test data file name
 txt_test_file_full_name = paste(root_directory, txt_test_file_name, sep="/")
-txt_test_df=read.csv(file=txt_test_file_full_name,sep = " ",header = FALSE)
+txt_test_df = readLines(txt_test_file_full_name)
+txt_test_df = strsplit(txt_test_df, " ")
 
 # forecasts file name
 forecasts_file_full_name = paste(root_directory, forecast_file_path, sep="/")
 forecasts_df=read.csv(forecasts_file_full_name, header = F, sep = ",")
 
 names(actual_results)[1]="Series"
+
 actual_results <- actual_results[,-1]
-
-# take the transpose of the dataframe
-value <- t(txt_test_df[1])
-
-indexes <- length(value) - match(unique(value), rev(value)) + 1
-
-uniqueindexes <- unique(indexes)
-
 actual_results_df <- actual_results[rowSums(is.na(actual_results)) == 0,]
 
 converted_forecasts_df = NULL
 converted_forecasts_matrix = matrix(nrow = nrow(forecasts_df), ncol = output_size)
 
-# test_data_level_df = NULL
-# test_data_seasonality_df = NULL
-
 for(k in 1 :nrow(forecasts_df)){
   one_ts_forecasts = as.numeric(forecasts_df[k,])
-  finalindex <- uniqueindexes[k]
-  one_line_test_data = as.numeric(txt_test_df[finalindex,])
-  level_value = one_line_test_data[input_size + 3]
+  one_line_test_data = as.numeric(unlist(txt_test_df[k]))
 
-  # if (is.null(test_data_level_df)){
-  #   test_data_level_df = as.data.frame(level_value)
-  # } else{
-  #   test_data_level_df = rbind(test_data_level_df, as.data.frame(level_value))
-  # }
-  #
-  seasonal_values = one_line_test_data[input_size + 4:length(one_line_test_data)]
-  #
-  # if(is.null(test_data_seasonality_df)){
-  #   test_data_seasonality_df = as.data.frame(seasonal_values)
-  # } else{
-  #   test_data_seasonality_df = cbind(test_data_seasonality_df, as.data.frame(seasonal_values))
-  # }
-  # cbind(test_data_seasonality_df, seasonal_values)
-  # print(paste("time_series: ", k))
-  # print("one_ts_forecasts")
-  # print(one_ts_forecasts)
-  # print("level values")
-  # print(level_value)
-  # print("seasonal values")
-  # print(seasonal_values)
-
-
-  # if(k == 48){
-  #   print(k)
-  #   logged_actual = log(actual_results_df[k, ]) - level_value - seasonal_values
-  #   print(logged_actual)
-  #   print(one_ts_forecasts)
-  #   # print(logged_actual - exp(one_ts_forecasts))
-  # }
+  level_value = one_line_test_data[length(one_line_test_data) - output_size]
+  # seasonal_values = tail(one_line_test_data, output_size)
 
   for (ii in 1:output_size) {
-    converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii])
+    converted_value = exp(one_ts_forecasts[ii] + level_value
+# + seasonal_values[ii]
+)
     if(contain_zero_values == 1){
       converted_value = converted_value -1
     }
     converted_forecasts_df[ii] =  converted_value
   }
-  # print("converted forecasts")
-  # print(converted_forecasts_df)
   converted_forecasts_matrix[k,] = converted_forecasts_df
 }
 
-time_series_wise_errors <- 2*abs(converted_forecasts_matrix-actual_results_df)/(abs(converted_forecasts_matrix)+abs(actual_results_df))
-sMAPEPerSeries1 <- rowMeans(time_series_wise_errors, na.rm=TRUE)
-
+sMAPEPerSeries1 <- rowMeans(2*abs(converted_forecasts_matrix-actual_results_df)/(abs(converted_forecasts_matrix)+abs(actual_results_df)), na.rm=TRUE)
 
 mean_error = mean(sMAPEPerSeries1)
 median_error = median(sMAPEPerSeries1)
@@ -118,79 +76,45 @@ writeLines(c(mean_error, median_error, std_error, "\n"), file_connection)
 close(file_connection)
 write.table(sMAPEPerSeries1, errors_file_full_name_all_errors, row.names=FALSE, col.names=FALSE)
 
-
-# forecasts = as.data.frame(t(forecasts_df))
-# names(forecasts)[1:ncol(forecasts)]=paste('ts',(1:(ncol(forecasts))),sep='_')
-# forecasts$date = (1:56)
-# # forecasts <- melt(forecasts, id = "date")
-# ggplot(data = forecasts, aes(x=date, y =ts_21, group=1)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts, aes(x=date, y =ts_49, group=1)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts, aes(x=date, y =ts_12, group=1)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts, aes(x=date, y =ts_20, group=1)) + geom_line(color = "#00AFBB", size = 1)
-#
-# names(test_data_level_df)[1] = "level"
-# test_data_level_df$ts = paste('ts',(1:(nrow(test_data_level_df))),sep='_')
-# new = test_data_level_df[test_data_level_df$level < 2.25, ]
-# ggplot(new, aes(x=ts, y=level, group=1)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts_df, aes(y = as.numeric(forecasts_df[21, ]))) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts_df, aes(y =forecasts_df[21])) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = forecasts_df, aes(y =forecasts_df[21])) + geom_line(color = "#00AFBB", size = 1)
-
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_21))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_28)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_28))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_48)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_48))+geom_line(color = "#00AFBB", size = 1)
-
-
 # errors_data_frame = as.data.frame(sMAPEPerSeries1)
 # names(errors_data_frame) = "Errors"
 # errors_data_frame$time_series_no = (1: nrow(errors_data_frame))
 # print(errors_data_frame[errors_data_frame$Errors >= 0.6, ])
-
-# plot the errors
+#
+# # plot the errors
 # ggplot(data = errors_data_frame, aes(x =time_series_no, y=Errors)) + geom_line(color = "#00AFBC", size = 1)
-
-
+#
+#
 # print(sMAPEPerSeries1)
 #
 # print(median(sMAPEPerSeries1))
 # print(mean(errors_data_frame$Errors[errors_data_frame$Errors < 0.6]))
-
-# prepare the actual results for plotting
+#
+# # prepare the actual results for plotting
 # transposed_actual_results <- as.data.frame(t(actual_results[,-1]))
 # names(transposed_actual_results)[1:ncol(transposed_actual_results)]=paste('ts',(1:(ncol(transposed_actual_results))),sep='_')
 # transposed_actual_results$actual_result_no = (1: nrow(transposed_actual_results))
-
-# prepare the forecasts for plotting
+#
+# # prepare the forecasts for plotting
 # transposed_forecasts <- as.data.frame(t(converted_forecasts_matrix))
 # names(transposed_forecasts)[1:ncol(transposed_forecasts)]=paste('ts',(1:(ncol(transposed_forecasts))),sep='_')
 # transposed_forecasts$forecast_no = (1: nrow(transposed_forecasts))
-
-# plot the actual results and forecasts
+#
+# # plot the actual results and forecasts
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_2)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_2))+geom_line(color = "#00AFBB", size = 1)
-
+#
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_55)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_55))+geom_line(color = "#00AFBB", size = 1)
-
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_17)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_17))+geom_line(color = "#00AFBB", size = 1)
+#
+# # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_17)) + geom_line(color = "#00AFBB", size = 1)
+# # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_17))+geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_21)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_21))+geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_28)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_28))+geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_48)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_48))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_49)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_49))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_65)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_65))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_72)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_72))+geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_108)) + geom_line(color = "#00AFBB", size = 1)
-# ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_108))+geom_line(color = "#00AFBB", size = 1)
-
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_49)) + geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_forecasts, aes(x =forecast_no, y=ts_49))+geom_line(color = "#00AFBB", size = 1)
 # ggplot(data = transposed_actual_results, aes(x =actual_result_no, y=ts_65)) + geom_line(color = "#00AFBB", size = 1)

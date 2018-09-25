@@ -54,7 +54,6 @@ class TFRecordWriter:
         val_df = pd.read_csv(self.__validate_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
 
         val_df = val_df.rename(columns={0: 'series'})
-        val_df = val_df.rename(columns={(self.__input_size + self.__output_size + 3): 'level'})
         series = np.unique(val_df['series'])
 
         for ser in series:

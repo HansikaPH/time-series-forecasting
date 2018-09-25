@@ -161,15 +161,14 @@ class StackingModelTrainer:
 
                             true_seasonality_values = validation_data_batch_value[3][array_first_dimension,
                                                       last_indices, 1:]
+
                             level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
                             last_validation_outputs = validation_output[array_first_dimension, last_indices]
-                            converted_validation_output = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+                            converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
 
                             actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                            converted_actual_values = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + actual_values)
+                            converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
 
                             if (self.__contain_zero_values):  # to compensate for 0 values in data
                                 converted_validation_output = converted_validation_output - 1

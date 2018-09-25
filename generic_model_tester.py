@@ -14,11 +14,13 @@ from rnn_architectures.seq2seq_model.with_decoder.moving_window.window_per_step.
 from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_step.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithMovingWindowOneInputPerStep
 
 # seq2seq model with dense layer
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindow
+from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindow
-from rnn_architectures.attention_model.bahdanau_attention.without_seasonality.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -63,7 +65,7 @@ def testing(args, config_dictionary):
     global learning_rate
 
     dataset_name = args.dataset_name
-    contain_zero_values = args.contain_zero_values
+    contain_zero_values = int(args.contain_zero_values)
     binary_train_file_path_test_mode = args.binary_train_file_test_mode
     binary_test_file_path_test_mode = args.binary_test_file_test_mode
     txt_test_file_path = args.txt_test_file
@@ -78,7 +80,12 @@ def testing(args, config_dictionary):
     model_type = args.model_type
     input_format = args.input_format
 
-    print("Model Testing Started for {}_{}_{}_{}_{}".format(dataset_name, model_type, input_format, hyperparameter_tuning, optimizer))
+    if args.without_stl_decomposition:
+        without_stl_decomposition = int(args.without_stl_decomposition)
+    else:
+        without_stl_decomposition = 0
+
+    print("Model Testing Started for {}_{}_{}_without_stl_decomposition{}_{}_{}".format(dataset_name, model_type, input_format, str(without_stl_decomposition), hyperparameter_tuning, optimizer))
 
     # select the optimizer
     if optimizer == "cocob":
@@ -127,22 +134,41 @@ def testing(args, config_dictionary):
             )
 
     elif model_type == "seq2seqwithdenselayer":
-        model_tester = Seq2SeqModelTesterWithDenseLayer(
-            use_bias=BIAS,
-            use_peepholes=LSTM_USE_PEEPHOLES,
-            output_size=output_size,
-            binary_train_file_path=binary_train_file_path_test_mode,
-            binary_test_file_path=binary_test_file_path_test_mode
-        )
-    elif model_type == "attention":
         if input_format == "non_moving_window":
-            model_tester = AttentionModelTesterWithNonMovingWindow(
+            model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindow(
                 use_bias=BIAS,
                 use_peepholes=LSTM_USE_PEEPHOLES,
                 output_size=output_size,
                 binary_train_file_path=binary_train_file_path_test_mode,
                 binary_test_file_path=binary_test_file_path_test_mode
             )
+        elif input_format == "moving_window":
+            model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(
+                use_bias=BIAS,
+                use_peepholes=LSTM_USE_PEEPHOLES,
+                input_size=input_size,
+                output_size=output_size,
+                binary_train_file_path=binary_train_file_path_test_mode,
+                binary_test_file_path=binary_test_file_path_test_mode
+            )
+    elif model_type == "attention":
+        if input_format == "non_moving_window":
+            if without_stl_decomposition:
+                model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(
+                    use_bias=BIAS,
+                    use_peepholes=LSTM_USE_PEEPHOLES,
+                    output_size=output_size,
+                    binary_train_file_path=binary_train_file_path_test_mode,
+                    binary_test_file_path=binary_test_file_path_test_mode
+                )
+            else:
+                model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(
+                    use_bias=BIAS,
+                    use_peepholes=LSTM_USE_PEEPHOLES,
+                    output_size=output_size,
+                    binary_train_file_path=binary_train_file_path_test_mode,
+                    binary_test_file_path=binary_test_file_path_test_mode
+                )
         elif input_format == "moving_window":
             model_tester = AttentionModelTesterWithMovingWindow(
                 use_bias=BIAS,
@@ -173,19 +199,23 @@ def testing(args, config_dictionary):
                                       optimizer_fn = optimizer_fn)
 
     # write the forecasting results to a file
-    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + input_format + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + input_format + '_' + "without_stl_decomposition" + str(without_stl_decomposition) + "_" + hyperparameter_tuning + '_' + optimizer + '.txt'
 
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)
 
     # invoke the final evaluation R script
-    error_file_name = dataset_name + '_' + model_type + '_' + input_format + '_' + hyperparameter_tuning + '_' + optimizer + '.txt'
+    error_file_name = dataset_name + '_' + model_type + '_' + input_format + '_' + "without_stl_decomposition" + str(without_stl_decomposition) + "_" + hyperparameter_tuning + '_' + optimizer + '.txt'
 
-    if(input_format == "moving_window"):
-        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), contain_zero_values), True)
+    if input_format == "moving_window":
+        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True, False)
     else:
-        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), contain_zero_values), False)
+        if without_stl_decomposition:
+            invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
+        else:
+            invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path,
+                             str(output_size), str(contain_zero_values)), False, False)
 
 
 
