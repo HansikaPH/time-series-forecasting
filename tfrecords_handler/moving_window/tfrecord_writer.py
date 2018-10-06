@@ -35,7 +35,7 @@ class TFRecordWriter:
         train_df = train_df.rename(columns={0: 'series'})
 
         # Returns unique number of time series in the dataset.
-        series = np.unique(train_df['series'])
+        series = pd.unique(train_df['series'])
 
         # Construct input and output training tuples for each time series.
         for ser in series:
@@ -54,7 +54,7 @@ class TFRecordWriter:
         val_df = pd.read_csv(self.__validate_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
 
         val_df = val_df.rename(columns={0: 'series'})
-        series = np.unique(val_df['series'])
+        series = pd.unique(val_df['series'])
 
         for ser in series:
             one_series_df = val_df[val_df['series'] == ser]
@@ -75,7 +75,7 @@ class TFRecordWriter:
 
         test_df = test_df.rename(columns={0: 'series'})
 
-        series1 = np.unique(test_df['series'])
+        series1 = pd.unique(test_df['series'])
 
         for ser in series1:
             test_series_df = test_df[test_df['series'] == ser]

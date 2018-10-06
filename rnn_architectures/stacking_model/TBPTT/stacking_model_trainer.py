@@ -20,6 +20,11 @@ class StackingModelTrainer:
         loss = tf.reduce_mean(tf.abs(t - z))
         return loss
 
+
+    def __l2_loss(self, z, t):
+        loss = tf.losses.mean_squared_error(labels=t, predictions=z)
+        return loss
+
     # Training the time series
     def train_model(self, **kwargs):
 
@@ -32,6 +37,10 @@ class StackingModelTrainer:
         l2_regularization = kwargs['l2_regularization']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         optimizer_fn = kwargs['optimizer_fn']
+        random_normal_initializer_stdev=kwargs['random_normal_initializer_stdev']
+        tbptt_chunk_length = kwargs['tbptt_chunk_length']
+
+        print(kwargs)
 
         tf.reset_default_graph()
 
@@ -48,22 +57,32 @@ class StackingModelTrainer:
         true_output = tf.placeholder(dtype = tf.float32, shape = [None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=1)
+
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
             return lstm_cell
 
+        initial_state = tf.placeholder(dtype=tf.float32,
+                                       shape=[int(num_hidden_layers), 2, None, int(lstm_cell_dimension)])
+        layerwise_initial_state = tf.unstack(initial_state, axis=0)
+        initial_state_tuple = tuple(
+            [tf.nn.rnn_cell.LSTMStateTuple(layerwise_initial_state[layer][0],
+                                           layerwise_initial_state[layer][1])
+             for layer in range(int(num_hidden_layers))]
+        )
+
         multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths,
+        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths, initial_state=initial_state_tuple,
                                                 dtype=tf.float32)
 
         # connect the dense layer to the RNN
         prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32),
                                       units=self.__output_size,
-                                      use_bias=self.__use_bias)
+                                      use_bias=self.__use_bias, kernel_initializer=weight_initializer)
 
-        # error that should be minimized in the training process
-        error = self.__l1_loss(prediction_output, true_output)
+        error = self.__l2_loss(prediction_output, true_output)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -89,10 +108,9 @@ class StackingModelTrainer:
         validation_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
 
         # prepare the training data into batches
-        # randomly shuffle the time series within the dataset
-        training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
+        # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
+        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size)))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
-        training_dataset.repeat(int(max_epoch_size))
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
                                                                      padded_shapes=train_padded_shapes)
@@ -131,10 +149,33 @@ class StackingModelTrainer:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch)
 
-                        session.run(optimizer,
-                                    feed_dict={input: training_data_batch_value[1],
-                                               true_output: training_data_batch_value[2],
-                                               sequence_lengths: training_data_batch_value[0]})
+                        current_minibatch_size = np.shape(training_data_batch_value[1])[0]
+
+                        number_of_chunks = np.ceil(np.shape(training_data_batch_value[1])[1] / tbptt_chunk_length)
+
+                        input_arrays = np.array_split(training_data_batch_value[1],
+                                                      indices_or_sections=number_of_chunks, axis=1)
+                        output_arrays = np.array_split(training_data_batch_value[2],
+                                                       indices_or_sections=number_of_chunks, axis=1)
+
+                        initial_state_value = np.zeros(
+                            shape=(int(num_hidden_layers), 2, current_minibatch_size, int(lstm_cell_dimension)),
+                            dtype=np.float32)
+
+                        # loop through the truncated mini batches for each mini-batch
+                        for i in range(len(input_arrays)):
+                            length_comparison_array = np.greater(
+                                [(i + 1) * number_of_chunks] * np.shape(training_data_batch_value[1])[0],
+                                training_data_batch_value[0])
+                            sequence_length_values = np.where(length_comparison_array, 0, number_of_chunks)
+
+                            initial_state_value, _, loss = session.run([states, optimizer, total_loss],
+                                                                       feed_dict={input: input_arrays[i],
+                                                                                  true_output: output_arrays[i],
+                                                                                  initial_state: initial_state_value,
+                                                                                  sequence_lengths: sequence_length_values
+                                                                                  })
+
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -147,10 +188,17 @@ class StackingModelTrainer:
                             # get the batch of validation inputs
                             validation_data_batch_value = session.run(next_validation_data_batch)
 
+                            current_minibatch_size = np.shape(validation_data_batch_value[1])[0]
+
+                            initial_state_value = np.zeros(
+                                shape=(int(num_hidden_layers), 2, current_minibatch_size, int(lstm_cell_dimension)),
+                                dtype=np.float32)
+
                             # get the output of the network for the validation input data batch
                             validation_output = session.run(prediction_output,
                                                             feed_dict={input: validation_data_batch_value[1],
-                                                                       sequence_lengths: validation_data_batch_value[0]
+                                                                       sequence_lengths: validation_data_batch_value[0],
+                                                                       initial_state: initial_state_value
                                                                        })
 
                             # calculate the smape for the validation data using vectorization
@@ -166,6 +214,7 @@ class StackingModelTrainer:
 
                             last_validation_outputs = validation_output[array_first_dimension, last_indices]
                             converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+
 
                             actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
                             converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)

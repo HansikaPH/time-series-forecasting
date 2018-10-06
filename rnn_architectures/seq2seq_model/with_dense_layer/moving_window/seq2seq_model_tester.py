@@ -159,13 +159,9 @@ class Seq2SeqModelTesterWithDenseLayer:
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
-                    # shape for the target data
-                    target_data_shape = [np.shape(test_input_batch_value[1])[0], np.shape(test_input_batch_value[1])[1], self.__output_size]
-
                     # get the output of the network for the test input data batch
                     test_output = session.run(prediction_output,
                                               feed_dict={input: test_input_batch_value[1],
-                                                         target: np.zeros(shape = target_data_shape),
                                                          input_sequence_length: test_input_batch_value[0],
                                                          })
 

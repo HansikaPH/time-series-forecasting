@@ -6,7 +6,8 @@ import random
 # import the different model types
 
 # stacking model
-from rnn_architectures.stacking_model.moving_window.stacking_model_tester import StackingModelTester
+from rnn_architectures.stacking_model.BPTT.stacking_model_tester import StackingModelTester as BPTTStackingModelTester
+from rnn_architectures.stacking_model.TBPTT.stacking_model_tester import StackingModelTester as TBPTTStackingModelTester
 
 # seq2seq model with decoder
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindow
@@ -82,10 +83,20 @@ def testing(args, config_dictionary):
 
     if args.without_stl_decomposition:
         without_stl_decomposition = int(args.without_stl_decomposition)
+        stl_decomposition_identifier = "without_stl_decomposition"
     else:
         without_stl_decomposition = 0
+        stl_decomposition_identifier = "with_stl_decomposition"
 
-    print("Model Testing Started for {}_{}_{}_without_stl_decomposition{}_{}_{}".format(dataset_name, model_type, input_format, str(without_stl_decomposition), hyperparameter_tuning, optimizer))
+    if args.with_truncated_backprpagation:
+        with_truncated_backprpagation = int(args.with_truncated_backprpagation)
+        tbptt_identifier = "with_truncated_backpropagation"
+    else:
+        with_truncated_backprpagation = 0
+        tbptt_identifier = "without_truncated_backpropagation"
+
+    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier
+    print("Model Testing Started for {}".format(model_identifier))
 
     # select the optimizer
     if optimizer == "cocob":
@@ -107,7 +118,10 @@ def testing(args, config_dictionary):
 
     # select the model type
     if model_type == "stacking":
-        model_tester = StackingModelTester(**model_kwargs)
+        if with_truncated_backprpagation == 0:
+            model_tester = BPTTStackingModelTester(**model_kwargs)
+        else:
+            model_tester = TBPTTStackingModelTester(**model_kwargs)
     elif model_type == "seq2seq":
         if input_format == "non_moving_window":
             model_tester = Seq2SeqModelTesterWithNonMovingWindow(**model_kwargs)
@@ -139,6 +153,11 @@ def testing(args, config_dictionary):
     l2_regularization = config_dictionary['l2_regularization']
     minibatch_size = config_dictionary['minibatch_size']
     gaussian_noise_stdev = config_dictionary['gaussian_noise_stdev']
+    random_normal_initializer_stdev = config_dictionary['random_normal_initializer_stdev']
+    if 'tbptt_chunk_length' in config_dictionary:
+        tbptt_chunk_length = config_dictionary['tbptt_chunk_length']
+    else:
+        tbptt_chunk_length = 0
 
     list_of_forecasts = model_tester.test_model(num_hidden_layers = int(round(num_hidden_layers)),
                                       lstm_cell_dimension = int(round(lstm_cell_dimension)),
@@ -147,17 +166,19 @@ def testing(args, config_dictionary):
                                       max_num_epochs = int(round(max_num_epochs)),
                                       l2_regularization = l2_regularization,
                                       gaussian_noise_stdev = gaussian_noise_stdev,
+                                      random_normal_initializer_stdev=random_normal_initializer_stdev,
+                                      tbptt_chunk_length = tbptt_chunk_length,
                                       optimizer_fn = optimizer_fn)
 
     # write the forecasting results to a file
-    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + dataset_name + '_' + model_type + '_' + input_format + '_' + "without_stl_decomposition" + str(without_stl_decomposition) + "_" + hyperparameter_tuning + '_' + optimizer + '.txt'
+    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + model_identifier + '.txt'
 
     with open(forecast_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)
 
     # invoke the final evaluation R script
-    error_file_name = dataset_name + '_' + model_type + '_' + input_format + '_' + "without_stl_decomposition" + str(without_stl_decomposition) + "_" + hyperparameter_tuning + '_' + optimizer + '.txt'
+    error_file_name = model_identifier + '.txt'
 
     if input_format == "moving_window":
         invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True, False)
