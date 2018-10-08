@@ -109,7 +109,8 @@ class StackingModelTrainer:
 
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
-        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size)))
+        shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
+        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
@@ -143,11 +144,11 @@ class StackingModelTrainer:
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
-                session.run(training_data_batch_iterator.initializer) #initialize the iterator to the beginning of the training dataset
+                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch}) #initialize the iterator to the beginning of the training dataset
 
                 while True:
                     try:
-                        training_data_batch_value = session.run(next_training_data_batch)
+                        training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
 
                         current_minibatch_size = np.shape(training_data_batch_value[1])[0]
 

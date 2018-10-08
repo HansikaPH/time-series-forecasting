@@ -1,17 +1,15 @@
 library(forecast)
 
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/M4/"
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/moving_window/"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/M4/train_data/Monthly-train.csv",sep=',',header = FALSE)
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-train.csv",sep=',',header = TRUE)
 m4_dataset <-as.data.frame(t(file[,-1]))
 
 max_forecast_horizon=18
+seasonality_period = 12
 
 INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
-
-files <- dir(path=OUTPUT_DIR, pattern="m4_test_monthly*")
-file.remove(paste(OUTPUT_DIR, files, sep = ''))
+input_size=as.integer(INPUT_SIZE_MULTIP*seasonality_period)
 
 for (idr in 1: nrow(m4_dataset)) {
   if(idr <= 10016 && idr >= 1){ #Macro Series
@@ -67,16 +65,12 @@ for (idr in 1: nrow(m4_dataset)) {
     level=stl_result[inn, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
     sav_df=data.frame(id=paste(idr,'|i',sep=''));
 
-    for (ii in 1:input_size) {
-      sav_df[,paste('r',ii,sep='')]=stl_result[inn-input_size+ii,3]-level  #inputs: past values normalized by the level
-    }
+    sav_df[,paste('r',(1:input_size),sep='')] = stl_result[(inn - input_size + 1) : inn, 3] - level #inputs: past values normalized by the level
 
     sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
                  #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
     sav_df[,'level']=level
-    for (ii in 1:max_forecast_horizon) {
-        sav_df[,paste('s',ii,sep='')]=seasonality[ii]
-    }
+    sav_df[,paste('s',(1:max_forecast_horizon),sep='')]=seasonality[1 : max_forecast_horizon]
 
     write.table(sav_df, file=OUTPUT_PATH, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
 

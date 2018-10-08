@@ -72,11 +72,6 @@ class StackingModelTrainer:
                                       units=self.__output_size,
                                       use_bias=self.__use_bias, kernel_initializer=weight_initializer)
 
-        # error that should be minimized in the training process
-        # x = true_output - prediction_output
-        # y = tf.abs(x)
-        # error = tf.reduce_mean(y)
-        # total_loss = tf.reduce_mean(tf.abs(true_output - prediction_output))
         error = self.__l2_loss(prediction_output, true_output)
 
         # l2 regularization of the trainable model parameters
@@ -104,7 +99,8 @@ class StackingModelTrainer:
 
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
-        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size)))
+        shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
+        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
@@ -138,11 +134,11 @@ class StackingModelTrainer:
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
-                session.run(training_data_batch_iterator.initializer) #initialize the iterator to the beginning of the training dataset
+                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch}) #initialize the iterator to the beginning of the training dataset
 
                 while True:
                     try:
-                        training_data_batch_value = session.run(next_training_data_batch)
+                        training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed: epoch})
 
                         _, output, loss = session.run([optimizer, prediction_output, total_loss],
                                     feed_dict={input: training_data_batch_value[1],
@@ -180,7 +176,6 @@ class StackingModelTrainer:
                             last_validation_outputs = validation_output[array_first_dimension, last_indices]
                             converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
 
-                            # print(last_validation_outputs)
 
                             actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
                             converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)

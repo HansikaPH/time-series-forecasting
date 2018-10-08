@@ -136,9 +136,10 @@ class Seq2SeqModelTrainer:
                                     [self.__output_size + 1, 1])
 
         # preparing the training data
-        training_dataset.shuffle(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE)
+        shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
+        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+                                                                  count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader_with_moving_window.train_data_parser)
-        training_dataset.repeat(int(max_epoch_size))
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size,
                                                                      padded_shapes=train_padded_shapes)
@@ -171,11 +172,11 @@ class Seq2SeqModelTrainer:
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
-                session.run(training_data_batch_iterator.initializer)
+                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch})
 
                 while True:
                     try:
-                        training_data_batch_value = session.run(next_training_data_batch)
+                        training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
                         current_minibatch_size = np.shape(training_data_batch_value[1])[0]
 
                         encoder_initial_state_value = np.zeros(shape = (int(num_hidden_layers), 2, current_minibatch_size, int(lstm_cell_dimension)), dtype=np.float32)
