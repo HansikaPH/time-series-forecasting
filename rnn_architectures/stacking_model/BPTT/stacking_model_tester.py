@@ -70,7 +70,7 @@ class StackingModelTester:
                                       use_bias=self.__use_bias, kernel_initializer=weight_initializer)
 
         # error that should be minimized in the training process
-        error = self.__l2_loss(prediction_output, true_output)
+        error = self.__l1_loss(prediction_output, true_output)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
