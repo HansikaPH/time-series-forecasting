@@ -45,23 +45,7 @@ def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
 
 def testing(args, config_dictionary):
-
-    # argument_parser = argparse.ArgumentParser("Test different forecasting models on different datasets")
-    # argument_parser.add_argument('--binary_train_file', required=True, help='The tfrecords file for train dataset')
-    # argument_parser.add_argument('--binary_test_file', required=True, help='The tfrecords file for test dataset')
-    # argument_parser.add_argument('--input_size', required=True, help='The input size of the dataset')
-    # argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
-    # argument_parser.add_argument('--optimizer', required = True, help = 'The type of the optimizer(cocob/adam/adagrad...)')
-    # argument_parser.add_argument('--hyperparameter_tuning', required=True,
-    #                              help='The method for hyperparameter tuning(bayesian/smac)')
-    # argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/non_moving_window/attention)')
-    #
-    # # parse the user arguments
-    # args = argument_parser.parse_args()
-
     # to make the random number choices reproducible
-    np.random.seed(1)
-    random.seed(1)
 
     global learning_rate
 
@@ -80,6 +64,10 @@ def testing(args, config_dictionary):
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
     input_format = args.input_format
+    seed = int(args.seed)
+
+    np.random.seed(seed)
+    random.seed(seed)
 
     if args.without_stl_decomposition:
         without_stl_decomposition = int(args.without_stl_decomposition)
@@ -88,14 +76,14 @@ def testing(args, config_dictionary):
         without_stl_decomposition = 0
         stl_decomposition_identifier = "with_stl_decomposition"
 
-    if args.with_truncated_backprpagation:
-        with_truncated_backprpagation = int(args.with_truncated_backprpagation)
+    if args.with_truncated_backpropagation:
+        with_truncated_backpropagation = int(args.with_truncated_backprpagation)
         tbptt_identifier = "with_truncated_backpropagation"
     else:
-        with_truncated_backprpagation = 0
+        with_truncated_backpropagation = 0
         tbptt_identifier = "without_truncated_backpropagation"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier
+    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(seed)
     print("Model Testing Started for {}".format(model_identifier))
 
     # select the optimizer
@@ -113,12 +101,13 @@ def testing(args, config_dictionary):
         'input_size': input_size,
         'output_size': output_size,
         'binary_train_file_path': binary_train_file_path_test_mode,
-        'binary_test_file_path': binary_test_file_path_test_mode
+        'binary_test_file_path': binary_test_file_path_test_mode,
+        'seed': seed
     }
 
     # select the model type
     if model_type == "stacking":
-        if with_truncated_backprpagation == 0:
+        if with_truncated_backpropagation == 0:
             model_tester = BPTTStackingModelTester(**model_kwargs)
         else:
             model_tester = TBPTTStackingModelTester(**model_kwargs)
@@ -171,22 +160,23 @@ def testing(args, config_dictionary):
                                       optimizer_fn = optimizer_fn)
 
     # write the forecasting results to a file
-    forecast_file_path = model_testing_configs.FORECASTS_DIRECTORY + model_identifier + '.txt'
+    rnn_forecasts_file_path = model_testing_configs.RNN_FORECASTS_DIRECTORY + model_identifier + '.txt'
 
-    with open(forecast_file_path, "w") as output:
+    with open(rnn_forecasts_file_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(list_of_forecasts)
 
     # invoke the final evaluation R script
     error_file_name = model_identifier + '.txt'
+    snaive_forecasts_file_path = model_testing_configs.SNAIVE_FORECASTS_DIRECTORY + dataset_name + '.txt'
 
     if input_format == "moving_window":
-        invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True, False)
+        invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True, False)
     else:
         if without_stl_decomposition:
-            invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
+            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
         else:
-            invoke_r_script((forecast_file_path, error_file_name, txt_test_file_path, actual_results_file_path,
+            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path,
                              str(output_size), str(contain_zero_values)), False, False)
 
 

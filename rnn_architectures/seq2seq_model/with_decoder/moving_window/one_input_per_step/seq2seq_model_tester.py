@@ -14,6 +14,7 @@ class Seq2SeqModelTester:
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
+        self.__seed = kwargs["seed"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -30,12 +31,13 @@ class Seq2SeqModelTester:
         l2_regularization = kwargs['l2_regularization']
         minibatch_size = kwargs['minibatch_size']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
+        random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
         optimizer_fn = kwargs['optimizer_fn']
 
         # reset the tensorflow graph
         tf.reset_default_graph()
 
-        tf.set_random_seed(1)
+        tf.set_random_seed(self.__seed)
 
         # declare the input and output placeholders
 
@@ -51,6 +53,8 @@ class Seq2SeqModelTester:
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
         output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+
         # initial state of the encoder
         encoder_initial_state = tf.placeholder(dtype=tf.float32,
                                                shape=[int(num_hidden_layers), 2, None, int(lstm_cell_dimension)])
@@ -65,7 +69,7 @@ class Seq2SeqModelTester:
 
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
             return lstm_cell
 
         # building the encoder network
@@ -92,7 +96,7 @@ class Seq2SeqModelTester:
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # the final projection layer to convert the output to the desired dimension
-        dense_layer = Dense(units=1, use_bias=self.__use_bias)
+        dense_layer = Dense(units=1, use_bias=self.__use_bias, kernel_initializer=weight_initializer)
 
         # building the decoder network for training
         with tf.variable_scope('decode'):
@@ -140,7 +144,7 @@ class Seq2SeqModelTester:
         # preparing the training data
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                                   count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader_with_moving_window.validation_data_parser)
 

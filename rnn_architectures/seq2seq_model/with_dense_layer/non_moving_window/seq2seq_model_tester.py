@@ -11,6 +11,7 @@ class Seq2SeqModelTesterWithDenseLayer:
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
+        self.__seed = kwargs["seed"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -27,12 +28,13 @@ class Seq2SeqModelTesterWithDenseLayer:
         l2_regularization = kwargs['l2_regularization']
         minibatch_size = kwargs['minibatch_size']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
+        random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
         optimizer_fn = kwargs['optimizer_fn']
 
         # reset the tensorflow graph
         tf.reset_default_graph()
 
-        tf.set_random_seed(1)
+        tf.set_random_seed(self.__seed)
 
         # declare the input and output placeholders
 
@@ -45,13 +47,15 @@ class Seq2SeqModelTesterWithDenseLayer:
         # placeholder for the sequence lengths
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+
         # create the model architecture
 
         # building the encoder network
 
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
             return lstm_cell
 
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
@@ -66,7 +70,7 @@ class Seq2SeqModelTesterWithDenseLayer:
         # the final projection layer to convert the encoder_outputs to the desired dimension
         prediction_output = tf.layers.dense(
             inputs=tf.convert_to_tensor(value=final_timestep_predictions, dtype=tf.float32), units=self.__output_size,
-            use_bias=self.__use_bias)
+            use_bias=self.__use_bias, kernel_initializer=weight_initializer)
         prediction_output = tf.expand_dims(input=prediction_output, axis=2)
 
         # error that should be minimized in the training process
@@ -94,7 +98,7 @@ class Seq2SeqModelTesterWithDenseLayer:
         # preparing the training data
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                                   count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
 

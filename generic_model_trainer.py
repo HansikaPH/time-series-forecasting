@@ -126,8 +126,8 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
 
 def bayesian_optimization():
     # to make the random number choices reproducible
-    np.random.seed(1)
-    random.seed(1)
+    np.random.seed(seed)
+    random.seed(seed)
 
     init_points = hyperparameter_tuning_configs.BAYESIAN_INIT_POINTS
     num_iter = hyperparameter_tuning_configs.BAYESIAN_NUM_ITER
@@ -145,7 +145,7 @@ def bayesian_optimization():
     # adding the hyperparameter for learning rate if the optimization is not cocob
     if optimizer != 'cocob':
         parameters['rate_of_learning'] = (hyperparameter_values_dic["rate_of_learning"][0], hyperparameter_values_dic["rate_of_learning"][1])
-    if with_truncated_backprpagation:
+    if with_truncated_backpropagation:
         parameters['tbptt_chunk_length'] = (hyperparameter_values_dic["tbptt_chunk_length"][0], hyperparameter_values_dic["tbptt_chunk_length"][1])
 
 
@@ -160,8 +160,8 @@ def bayesian_optimization():
 
 def smac():
     # to make the random number choices reproduceable
-    np.random.rand(1)
-    random.seed(1)
+    np.random.rand(seed)
+    random.seed(seed)
 
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
@@ -193,7 +193,7 @@ def smac():
 
     # add the hyperparameter for learning rate only if the  optimization is not cocob
     if optimizer == "cocob":
-        if with_truncated_backprpagation:
+        if with_truncated_backpropagation:
             configuration_space.add_hyperparameters(
                 [lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size, max_num_of_epochs,
                  l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev, tbptt_chunk_length])
@@ -202,7 +202,7 @@ def smac():
                 [lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size, max_num_of_epochs,
                  l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
     else:
-        if with_truncated_backprpagation:
+        if with_truncated_backpropagation:
             configuration_space.add_hyperparameters(
                 [rate_of_learning, lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size,
                  max_num_of_epochs,
@@ -251,8 +251,9 @@ if __name__ == '__main__':
     argument_parser.add_argument('--model_type', required=True, help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer/attention)')
     argument_parser.add_argument('--input_format', required=True, help='Input format(moving_window/non_moving_window)')
     argument_parser.add_argument('--without_stl_decomposition', required=False, help='Whether not to use stl decomposition(0/1). Default is 0')
-    argument_parser.add_argument('--with_truncated_backprpagation', required=False,
+    argument_parser.add_argument('--with_truncated_backpropagation', required=False,
                                  help='Whether not to use truncated backpropagation(0/1). Default is 0')
+    argument_parser.add_argument('--seed', required=True, help='Integer seed to use as the random seed')
 
     # parse the user arguments
     args = argument_parser.parse_args()
@@ -273,6 +274,7 @@ if __name__ == '__main__':
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
     input_format = args.input_format
+    seed = int(args.seed)
 
     if args.without_stl_decomposition:
         without_stl_decomposition = int(args.without_stl_decomposition)
@@ -281,14 +283,14 @@ if __name__ == '__main__':
         without_stl_decomposition = 0
         stl_decomposition_identifier = "with_stl_decomposition"
 
-    if args.with_truncated_backprpagation:
-        with_truncated_backprpagation = int(args.with_truncated_backprpagation)
+    if args.with_truncated_backpropagation:
+        with_truncated_backpropagation = int(args.with_truncated_backpropagation)
         tbptt_identifier = "with_truncated_backpropagation"
     else:
-        with_truncated_backprpagation = 0
-        tbptt_identifier = "without_truncated_backpropagation"
+        with_truncated_backpropagation = 0
+        tbptt_identifier = "with_truncated_backpropagation"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier
+    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(seed)
     print("Model Training Started for {}".format(model_identifier))
 
     # select the optimizer
@@ -307,12 +309,13 @@ if __name__ == '__main__':
         'output_size' : output_size,
         'binary_train_file_path' : binary_train_file_path_train_mode,
         'binary_validation_file_path' : binary_validation_file_path_train_mode,
-        'contain_zero_values' : contain_zero_values
+        'contain_zero_values' : contain_zero_values,
+        'seed': seed
     }
 
     # select the model type
     if model_type == "stacking":
-        if with_truncated_backprpagation == 0:
+        if with_truncated_backpropagation == 0:
             model_trainer = BPTTStackingModelTrainer(**model_kwargs)
         else:
             model_trainer = TBPTTStackingModelTrainer(**model_kwargs)
@@ -345,8 +348,8 @@ if __name__ == '__main__':
         optimized_configuration = bayesian_optimization()
     elif hyperparameter_tuning == "smac":
         optimized_configuration = smac()
-
-    #NN5 configs
+    #
+    # #NN5 configs
     # optimized_configuration = {
     #     "num_hidden_layers" : 1.075789638829622,
     #     "lstm_cell_dimension": 23,
@@ -364,14 +367,16 @@ if __name__ == '__main__':
     #     "num_hidden_layers": 1.075789638829622,
     #     "lstm_cell_dimension": 29,
     #     "minibatch_size": 20.846339868432239,
-    #     "rate_of_learning": 0.0033262220421187676,
-    #     "max_epoch_size": 0,
+    #     "rate_of_learning": 0.0043262220421187676,
+    #     "max_epoch_size": 1,
     #     "gaussian_noise_stdev": 0.0008,
     #     "l2_regularization": 0.0001,
     #     "max_num_epochs": 19,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717
+    #     "random_normal_initializer_stdev": 0.00027502494731703717,
+    #     'tbptt_chunk_length': 10
     # }
 
+#0.0910382749239466
     # CIF configs 2
     # optimized_configuration = {
     #     "num_hidden_layers": 1.075789638829622,

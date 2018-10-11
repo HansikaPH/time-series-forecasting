@@ -1,28 +1,38 @@
+## This file concatenates the error results of the CIF dataset for the forecasting horizons 6 and 12
+
 import glob
 import numpy as np
 
 input_path = '../results/errors/'
 
 output_file_mean_median = input_path + "mean_median_cif2016_"
-output_file_ranked_error = input_path + "all_errors_cif2016_"
+output_file_all_smape_errors = input_path + "all_smape_errors_cif2016_"
+output_file_all_mase_errors = input_path + "all_mase_errors_cif2016_"
 
 # get the list of all the files matching the regex
-all_errors_files_o6 = [filename for filename in glob.iglob(input_path + "all_errors_cif2016_O6_" + "*")]
-all_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_errors_cif2016_O12_" + "*")]
+all_smape_errors_files_o6 = [filename for filename in glob.iglob(input_path + "all_smape_errors_cif2016_O6_" + "*")]
+all_smape_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_smape_errors_cif2016_O12_" + "*")]
+
+all_mase_errors_files_o6 = [filename for filename in glob.iglob(input_path + "all_mase_errors_cif2016_O6_" + "*")]
+all_mase_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_mase_errors_cif2016_O12_" + "*")]
 
 # read the files one by one and merge the content
-for filename_o6, filename_o12 in zip(sorted(all_errors_files_o6), sorted(all_errors_files_o12)):
-    filename_o6_object = open(filename_o6)
-    filename_o12_object = open(filename_o12)
+for filename_smape_o6, filename_smape_o12, filename_mase_o6, filename_mase_o12 in zip(sorted(all_smape_errors_files_o6), sorted(all_smape_errors_files_o12), sorted(all_mase_errors_files_o6), sorted(all_mase_errors_files_o12)):
+    filename_o6_smape_object = open(filename_smape_o6)
+    filename_o12_smape_object = open(filename_smape_o12)
 
-    filename_part = filename_o6.split(sep="all_errors_cif2016_O6_", maxsplit=1)[1]
+    filename_o6_mase_object = open(filename_mase_o6)
+    filename_o12_mase_object = open(filename_mase_o12)
 
-    output_file_ranked_error_object = open(output_file_ranked_error + filename_part, "w")
+    filename_part = filename_smape_o6.split(sep="all_smape_errors_cif2016_O6_", maxsplit=1)[1]
+
+    output_file_all_smape_errors_object = open(output_file_all_smape_errors + filename_part, "w")
+    output_file_all_mase_errors_object = open(output_file_all_mase_errors + filename_part, "w")
     output_file_mean_median_object = open(output_file_mean_median + filename_part, "w")
 
     # read the errors from both files
-    all_errors_o6 = [float(num) for num in filename_o6_object]
-    all_errors_o12 = [float(num) for num in filename_o12_object]
+    all_errors_o6 = [float(num) for num in filename_o6_smape_object]
+    all_errors_o12 = [float(num) for num in filename_o12_smape_object]
 
     # merge the errors of the two files
     all_errors_array = np.array(all_errors_o12 + all_errors_o6, dtype=np.float32)
@@ -42,6 +52,6 @@ for filename_o6, filename_o12 in zip(sorted(all_errors_files_o6), sorted(all_err
     output_file_ranked_error_object.write(np.transpose(all_errors_array))
 
     # close all files
-    filename_o6_object.close()
-    filename_o12_object.close()
+    filename_o6_smape_object.close()
+    filename_o12_smape_object.close()
     output_file_mean_median_object.close()

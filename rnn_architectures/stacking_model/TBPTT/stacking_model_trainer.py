@@ -14,6 +14,7 @@ class StackingModelTrainer:
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
+        self.__seed = kwargs["seed"]
 
 
     def __l1_loss(self, z, t):
@@ -44,7 +45,7 @@ class StackingModelTrainer:
 
         tf.reset_default_graph()
 
-        tf.set_random_seed(1)
+        tf.set_random_seed(self.__seed)
 
         # declare the input and output placeholders
 
@@ -57,7 +58,7 @@ class StackingModelTrainer:
         true_output = tf.placeholder(dtype = tf.float32, shape = [None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=1)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
 
         # RNN with the LSTM layer
         def lstm_cell():
@@ -110,7 +111,7 @@ class StackingModelTrainer:
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size), seed=shuffle_seed))
+        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE, count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),

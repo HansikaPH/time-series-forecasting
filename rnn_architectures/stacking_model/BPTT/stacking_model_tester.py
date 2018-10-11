@@ -12,6 +12,7 @@ class StackingModelTester:
         self.__output_size = kwargs["output_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
+        self.__seed = kwargs["seed"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -39,7 +40,7 @@ class StackingModelTester:
         # reset the tensorflow graph
         tf.reset_default_graph()
 
-        tf.set_random_seed(1)
+        tf.set_random_seed(self.__seed)
 
         # declare the input and output placeholders
         input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
@@ -51,7 +52,7 @@ class StackingModelTester:
         true_output = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=1)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
 
         # create the model architecture
 
@@ -100,7 +101,7 @@ class StackingModelTester:
         training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
 
         # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
-        padded_training_data_batches = training_dataset.padded_batch(batch_size=1,
+        padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
                                                                      padded_shapes=(
                                                                          [], [tf.Dimension(None), self.__input_size],
                                                                          [tf.Dimension(None), self.__output_size],

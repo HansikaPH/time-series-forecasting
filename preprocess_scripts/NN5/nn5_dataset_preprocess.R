@@ -1,9 +1,10 @@
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/moving_window/"
-output_file_name = 'nn5_results.txt'
-output_file_full_name = paste(OUTPUT_DIR, output_file_name, sep = '')
+OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_TEST_DATASET.csv",sep=';',header = FALSE)
-nn5_result_dataset <-as.data.frame(t(file[,-1]))
+file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/NN5_FINAL_DATASET.csv",sep=',',header = FALSE)
+nn5_dataset <-as.data.frame(t(file[,-1]))
+
+output_file_name = 'nn5_dataset.txt'
+output_file_full_name = paste(OUTPUT_DIR, output_file_name, sep = '')
 
 sunday = vector()
 monday = vector()
@@ -15,8 +16,8 @@ saturday = vector()
 wrong= vector()
 
 #replacing missing values
-for (idr in 1: nrow(nn5_result_dataset)) {
-  oneLine_df=nn5_result_dataset[idr,]
+for (idr in 1: nrow(nn5_dataset)) {
+  oneLine_df=nn5_dataset[idr,]
   numericvalue<-as.numeric(oneLine_df)
   for(i in 1:length(numericvalue)){
     if(i%%7==0){
@@ -49,29 +50,29 @@ friday_median<-median(friday,na.rm = TRUE)
 saturday_median<-median(saturday,na.rm = TRUE)
 
 #replacing missing values
-for (idr in 1: nrow(nn5_result_dataset)) {
-  oneLine_df=nn5_result_dataset[idr,]
+for (idr in 1: nrow(nn5_dataset)) {
+  oneLine_df=nn5_dataset[idr,]
   numericvalue<-as.numeric(oneLine_df)
   for(i in 1:length(numericvalue)){
     if(is.na(oneLine_df[i])){
       if(i%%7==0){
-        nn5_result_dataset[idr, i] =sunday_median
+        nn5_dataset[idr,i] =sunday_median
       }else if(i%%7==1){
-        nn5_result_dataset[idr, i]= monday_median
+        nn5_dataset[idr,i]= monday_median
       }else if(i%%7==2){
-        nn5_result_dataset[idr, i]= tuesday_median
+        nn5_dataset[idr,i]= tuesday_median
       }else if(i%%7==3){
-        nn5_result_dataset[idr, i] =wednesday_median
+        nn5_dataset[idr,i] =wednesday_median
       }else if(i%%7==4){
-        nn5_result_dataset[idr, i] =thursday_median
+        nn5_dataset[idr,i] =thursday_median
       }else if(i%%7==5){
-        nn5_result_dataset[idr, i]= friday_median
+        nn5_dataset[idr,i]= friday_median
       }else if(i%%7==6){
-        nn5_result_dataset[idr, i]= saturday_median
+        nn5_dataset[idr,i]= saturday_median
       }
     }
   }
 }
 
-# printing the results to the file
-write.table(nn5_result_dataset, output_file_full_name, sep = ";", row.names = TRUE, col.names = FALSE)
+# printing the dataset to the file
+write.table(nn5_dataset, output_file_full_name, sep = ",", row.names = FALSE, col.names = FALSE)
