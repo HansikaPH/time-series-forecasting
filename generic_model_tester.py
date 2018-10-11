@@ -77,7 +77,7 @@ def testing(args, config_dictionary):
         stl_decomposition_identifier = "with_stl_decomposition"
 
     if args.with_truncated_backpropagation:
-        with_truncated_backpropagation = int(args.with_truncated_backprpagation)
+        with_truncated_backpropagation = int(args.with_truncated_backpropagation)
         tbptt_identifier = "with_truncated_backpropagation"
     else:
         with_truncated_backpropagation = 0
