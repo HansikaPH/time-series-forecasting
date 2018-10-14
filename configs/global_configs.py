@@ -9,7 +9,7 @@ class model_testing_configs:
 
 # configs for hyperparameter tuning(bayesian optimization/SMAC3)
 class hyperparameter_tuning_configs:
-    BAYESIAN_INIT_POINTS = 2
+    BAYESIAN_INIT_POINTS = 5
     BAYESIAN_NUM_ITER = 30
     SMAC_RUNCOUNT_LIMIT = 30
 

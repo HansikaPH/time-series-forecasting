@@ -71,20 +71,27 @@ def testing(args, config_dictionary):
 
     if args.without_stl_decomposition:
         without_stl_decomposition = int(args.without_stl_decomposition)
-        stl_decomposition_identifier = "without_stl_decomposition"
     else:
         without_stl_decomposition = 0
-        stl_decomposition_identifier = "with_stl_decomposition"
 
     if args.with_truncated_backpropagation:
-        with_truncated_backpropagation = int(args.with_truncated_backprpagation)
-        tbptt_identifier = "with_truncated_backpropagation"
+        with_truncated_backpropagation = int(args.with_truncated_backpropagation)
     else:
         with_truncated_backpropagation = 0
+
+    if with_truncated_backpropagation == 0:
         tbptt_identifier = "without_truncated_backpropagation"
+    else:
+        tbptt_identifier = "with_truncated_backpropagation"
+
+    if without_stl_decomposition == 0:
+        stl_decomposition_identifier = "with_stl_decomposition"
+    else:
+        stl_decomposition_identifier = "without_stl_decomposition"
 
     model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(seed)
     print("Model Testing Started for {}".format(model_identifier))
+    print(config_dictionary)
 
     # select the optimizer
     if optimizer == "cocob":

@@ -3,6 +3,7 @@ import tensorflow as tf
 from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
 
+
 class StackingModelTester:
 
     def __init__(self, **kwargs):
@@ -34,8 +35,7 @@ class StackingModelTester:
         l2_regularization = kwargs['l2_regularization']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         optimizer_fn = kwargs['optimizer_fn']
-        random_normal_initializer_stdev=kwargs['random_normal_initializer_stdev']
-
+        random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
 
         # reset the tensorflow graph
         tf.reset_default_graph()
@@ -58,17 +58,18 @@ class StackingModelTester:
 
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
+                                                initializer=weight_initializer)
             return lstm_cell
 
-
         multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths, dtype=tf.float32)
+        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths,
+                                                dtype=tf.float32)
 
         # connect the dense layer to the RNN
         prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32),
-                                      units=self.__output_size,
-                                      use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+                                            units=self.__output_size,
+                                            use_bias=self.__use_bias, kernel_initializer=weight_initializer)
 
         # error that should be minimized in the training process
         error = self.__l1_loss(prediction_output, true_output)
@@ -86,8 +87,8 @@ class StackingModelTester:
         optimizer = optimizer_fn(total_loss)
 
         # create the Dataset objects for the training and test data
-        training_dataset = tf.data.TFRecordDataset(filenames = [self.__binary_train_file_path], compression_type = "ZLIB")
-        test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type = "ZLIB")
+        training_dataset = tf.data.TFRecordDataset(filenames=[self.__binary_train_file_path], compression_type="ZLIB")
+        test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type="ZLIB")
 
         # parse the records
         tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
@@ -135,15 +136,16 @@ class StackingModelTester:
 
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
-                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch})
+                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
                 while True:
                     try:
-                        training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
+                        training_data_batch_value = session.run(next_training_data_batch,
+                                                                feed_dict={shuffle_seed: epoch})
 
-                        _, output, loss = session.run([optimizer, prediction_output, total_loss],
-                                                      feed_dict={input: training_data_batch_value[1],
-                                                                 true_output: training_data_batch_value[2],
-                                                                 sequence_lengths: training_data_batch_value[0]})
+                        session.run(optimizer,
+                                    feed_dict={input: training_data_batch_value[1],
+                                               true_output: training_data_batch_value[2],
+                                               sequence_lengths: training_data_batch_value[0]})
 
                     except tf.errors.OutOfRangeError:
                         break
