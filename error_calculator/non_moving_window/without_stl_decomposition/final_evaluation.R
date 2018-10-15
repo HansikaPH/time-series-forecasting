@@ -96,12 +96,9 @@ print(median_MASE)
 print(std_MASE)
 
 # writing the SMAPE results to file
-file_connection = file(errors_file_full_name_mean_median)
-writeLines(c(mean_SMAPE, median_SMAPE, std_SMAPE, "\n"), file_connection)
+write(c(mean_SMAPE, median_SMAPE, std_SMAPE, "\n"), file=errors_file_full_name_mean_median, append=FALSE)
 write.table(SMAPEPerSeries, SMAPE_file_full_name_all_errors, row.names=FALSE, col.names=FALSE)
 
 # writing the MASE results to file
-writeLines(c(mean_MASE, median_MASE, std_MASE, "\n"), file_connection)
+write(c(mean_MASE, median_MASE, std_MASE, "\n"), file=errors_file_full_name_mean_median, append=TRUE)
 write.table(mase_vector, MASE_file_full_name_all_errors, row.names=FALSE, col.names=FALSE)
-
-close(file_connection)
