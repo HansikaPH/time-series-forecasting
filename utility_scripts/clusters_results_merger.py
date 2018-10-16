@@ -1,9 +1,14 @@
-## This file concatenates the error results of the CIF dataset for the forecasting horizons 6 and 12
+## This file concatenates the error results of the different clusters for a given dataset
 
 import glob
 import numpy as np
+import argparse
 
 input_path = '../results/errors/'
+
+# get the different cluster names as external arguments
+argument_parser = argparse.ArgumentParser("Train different forecasting models")
+argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
 
 output_file_mean_median = input_path + "mean_median_cif2016_"
 output_file_all_smape_errors = input_path + "all_smape_errors_cif2016_"
@@ -17,7 +22,12 @@ all_mase_errors_files_o6 = [filename for filename in glob.iglob(input_path + "al
 all_mase_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_mase_errors_cif2016_O12_" + "*")]
 
 # read the files one by one and merge the content
-for filename_smape_o6, filename_smape_o12, filename_mase_o6, filename_mase_o12 in zip(sorted(all_smape_errors_files_o6), sorted(all_smape_errors_files_o12), sorted(all_mase_errors_files_o6), sorted(all_mase_errors_files_o12)):
+for filename_smape_o6, filename_smape_o12, filename_mase_o6, filename_mase_o12 in zip(sorted(all_smape_errors_files_o6),
+                                                                                      sorted(
+                                                                                              all_smape_errors_files_o12),
+                                                                                      sorted(all_mase_errors_files_o6),
+                                                                                      sorted(
+                                                                                              all_mase_errors_files_o12)):
     filename_o6_smape_object = open(filename_smape_o6)
     filename_o12_smape_object = open(filename_smape_o12)
 

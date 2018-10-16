@@ -1,6 +1,6 @@
 library(forecast)
 
-OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/moving_window/"
+OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/non_moving_window/"
 
 file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-train.csv"
 m4_dataset <- readLines(file)
@@ -14,31 +14,24 @@ seasonality_period = 12
 for (validation in c(TRUE, FALSE)) {
     for (idr in 2 : length(m4_dataset)) {
         if (idr - 1 <= 10016 && idr - 1 >= 1) { #Macro Series
-            input_size = 15
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_macro_", sep = '/')
         }
         else if (idr - 1 <= 20991 && idr - 1 > 10016) {
-            input_size = 15
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_micro_", sep = '/')
         }
         else if (idr - 1 <= 26719 && idr - 1 > 20991) {
-            input_size = 15
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_demo_", sep = '/')
         }
         else if (idr - 1 <= 36736 && idr - 1 > 26719) {
-            input_size = 15
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_industry_", sep = '/')
         }
         else if (idr - 1 <= 47723 && idr - 1 > 36736) {
-            input_size = 15
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_finance_", sep = '/')
         }
         else if (idr - 1 > 47723) {
-            input_size = 5
             OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_other_", sep = '/')
         }
         OUTPUT_PATH = paste(OUTPUT_PATH, max_forecast_horizon, sep = '')
-        OUTPUT_PATH = paste(OUTPUT_PATH, 'i', input_size, sep = '')
         if (validation) {
             OUTPUT_PATH = paste(OUTPUT_PATH, 'v', sep = '')
         }
@@ -67,29 +60,31 @@ for (validation in c(TRUE, FALSE)) {
             cbind(seasonal_vect, levels_vect, values_vect)
         })
 
-        input_windows = embed(stl_result[1 : (time_series_length - max_forecast_horizon), 3], input_size)[, input_size : 1]
-        output_windows = embed(stl_result[- (1 : input_size) , 3], max_forecast_horizon)[, max_forecast_horizon : 1]
-        level_values = stl_result[input_size : (time_series_length - max_forecast_horizon), 2]
-        input_windows = input_windows - level_values
-        output_windows = output_windows - level_values
+        level_value = stl_result[time_series_length - max_forecast_horizon, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
+
         if (validation) {
-            # create the seasonality metadata
-            seasonality_windows = embed(stl_result[- (1 : input_size) , 1], max_forecast_horizon)[, max_forecast_horizon : 1]
-            sav_df = matrix(NA, ncol = (4 + input_size + max_forecast_horizon * 2), nrow = length(level_values))
+            # preallocate data frame
+            sav_df = matrix(NA, ncol = (4 + time_series_length + max_forecast_horizon), nrow = 1)
             sav_df = as.data.frame(sav_df)
-            sav_df[, (input_size + max_forecast_horizon + 3)] = '|#'
-            sav_df[, (input_size + max_forecast_horizon + 4)] = level_values
-            sav_df[, (input_size + max_forecast_horizon + 5) : ncol(sav_df)] = seasonality_windows
+
+            sav_df[, (time_series_length + 3)] = '|#'
+            sav_df[, (time_series_length + 4)] = level_value
+            sav_df[, (time_series_length + 5) : ncol(sav_df)] = (stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1])
+            t
         }else {
-            sav_df = matrix(NA, ncol = (2 + input_size + max_forecast_horizon), nrow = length(level_values))
+            # preallocate data frame
+            sav_df = matrix(NA, ncol = (2 + time_series_length), nrow = 1)
             sav_df = as.data.frame(sav_df)
         }
 
         sav_df[, 1] = paste(idr - 1, '|i', sep = '')
-        sav_df[, 2 : (input_size + 1)] = input_windows
+        normalized_values = t(stl_result[, 3]) - level_value
 
-        sav_df[, (input_size + 2)] = '|o'
-        sav_df[, (input_size + 3) : (input_size + max_forecast_horizon + 2)] = output_windows
+        sav_df[, 2 : (time_series_length - max_forecast_horizon + 1)] = normalized_values[1 : (time_series_length - max_forecast_horizon)]
+
+        sav_df[, (2 + time_series_length - max_forecast_horizon)] = '|o'
+
+        sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = tail(normalized_values, max_forecast_horizon)
 
         write.table(sav_df, file = OUTPUT_PATH, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
     }

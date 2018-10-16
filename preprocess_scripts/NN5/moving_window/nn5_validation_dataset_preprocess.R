@@ -6,13 +6,9 @@ file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0
 nn5_dataset <-as.data.frame(file)
 
 max_forecast_horizon=56
-
-if(length(args) != 0) {
-  input_size = as.integer(args[1])
-} else{
-  INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-  input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
-}
+seasonality_period=7
+INPUT_SIZE_MULTIP=1.25
+input_size = round(seasonality_period * INPUT_SIZE_MULTIP)
 
 OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_stl_",sep='/')
 OUTPUT_PATH56=paste(OUTPUT_PATH56,max_forecast_horizon,sep='')

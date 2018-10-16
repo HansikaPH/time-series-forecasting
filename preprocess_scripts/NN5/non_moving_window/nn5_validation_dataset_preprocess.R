@@ -34,7 +34,7 @@ for (idr in 1: nrow(numeric_dataset_log)) {
     cbind(seasonal_vect, levels_vect, values_vect)
   })
 
-  level=stl_result[time_series_length, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
+  level=stl_result[time_series_length - max_forecast_horizon, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
   sav_df=data.frame(id=paste(idr,'|i',sep=''));
   normalized_values = stl_result[,3]-level
   sav_df=cbind(sav_df, t(normalized_values[1: (time_series_length - max_forecast_horizon)])) #inputs: past values normalized by the level

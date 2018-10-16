@@ -415,14 +415,14 @@ if __name__ == '__main__':
     #     "num_hidden_layers": 1.075789638829622,
     #     "lstm_cell_dimension": 23,
     #     "minibatch_size": 10,
-    #     "rate_of_learning": 0.813262220421187676,
-    #     "max_epoch_size": 1,
+    #     "rate_of_learning": 0.513262220421187676,
+    #     "max_epoch_size": 3,
     #     "gaussian_noise_stdev": 0.00023780395225712772,
     #     "l2_regularization": 0.00015753660121731034,
-    #     "max_num_epochs": 20,
+    #     "max_num_epochs": 30,
     #     "random_normal_initializer_stdev": 0.00027502494731703717
     # }
-    #
+
     # NN3 configs
     # optimized_configuration = {
     #     "num_hidden_layers" : 1.075789638829622,

@@ -1,7 +1,7 @@
 OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/"
 
 file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-test.csv",sep=',',header = TRUE)
-m4_result_dataset <-as.data.frame((file[,-1]))
+m4_result_dataset <-as.data.frame(file[,-1])
 
 # printing the results to the file
 
@@ -21,4 +21,4 @@ write.table(m4_result_dataset[26720:36736,], paste(OUTPUT_DIR, "m4_result_monthl
 write.table(m4_result_dataset[36737:47723,], paste(OUTPUT_DIR, "m4_result_monthly_finance.txt", sep = ''), sep = ";", row.names = TRUE, col.names = FALSE)
 
 # macro data
-write.table(m4_result_dataset[47724:ncol(m4_result_dataset),], paste(OUTPUT_DIR, "m4_result_monthly_other.txt", sep = ''), sep = ";", row.names = TRUE, col.names = FALSE)
+write.table(m4_result_dataset[47724:nrow(m4_result_dataset),], paste(OUTPUT_DIR, "m4_result_monthly_other.txt", sep = ''), sep = ";", row.names = TRUE, col.names = FALSE)

@@ -1,5 +1,3 @@
-library(ggplot2)
-library(reshape2)
 library(TSrepr)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -36,7 +34,8 @@ forecasts_file_full_name = paste(root_directory, rnn_forecast_file_path, sep="/"
 forecasts_df=read.csv(forecasts_file_full_name, header = F, sep = ",")
 
 # reading in the snaive forecasts file
-snaive_forecasts_df = read.csv(snaive_forecasts_file_path, header = F, sep=",")
+snaive_forecasts_file_full_name = paste(root_directory, snaive_forecasts_file_path, sep="/")
+snaive_forecasts_df = read.csv(snaive_forecasts_file_full_name, header = F, sep=",")
 
 names(actual_results)[1]="Series"
 actual_results <- actual_results[,-1]

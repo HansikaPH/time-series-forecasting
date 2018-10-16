@@ -8,13 +8,9 @@ file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0
 nn5_dataset <-as.data.frame(file)
 
 max_forecast_horizon=56
-
-if(length(args) != 0) {
-  input_size = as.integer(args[1])
-} else{
-  INPUT_SIZE_MULTIP=1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
-  input_size=as.integer(INPUT_SIZE_MULTIP*max_forecast_horizon)
-}
+seasonality_period=7
+INPUT_SIZE_MULTIP=1.25
+input_size = round(seasonality_period * INPUT_SIZE_MULTIP)
 
 OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_test_",sep='/')
 OUTPUT_PATH56=paste(OUTPUT_PATH56,max_forecast_horizon,sep='')
@@ -52,7 +48,7 @@ for (idr in 1: nrow(numeric_dataset_log)) {
 
 
   seasonality_56 = tryCatch({
-    forecast = stlf(ts(stl_result[,1] , frequency = 7), "period",h=56)
+    forecast = stlf(ts(stl_result[,1] , frequency = 7), "period",h=max_forecast_horizon)
     seasonality_56_vector = as.numeric(forecast$mean)
     # seasonality_56_vector = rep(seasonality_56_vector,times=8)
     cbind(seasonality_56_vector)
@@ -74,7 +70,7 @@ for (idr in 1: nrow(numeric_dataset_log)) {
     #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
     sav_df[,'level']=level
 
-    for (ii in 1:56) {
+    for (ii in 1:max_forecast_horizon) {
       sav_df[, paste('s', ii, sep = '')] = seasonality_56[ii]
     }
 

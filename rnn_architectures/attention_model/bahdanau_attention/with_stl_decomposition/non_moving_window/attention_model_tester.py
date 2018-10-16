@@ -67,10 +67,12 @@ class AttentionModelTester:
                                                                    memory_sequence_length=input_sequence_length)
 
         # decoder cell of the decoder network
-        decoder_cell = tf.nn.rnn_cell.LSTMCell(num_units=lstm_cell_dimension, use_peepholes=self.__use_peepholes)
+        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(
+            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # using the attention wrapper to wrap the decoding cell
-        decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=decoder_cell, attention_mechanism=attention_mechanism,
+        decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
+                                                           attention_mechanism=attention_mechanism,
                                                            attention_layer_size=lstm_cell_dimension)
         # the final projection layer to convert the output to the desired dimension
         dense_layer = Dense(units=1, use_bias=self.__use_bias, kernel_initializer=weight_initializer)
