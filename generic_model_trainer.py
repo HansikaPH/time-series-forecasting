@@ -263,11 +263,11 @@ def smac():
         "run_obj": "quality",
         "runcount-limit": hyperparameter_tuning_configs.SMAC_RUNCOUNT_LIMIT,
         "cs": configuration_space,
-        "deterministic": True
+        "deterministic": "true"
     })
 
     # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(1), tae_runner=train_model_smac)
+    smac = SMAC(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model_smac)
 
     incumbent = smac.optimize()
     smape_error = train_model_smac(incumbent)
@@ -412,14 +412,14 @@ if __name__ == '__main__':
 
     # NN5 configs
     # optimized_configuration = {
-    #     "num_hidden_layers": 1.075789638829622,
+    #     "num_hidden_layers": 1,
     #     "lstm_cell_dimension": 23,
-    #     "minibatch_size": 10,
-    #     "rate_of_learning": 0.513262220421187676,
+    #     "minibatch_size": 5,
+    #     "rate_of_learning": 0.8113262220421187676,
     #     "max_epoch_size": 3,
     #     "gaussian_noise_stdev": 0.00023780395225712772,
     #     "l2_regularization": 0.00015753660121731034,
-    #     "max_num_epochs": 30,
+    #     "max_num_epochs": 25,
     #     "random_normal_initializer_stdev": 0.00027502494731703717
     # }
 
@@ -457,13 +457,35 @@ if __name__ == '__main__':
     #     "num_hidden_layers": 1.075789638829622,
     #     "lstm_cell_dimension": 22,
     #     "minibatch_size": 20.846339868432239,
-    #     "rate_of_learning": 0.0033262220421187676,
-    #     "max_epoch_size": 0,
+    #     "rate_of_learning": 0.53262220421187676,
+    #     "max_epoch_size": 5,
     #     "gaussian_noise_stdev": 0.0005539332088020351,
     #     "l2_regularization": 0.0006101647564088497,
     #     "max_num_epochs": 20,
     #     "random_normal_initializer_stdev": 0.00027502494731703717
     # }
+
+    # # CIF configs 2
+    # optimized_configuration = {
+    #     "num_hidden_layers": 2,
+    #     "lstm_cell_dimension": 28,
+    #     "minibatch_size": 16,
+    #     "rate_of_learning": 0.26343183932470754,
+    #     "max_epoch_size": 3,
+    #     "gaussian_noise_stdev": 0.0007517656514955944,
+    #     "l2_regularization": 0.00022259525510874703,
+    #     "max_num_epochs": 14,
+    #     "random_normal_initializer_stdev": 0.0005827304210740794
+    # }
+
+    # cif
+    # optimized_configuration = {'num_hidden_layers': 1.0, 'lstm_cell_dimension': 28.471127262736434,
+    #                            'minibatch_size': 28.135034205224617, 'max_epoch_size': 9.1502825822926326,
+    #                            'max_num_epochs': 16.962475980675006, 'l2_regularization': 0.0006369387641617046,
+    #                            'gaussian_noise_stdev': 0.00057001364478555087,
+    #                            'random_normal_initializer_stdev': 0.00025797511482927632,
+    #                            'rate_of_learning': 0.50172634121590136}
+
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 

@@ -40,8 +40,10 @@ class Seq2SeqModelTrainer:
 
         # adding noise to the input
         input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
+        validation_input = input
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-        input = input + noise
+        training_input = input + noise
+
         target = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
 
         # placeholder for the sequence lengths
@@ -51,38 +53,61 @@ class Seq2SeqModelTrainer:
 
         # create the model architecture
 
-        # building the encoder network
-
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
+                                                initializer=weight_initializer)
             return lstm_cell
 
-        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = sequence_length, dtype = tf.float32)
+        # building the encoder network
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
+            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
-        # decoder cell of the decoder network
-        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+        with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
+            training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                 inputs=training_input,
+                                                                                 sequence_length=sequence_length,
+                                                                                 dtype=tf.float32)
+
+        with tf.variable_scope(encoder_train_scope, reuse=tf.AUTO_REUSE) as encoder_inference_scope:
+            inference_encoder_outputs, inference_encoder_states = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                    inputs=validation_input,
+                                                                                    sequence_length=sequence_length,
+                                                                                    dtype=tf.float32)
 
         # the final projection layer to convert the output to the desired dimension
-        dense_layer = Dense(units=self.__output_size, use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+        dense_layer = Dense(units=1, use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+
+        # decoder cell of the decoder network
+        multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(
+            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
         # building the decoder network for training
-        with tf.variable_scope('decode'):
-            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 0.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
+        with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
+            # create the initial state for the decoder
+            training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+                                                                               sequence_length=sequence_length,
+                                                                               sampling_probability=0.0)
+            training_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=training_helper,
+                                                               initial_state=training_encoder_state,
+                                                               output_layer=dense_layer)
 
             # perform the decoding
-            training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
+            training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=training_decoder)
 
         # building the decoder network for inference
-        with tf.variable_scope('decode', reuse = tf.AUTO_REUSE):
-            helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs = target, sequence_length=sequence_length, sampling_probability = 1.0)
-            decoder = tf.contrib.seq2seq.BasicDecoder(cell = multi_layered_decoder_cell, helper = helper, initial_state = encoder_state, output_layer = dense_layer)
+        with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
+            # create the initial state for the decoder
+            inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+                                                                                sequence_length=sequence_length,
+                                                                                sampling_probability=1.0)
+            inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell,
+                                                                helper=inference_helper,
+                                                                initial_state=inference_encoder_states,
+                                                                output_layer=dense_layer)
 
             # perform the decoding
-            inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder = decoder)
-
+            inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
 
         # error that should be minimized in the training process
         error = self.__l1_loss(training_decoder_outputs[0], target)
@@ -172,8 +197,7 @@ class Seq2SeqModelTrainer:
                             target_data_shape = [np.shape(validation_data_batch_value[1])[0], np.shape(validation_data_batch_value[1])[1], self.__output_size]
 
                             # get the output of the network for the validation input data batch
-                            encoder_state_value, validation_output = session.run(
-                                [encoder_state, inference_decoder_outputs[0]],
+                            validation_output = session.run(inference_decoder_outputs[0],
                                 feed_dict={input: validation_data_batch_value[1],
                                            target: np.zeros(target_data_shape),
                                            sequence_length: validation_data_batch_value[0]

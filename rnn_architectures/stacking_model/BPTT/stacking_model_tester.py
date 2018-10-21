@@ -44,17 +44,16 @@ class StackingModelTester:
 
         # declare the input and output placeholders
         input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
-
-        # adding the gassian noise to the input layer
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-        input = input + noise
+        training_input = input + noise
 
+        testing_input = input
+
+        # output format [batch_size, sequence_length, dimension]
         true_output = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
         weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
-
-        # create the model architecture
 
         # RNN with the LSTM layer
         def lstm_cell():
@@ -63,16 +62,32 @@ class StackingModelTester:
             return lstm_cell
 
         multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        rnn_outputs, states = tf.nn.dynamic_rnn(cell=multi_layered_cell, inputs=input, sequence_length=sequence_lengths,
-                                                dtype=tf.float32)
 
-        # connect the dense layer to the RNN
-        prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=rnn_outputs, dtype=tf.float32),
-                                            units=self.__output_size,
-                                            use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+        with tf.variable_scope('train_scope') as train_scope:
+            training_rnn_outputs, training_rnn_states = tf.nn.dynamic_rnn(cell=multi_layered_cell,
+                                                                          inputs=training_input,
+                                                                          sequence_length=sequence_lengths,
+                                                                          dtype=tf.float32)
+
+            # connect the dense layer to the RNN
+            training_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=training_rnn_outputs, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer, name='dense_layer')
+
+        with tf.variable_scope(train_scope, reuse=tf.AUTO_REUSE) as inference_scope:
+            inference_rnn_outputs, inference_rnn_states = tf.nn.dynamic_rnn(cell=multi_layered_cell,
+                                                                            inputs=testing_input,
+                                                                            sequence_length=sequence_lengths,
+                                                                            dtype=tf.float32)
+            # connect the dense layer to the RNN
+            inference_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=inference_rnn_outputs, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer, name='dense_layer', reuse=True)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(prediction_output, true_output)
+        error = self.__l1_loss(training_prediction_output, true_output)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -160,7 +175,7 @@ class StackingModelTester:
                     test_input_batch_value = session.run(test_input_data_batch)
 
                     # get the output of the network for the test input data batch
-                    test_output = session.run(prediction_output,
+                    test_output = session.run(inference_prediction_output,
                                               feed_dict={input: test_input_batch_value[1],
                                                          sequence_lengths: test_input_batch_value[0]})
 

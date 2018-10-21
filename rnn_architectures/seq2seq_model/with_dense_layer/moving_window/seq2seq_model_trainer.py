@@ -4,6 +4,7 @@ from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import model_training_configs
 from configs.global_configs import training_data_configs
 
+
 class Seq2SeqModelTrainerWithDenseLayer:
 
     def __init__(self, **kwargs):
@@ -39,44 +40,75 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
         # adding noise to the input
         input = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__input_size])
-        noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-        input = input + noise
+        validation_input = input
+        noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev,
+                                 dtype=tf.float32)
+        training_input = input + noise
+
         target = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
 
-
         # placeholder for the sequence lengths
-        input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
+        sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
         weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
 
         # create a tensor array for the indices of the encoder outputs array and the target
-        new_index_array = tf.range(start=0, limit=tf.shape(input_sequence_length)[0], delta=1)
-        output_array_indices = tf.stack([new_index_array, input_sequence_length - 1], axis=-1)
+        new_index_array = tf.range(start=0, limit=tf.shape(sequence_length)[0], delta=1)
+        output_array_indices = tf.stack([new_index_array, sequence_length - 1], axis=-1)
 
         actual_targets = tf.gather_nd(params=target, indices=output_array_indices)
         actual_targets = tf.expand_dims(input=actual_targets, axis=1)
 
         # create the model architecture
 
-        # building the encoder network
-
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
+                                                initializer=weight_initializer)
             return lstm_cell
 
-        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = input_sequence_length, dtype = tf.float32)
+        # building the encoder network
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
+            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
 
-        final_timestep_predictions = tf.gather_nd(params=encoder_outputs, indices=output_array_indices)
+        with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
+            training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                 inputs=training_input,
+                                                                                 sequence_length=sequence_length,
+                                                                                 dtype=tf.float32)
 
-        # the final projection layer to convert the encoder_outputs to the desired dimension
-        prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=final_timestep_predictions, dtype=tf.float32), units=self.__output_size,
-                                            use_bias=self.__use_bias, kernel_initializer=weight_initializer)
-        prediction_output = tf.expand_dims(input=prediction_output, axis=1)
+        with tf.variable_scope(encoder_train_scope, reuse=tf.AUTO_REUSE) as encoder_inference_scope:
+            inference_encoder_outputs, inference_encoder_states = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                    inputs=validation_input,
+                                                                                    sequence_length=sequence_length,
+                                                                                    dtype=tf.float32)
+
+        # building the decoder network for training
+        with tf.variable_scope('dense_layer_train_scope') as dense_layer_train_scope:
+            train_final_timestep_predictions = tf.gather_nd(params=training_encoder_outputs,
+                                                            indices=output_array_indices)
+
+            # the final projection layer to convert the encoder_outputs to the desired dimension
+            train_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=train_final_timestep_predictions, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+            train_prediction_output = tf.expand_dims(input=train_prediction_output, axis=1)
+
+        # building the decoder network for inference
+        with tf.variable_scope(dense_layer_train_scope, reuse=tf.AUTO_REUSE) as dense_layer_inference_scope:
+            inference_final_timestep_predictions = tf.gather_nd(params=inference_encoder_outputs,
+                                                                indices=output_array_indices)
+
+            # the final projection layer to convert the encoder_outputs to the desired dimension
+            inference_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=inference_final_timestep_predictions, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+            inference_prediction_output = tf.expand_dims(input=inference_prediction_output, axis=1)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(prediction_output, actual_targets)
+        error = self.__l1_loss(train_prediction_output, actual_targets)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -91,20 +123,24 @@ class Seq2SeqModelTrainerWithDenseLayer:
         optimizer = optimizer_fn(total_loss)
 
         # create the training and validation datasets from the tfrecord files
-        training_dataset = tf.data.TFRecordDataset(filenames = [self.__binary_train_file_path], compression_type = "ZLIB")
-        validation_dataset = tf.data.TFRecordDataset(filenames = [self.__binary_validation_file_path], compression_type = "ZLIB")
+        training_dataset = tf.data.TFRecordDataset(filenames=[self.__binary_train_file_path], compression_type="ZLIB")
+        validation_dataset = tf.data.TFRecordDataset(filenames=[self.__binary_validation_file_path],
+                                                     compression_type="ZLIB")
 
         # parse the records
         tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
 
         # define the expected shapes of data after padding
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
-        validation_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size], [tf.Dimension(None), self.__output_size + 1])
+        validation_padded_shapes = (
+            [], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size],
+            [tf.Dimension(None), self.__output_size + 1])
 
         # preparing the training data
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
-                                                                  count=int(max_epoch_size), seed=shuffle_seed))
+        training_dataset = training_dataset.apply(
+            tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+                                               count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size,
@@ -130,7 +166,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
-        with tf.Session() as session :
+        with tf.Session() as session:
             session.run(init_op)
 
             for epoch in range(max_num_epochs):
@@ -141,12 +177,13 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
                 while True:
                     try:
-                        training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed: epoch})
+                        training_data_batch_value = session.run(next_training_data_batch,
+                                                                feed_dict={shuffle_seed: epoch})
 
                         session.run(optimizer,
                                     feed_dict={input: training_data_batch_value[1],
                                                target: training_data_batch_value[2],
-                                               input_sequence_length: training_data_batch_value[0]
+                                               sequence_length: training_data_batch_value[0]
                                                })
                     except tf.errors.OutOfRangeError:
                         break
@@ -159,12 +196,12 @@ class Seq2SeqModelTrainerWithDenseLayer:
                             # get the batch of validation inputs
                             validation_data_batch_value = session.run(next_validation_data_batch)
 
-
                             # get the output of the network for the validation input data batch
-                            validation_output = session.run(prediction_output,
-                                feed_dict={input: validation_data_batch_value[1],
-                                           input_sequence_length: validation_data_batch_value[0]
-                                           })
+                            validation_output = session.run(inference_prediction_output,
+                                                            feed_dict={input: validation_data_batch_value[1],
+                                                                       sequence_length:
+                                                                           validation_data_batch_value[0]
+                                                                       })
 
                             # calculate the smape for the validation data using vectorization
                             last_indices = validation_data_batch_value[0] - 1

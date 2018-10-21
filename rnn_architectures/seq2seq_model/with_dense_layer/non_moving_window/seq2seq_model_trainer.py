@@ -38,39 +38,71 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
         # adding noise to the input
         input = tf.placeholder(dtype=tf.float32, shape=[None, None, 1])
+        validation_input = input
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
-        input = input + noise
+        training_input = input + noise
+
         target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
-        input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
+        sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
         weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
 
         # create the model architecture
 
-        # building the encoder network
-
         # RNN with the LSTM layer
         def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes, initializer=weight_initializer)
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
+                                                initializer=weight_initializer)
             return lstm_cell
 
-        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(cell = multi_layered_encoder_cell, inputs = input, sequence_length = input_sequence_length, dtype = tf.float32)
+        # building the encoder network
+        multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
+            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+
+        with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
+            training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                 inputs=training_input,
+                                                                                 sequence_length=sequence_length,
+                                                                                 dtype=tf.float32)
+
+        with tf.variable_scope(encoder_train_scope, reuse=tf.AUTO_REUSE) as encoder_inference_scope:
+            inference_encoder_outputs, inference_encoder_states = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                    inputs=validation_input,
+                                                                                    sequence_length=sequence_length,
+                                                                                    dtype=tf.float32)
 
         # create a tensor array for the indices of the encoder outputs array
-        new_index_array = tf.range(start=0, limit=tf.shape(input_sequence_length)[0], delta=1)
-        output_array_indices = tf.stack([new_index_array, input_sequence_length - 1], axis=-1)
-        final_timestep_predictions = tf.gather_nd(params=encoder_outputs, indices=output_array_indices)
+        new_index_array = tf.range(start=0, limit=tf.shape(sequence_length)[0], delta=1)
+        output_array_indices = tf.stack([new_index_array, sequence_length - 1], axis=-1)
 
-        # the final projection layer to convert the encoder_outputs to the desired dimension
-        prediction_output = tf.layers.dense(inputs=tf.convert_to_tensor(value=final_timestep_predictions, dtype=tf.float32), units=self.__output_size,
-                                            use_bias=self.__use_bias, kernel_initializer=weight_initializer)
-        prediction_output = tf.expand_dims(input=prediction_output, axis=2)
+        # building the decoder network for training
+        with tf.variable_scope('dense_layer_train_scope') as dense_layer_train_scope:
+            train_final_timestep_predictions = tf.gather_nd(params=training_encoder_outputs,
+                                                            indices=output_array_indices)
+
+            # the final projection layer to convert the encoder_outputs to the desired dimension
+            train_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=train_final_timestep_predictions, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+            train_prediction_output = tf.expand_dims(input=train_prediction_output, axis=2)
+
+        # building the decoder network for inference
+        with tf.variable_scope(dense_layer_train_scope, reuse=tf.AUTO_REUSE) as dense_layer_inference_scope:
+            inference_final_timestep_predictions = tf.gather_nd(params=inference_encoder_outputs,
+                                                                indices=output_array_indices)
+
+            # the final projection layer to convert the encoder_outputs to the desired dimension
+            inference_prediction_output = tf.layers.dense(
+                inputs=tf.convert_to_tensor(value=inference_final_timestep_predictions, dtype=tf.float32),
+                units=self.__output_size,
+                use_bias=self.__use_bias, kernel_initializer=weight_initializer)
+            inference_prediction_output = tf.expand_dims(input=inference_prediction_output, axis=2)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(prediction_output, target)
+        error = self.__l1_loss(train_prediction_output, target)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -139,7 +171,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
                         session.run(optimizer,
                                     feed_dict={input: training_data_batch_value[1],
                                                target: training_data_batch_value[2],
-                                               input_sequence_length: training_data_batch_value[0]
+                                               sequence_length: training_data_batch_value[0]
                                                })
                     except tf.errors.OutOfRangeError:
                         break
@@ -156,10 +188,10 @@ class Seq2SeqModelTrainerWithDenseLayer:
                             target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                             # get the output of the network for the validation input data batch
-                            validation_output = session.run(prediction_output,
+                            validation_output = session.run(inference_prediction_output,
                                 feed_dict={input: validation_data_batch_value[1],
                                            target: np.zeros(target_data_shape),
-                                           input_sequence_length: validation_data_batch_value[0]
+                                           sequence_length: validation_data_batch_value[0]
                                            })
 
                             # calculate the smape for the validation data using vectorization
