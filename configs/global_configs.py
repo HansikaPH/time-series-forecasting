@@ -10,8 +10,8 @@ class model_testing_configs:
 # configs for hyperparameter tuning(bayesian optimization/SMAC3)
 class hyperparameter_tuning_configs:
     BAYESIAN_INIT_POINTS = 5
-    BAYESIAN_NUM_ITER = 50
+    BAYESIAN_NUM_ITER = 100
     SMAC_RUNCOUNT_LIMIT = 50
 
 class training_data_configs:
-    SHUFFLE_BUFFER_SIZE = 10000
+    SHUFFLE_BUFFER_SIZE = 20000

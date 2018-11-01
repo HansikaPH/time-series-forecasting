@@ -44,7 +44,8 @@ class Seq2SeqModelTrainer:
 
         validation_input = input
 
-        target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
+        training_target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
+        decoder_input = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
@@ -86,9 +87,10 @@ class Seq2SeqModelTrainer:
         # building the decoder network for training
         with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
             # create the initial state for the decoder
-            training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+            training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                sequence_length=output_sequence_length,
-                                                                               sampling_probability=0.0)
+                                                                               sampling_probability=0.0,
+                                                                               name = "training_helper")
             training_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=training_helper,
                                                                initial_state=training_encoder_state,
                                                                output_layer=dense_layer)
@@ -99,9 +101,10 @@ class Seq2SeqModelTrainer:
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
             # create the initial state for the decoder
-            inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+            inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                 sequence_length=output_sequence_length,
-                                                                                sampling_probability=1.0)
+                                                                                sampling_probability=1.0,
+                                                                                name = "inference_helper")
             inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=inference_helper,
                                                                 initial_state=inference_encoder_states,
                                                                 output_layer=dense_layer)
@@ -111,7 +114,7 @@ class Seq2SeqModelTrainer:
 
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(training_decoder_outputs[0], target)
+        error = self.__l1_loss(training_decoder_outputs[0], training_target)
 
 
         # l2 regularization of the trainable model parameters
@@ -179,12 +182,18 @@ class Seq2SeqModelTrainer:
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
+                        training_input_value = session.run(training_input, feed_dict={input: training_data_batch_value[1]})
 
-                        session.run(optimizer,
+                        decoder_input_value = np.hstack((np.expand_dims(training_input_value[:, -1, :], axis=1), training_data_batch_value[2][:, :-1, :]))
+
+                        total_loss_value, _ = session.run([total_loss, optimizer],
                                     feed_dict={input: training_data_batch_value[1],
-                                               target: training_data_batch_value[2],
+                                               training_target: training_data_batch_value[2],
+                                               decoder_input: decoder_input_value,
                                                input_sequence_length: training_data_batch_value[0],
                                                output_sequence_length: [self.__output_size] * np.shape(training_data_batch_value[1])[0]})
+
+
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -197,17 +206,16 @@ class Seq2SeqModelTrainer:
                             validation_data_batch_value = session.run(next_validation_data_batch)
 
                             # shape for the target data
-                            target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
+                            decoder_input_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
                             # get the output of the network for the validation input data batch
                             validation_output = session.run(inference_decoder_outputs[0],
                                 feed_dict={input: validation_data_batch_value[1],
-                                           target: np.zeros(target_data_shape),
+                                           decoder_input: np.zeros(decoder_input_shape),
                                            input_sequence_length: validation_data_batch_value[0],
                                            output_sequence_length: [self.__output_size] *
                                                                    np.shape(validation_data_batch_value[1])[0]
                                            })
-
                             # calculate the smape for the validation data using vectorization
 
                             # convert the data to remove the preprocessing
@@ -240,5 +248,6 @@ class Seq2SeqModelTrainer:
 
             smape_final = np.mean(smape_final_list)
             print("SMAPE value: {}".format(smape_final))
+            session.close()
 
         return smape_final

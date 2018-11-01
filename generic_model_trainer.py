@@ -18,18 +18,12 @@ from smac.facade.smac_facade import SMAC
 ## import the different model architectures
 
 # stacking model
-from rnn_architectures.stacking_model.BPTT.stacking_model_trainer import \
-    StackingModelTrainer as BPTTStackingModelTrainer
-from rnn_architectures.stacking_model.TBPTT.stacking_model_trainer import \
-    StackingModelTrainer as TBPTTStackingModelTrainer
+from rnn_architectures.stacking_model.stacking_model_trainer import \
+    StackingModelTrainer as StackingModelTrainer
 
 # seq2seq model with decoder
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import \
     Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindow
-from rnn_architectures.seq2seq_model.with_decoder.moving_window.window_per_step.seq2seq_model_trainer import \
-    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindow
-from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_step.seq2seq_model_trainer import \
-    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithMovingWindowOneInputPerStep
 
 # seq2seq model with dense layer
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import \
@@ -40,8 +34,6 @@ from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_mode
 # attention model
 from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_trainer import \
     AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithoutSeasonality
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.moving_window.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerWithMovingWindow
 from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_trainer import \
     AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithSeasonality
 
@@ -86,6 +78,7 @@ def read_initial_hyperparameter_values():
     return hyperparameter_values_dic
 
 
+
 # Training the time series
 def train_model_smac(configs):
     rate_of_learning = configs["rate_of_learning"]
@@ -116,7 +109,7 @@ def train_model_smac(configs):
                                       tbptt_chunk_length=tbptt_chunk_length,
                                       optimizer_fn=optimizer_fn)
 
-    print("Error: {}".format(error))
+    print(model_identifier)
     return error
 
 
@@ -136,7 +129,6 @@ def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size,
                                       random_normal_initializer_stdev=random_normal_initializer_stdev,
                                       tbptt_chunk_length=tbptt_chunk_length,
                                       optimizer_fn=optimizer_fn)
-    print("Error: {}".format(error))
     return -1 * error
 
 
@@ -331,14 +323,14 @@ if __name__ == '__main__':
     seed = int(args.seed)
 
     if args.without_stl_decomposition:
-        without_stl_decomposition = int(args.without_stl_decomposition)
+        without_stl_decomposition = bool(int(args.without_stl_decomposition))
     else:
-        without_stl_decomposition = 0
+        without_stl_decomposition = False
 
     if args.with_truncated_backpropagation:
-        with_truncated_backpropagation = int(args.with_truncated_backpropagation)
+        with_truncated_backpropagation = bool(int(args.with_truncated_backpropagation))
     else:
-        with_truncated_backpropagation = 0
+        with_truncated_backpropagation = False
 
     if with_truncated_backpropagation:
         tbptt_identifier = "with_truncated_backpropagation"
@@ -376,17 +368,9 @@ if __name__ == '__main__':
 
     # select the model type
     if model_type == "stacking":
-        if with_truncated_backpropagation == 0:
-            model_trainer = BPTTStackingModelTrainer(**model_kwargs)
-        else:
-            model_trainer = TBPTTStackingModelTrainer(**model_kwargs)
+        model_trainer = StackingModelTrainer(**model_kwargs)
     elif model_type == "seq2seq":
-        if input_format == "non_moving_window":
-            model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(**model_kwargs)
-        elif input_format == "moving_window":
-            model_trainer = Seq2SeqModelTrainerWithMovingWindow(**model_kwargs)
-        elif input_format == "moving_window_one_input_per_step":
-            model_trainer = Seq2SeqModelTrainerWithMovingWindowOneInputPerStep(**model_kwargs)
+        model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindow(**model_kwargs)
@@ -398,8 +382,6 @@ if __name__ == '__main__':
                 model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(**model_kwargs)
             else:
                 model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(**model_kwargs)
-        elif input_format == "moving_window":
-            model_trainer = AttentionModelTrainerWithMovingWindow(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values()
@@ -412,11 +394,11 @@ if __name__ == '__main__':
 
     # NN5 configs
     # optimized_configuration = {
-    #     "num_hidden_layers": 1,
+    #     "num_hidden_layers": 4,
     #     "lstm_cell_dimension": 23,
-    #     "minibatch_size": 5,
-    #     "rate_of_learning": 0.8113262220421187676,
-    #     "max_epoch_size": 3,
+    #     "minibatch_size": 20,
+    #     "rate_of_learning": 0.2113262220421187676,
+    #     "max_epoch_size": 1,
     #     "gaussian_noise_stdev": 0.00023780395225712772,
     #     "l2_regularization": 0.00015753660121731034,
     #     "max_num_epochs": 25,
@@ -425,16 +407,16 @@ if __name__ == '__main__':
 
     # NN3 configs
     # optimized_configuration = {
-    #     "num_hidden_layers" : 1.075789638829622,
+    #     "num_hidden_layers": 1,
     #     "lstm_cell_dimension": 23,
-    #     "minibatch_size": 5,
+    #     "minibatch_size": 10,
     #     "rate_of_learning": 0.93262220421187676,
-    #     "max_epoch_size": 1,
+    #     "max_epoch_size": 2,
     #     "gaussian_noise_stdev": 0.00023780395225712772,
     #     "l2_regularization": 0.00015753660121731034,
     #     "max_num_epochs": 20,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717,
-    #     "tbptt_chunk_length": 5
+    #     "random_normal_initializer_stdev": 0.00027502494731703717
+    #     # "tbptt_chunk_length": 5
     # }
 
     # CIF configs
@@ -479,12 +461,12 @@ if __name__ == '__main__':
     # }
 
     # cif
-    # optimized_configuration = {'num_hidden_layers': 1.0, 'lstm_cell_dimension': 28.471127262736434,
-    #                            'minibatch_size': 28.135034205224617, 'max_epoch_size': 9.1502825822926326,
-    #                            'max_num_epochs': 16.962475980675006, 'l2_regularization': 0.0006369387641617046,
+    # optimized_configuration = {'num_hidden_layers': 5.0, 'lstm_cell_dimension': 28.471127262736434,
+    #                            'minibatch_size': 10.135034205224617, 'max_epoch_size': 9.1502825822926326,
+    #                            'max_num_epochs': 20.962475980675006, 'l2_regularization': 0.0006369387641617046,
     #                            'gaussian_noise_stdev': 0.00057001364478555087,
     #                            'random_normal_initializer_stdev': 0.00025797511482927632,
-    #                            'rate_of_learning': 0.50172634121590136}
+    #                            'rate_of_learning': 0.20172634121590136}
 
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')

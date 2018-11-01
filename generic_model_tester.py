@@ -6,22 +6,23 @@ import random
 # import the different model types
 
 # stacking model
-from rnn_architectures.stacking_model.BPTT.stacking_model_tester import StackingModelTester as BPTTStackingModelTester
-from rnn_architectures.stacking_model.TBPTT.stacking_model_tester import StackingModelTester as TBPTTStackingModelTester
+from rnn_architectures.stacking_model.stacking_model_tester import StackingModelTester as StackingModelTester
 
 # seq2seq model with decoder
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindow
-from rnn_architectures.seq2seq_model.with_decoder.moving_window.window_per_step.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithMovingWindow
-from rnn_architectures.seq2seq_model.with_decoder.moving_window.one_input_per_step.seq2seq_model_tester import Seq2SeqModelTester as Seq2SeqModelTesterWithMovingWindowOneInputPerStep
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import \
+    Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindow
 
 # seq2seq model with dense layer
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindow
-from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_tester import Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import \
+    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindow
+from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_tester import \
+    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithMovingWindow
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -34,15 +35,19 @@ BIAS = False
 
 learning_rate = 0.0
 
+
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
+
 def adam_optimizer_fn(total_loss):
     return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
+
 def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
+
 
 def testing(args, config_dictionary):
     # to make the random number choices reproducible
@@ -55,7 +60,7 @@ def testing(args, config_dictionary):
     binary_test_file_path_test_mode = args.binary_test_file_test_mode
     txt_test_file_path = args.txt_test_file
     actual_results_file_path = args.actual_results_file
-    if(args.input_size):
+    if (args.input_size):
         input_size = int(args.input_size)
     else:
         input_size = 0
@@ -70,26 +75,27 @@ def testing(args, config_dictionary):
     random.seed(seed)
 
     if args.without_stl_decomposition:
-        without_stl_decomposition = int(args.without_stl_decomposition)
+        without_stl_decomposition = bool(int(args.without_stl_decomposition))
     else:
-        without_stl_decomposition = 0
+        without_stl_decomposition = False
 
     if args.with_truncated_backpropagation:
-        with_truncated_backpropagation = int(args.with_truncated_backpropagation)
+        with_truncated_backpropagation = bool(int(args.with_truncated_backpropagation))
     else:
-        with_truncated_backpropagation = 0
+        with_truncated_backpropagation = False
 
-    if with_truncated_backpropagation == 0:
+    if not with_truncated_backpropagation:
         tbptt_identifier = "without_truncated_backpropagation"
     else:
         tbptt_identifier = "with_truncated_backpropagation"
 
-    if without_stl_decomposition == 0:
+    if not without_stl_decomposition:
         stl_decomposition_identifier = "with_stl_decomposition"
     else:
         stl_decomposition_identifier = "without_stl_decomposition"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(seed)
+    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+        seed)
     print("Model Testing Started for {}".format(model_identifier))
     print(config_dictionary)
 
@@ -114,31 +120,19 @@ def testing(args, config_dictionary):
 
     # select the model type
     if model_type == "stacking":
-        if with_truncated_backpropagation == 0:
-            model_tester = BPTTStackingModelTester(**model_kwargs)
-        else:
-            model_tester = TBPTTStackingModelTester(**model_kwargs)
+        model_tester = StackingModelTester(**model_kwargs)
     elif model_type == "seq2seq":
-        if input_format == "non_moving_window":
-            model_tester = Seq2SeqModelTesterWithNonMovingWindow(**model_kwargs)
-        elif input_format == "moving_window":
-            model_tester = Seq2SeqModelTesterWithMovingWindow(**model_kwargs)
-        elif input_format == "moving_window_one_input_per_step":
-            model_tester = Seq2SeqModelTesterWithMovingWindowOneInputPerStep(**model_kwargs)
-
+        model_tester = Seq2SeqModelTesterWithNonMovingWindow(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindow(**model_kwargs)
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
-        if input_format == "non_moving_window":
-            if without_stl_decomposition:
-                model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
-            else:
-                model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
-        elif input_format == "moving_window":
-            model_tester = AttentionModelTesterWithMovingWindow(**model_kwargs)
+        if without_stl_decomposition:
+            model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
+        else:
+            model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
@@ -155,16 +149,16 @@ def testing(args, config_dictionary):
     else:
         tbptt_chunk_length = 0
 
-    list_of_forecasts = model_tester.test_model(num_hidden_layers = int(round(num_hidden_layers)),
-                                      lstm_cell_dimension = int(round(lstm_cell_dimension)),
-                                      minibatch_size = int(round(minibatch_size)),
-                                      max_epoch_size = int(round(max_epoch_size)),
-                                      max_num_epochs = int(round(max_num_epochs)),
-                                      l2_regularization = l2_regularization,
-                                      gaussian_noise_stdev = gaussian_noise_stdev,
-                                      random_normal_initializer_stdev=random_normal_initializer_stdev,
-                                      tbptt_chunk_length = tbptt_chunk_length,
-                                      optimizer_fn = optimizer_fn)
+    list_of_forecasts = model_tester.test_model(num_hidden_layers=int(round(num_hidden_layers)),
+                                                lstm_cell_dimension=int(round(lstm_cell_dimension)),
+                                                minibatch_size=int(round(minibatch_size)),
+                                                max_epoch_size=int(round(max_epoch_size)),
+                                                max_num_epochs=int(round(max_num_epochs)),
+                                                l2_regularization=l2_regularization,
+                                                gaussian_noise_stdev=gaussian_noise_stdev,
+                                                random_normal_initializer_stdev=random_normal_initializer_stdev,
+                                                tbptt_chunk_length=tbptt_chunk_length,
+                                                optimizer_fn=optimizer_fn)
 
     # write the forecasting results to a file
     rnn_forecasts_file_path = model_testing_configs.RNN_FORECASTS_DIRECTORY + model_identifier + '.txt'
@@ -178,14 +172,14 @@ def testing(args, config_dictionary):
     snaive_forecasts_file_path = model_testing_configs.SNAIVE_FORECASTS_DIRECTORY + dataset_name + '.txt'
 
     if input_format == "moving_window":
-        invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True, False)
+        invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
+                         actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True,
+                        False)
     else:
         if without_stl_decomposition:
-            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
+            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
+                             actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
         else:
-            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path, actual_results_file_path,
+            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
+                             actual_results_file_path,
                              str(output_size), str(contain_zero_values)), False, False)
-
-
-
-

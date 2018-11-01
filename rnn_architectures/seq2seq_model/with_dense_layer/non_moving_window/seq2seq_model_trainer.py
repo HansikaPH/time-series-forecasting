@@ -168,7 +168,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
-                        session.run(optimizer,
+                        total_loss_value, _ = session.run([total_loss, optimizer],
                                     feed_dict={input: training_data_batch_value[1],
                                                target: training_data_batch_value[2],
                                                sequence_length: training_data_batch_value[0]
@@ -193,7 +193,6 @@ class Seq2SeqModelTrainerWithDenseLayer:
                                            target: np.zeros(target_data_shape),
                                            sequence_length: validation_data_batch_value[0]
                                            })
-
                             # calculate the smape for the validation data using vectorization
 
                             # convert the data to remove the preprocessing
@@ -226,5 +225,6 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
             smape_final = np.mean(smape_final_list)
             print("SMAPE value: {}".format(smape_final))
+            session.close()
 
         return smape_final

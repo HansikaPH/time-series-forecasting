@@ -44,9 +44,10 @@ class Seq2SeqModelTester:
         noise = tf.random_normal(shape=tf.shape(input), mean=0.0, stddev=gaussian_noise_stdev, dtype=tf.float32)
         training_input = input + noise
 
-        testing_input = input
+        validation_input = input
 
-        target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
+        training_target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
+        decoder_input = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
@@ -73,8 +74,8 @@ class Seq2SeqModelTester:
                                                                                  dtype=tf.float32)
 
         with tf.variable_scope(encoder_train_scope, reuse=tf.AUTO_REUSE) as encoder_inference_scope:
-            inference_encoder_outputs, inference_encoder_states = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
-                                                                                    inputs=testing_input,
+            inference_encoder_outputs, inference_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                    inputs=validation_input,
                                                                                     sequence_length=input_sequence_length,
                                                                                     dtype=tf.float32)
 
@@ -88,9 +89,10 @@ class Seq2SeqModelTester:
         # building the decoder network for training
         with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
             # create the initial state for the decoder
-            training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+            training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                sequence_length=output_sequence_length,
-                                                                               sampling_probability=0.0)
+                                                                               sampling_probability=0.0,
+                                                                               name="training_helper")
             training_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=training_helper,
                                                                initial_state=training_encoder_state,
                                                                output_layer=dense_layer)
@@ -101,19 +103,20 @@ class Seq2SeqModelTester:
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
             # create the initial state for the decoder
-            inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=target,
+            inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                 sequence_length=output_sequence_length,
-                                                                                sampling_probability=1.0)
+                                                                                sampling_probability=1.0,
+                                                                                name="inference_helper")
             inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell,
                                                                 helper=inference_helper,
-                                                                initial_state=inference_encoder_states,
+                                                                initial_state=inference_encoder_state,
                                                                 output_layer=dense_layer)
 
             # perform the decoding
             inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(training_decoder_outputs[0], target)
+        error = self.__l1_loss(training_decoder_outputs[0], training_target)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -175,15 +178,20 @@ class Seq2SeqModelTester:
                 print("Epoch->", epoch)
 
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch})
-
                 while True:
                     try:
                         next_training_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
+                        training_input_value = session.run(training_input,
+                                                           feed_dict={input: next_training_batch_value[1]})
+
+                        decoder_input_value = np.hstack((np.expand_dims(training_input_value[:, -1, :], axis=1),
+                                                         next_training_batch_value[2][:, :-1, :]))
 
                         # model training
-                        session.run(optimizer,
+                        loss, _ = session.run([total_loss, optimizer],
                                     feed_dict={input: next_training_batch_value[1],
-                                               target: next_training_batch_value[2],
+                                               training_target: next_training_batch_value[2],
+                                               decoder_input: decoder_input_value,
                                                input_sequence_length: next_training_batch_value[0],
                                                output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]})
                     except tf.errors.OutOfRangeError:
@@ -199,12 +207,12 @@ class Seq2SeqModelTester:
                     test_input_batch_value = session.run(test_input_data_batch)
 
                     # shape for the target data
-                    target_data_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
+                    decoder_input_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
 
                     # get the output of the network for the test input data batch
                     test_output = session.run(inference_decoder_outputs[0],
                                               feed_dict={input: test_input_batch_value[1],
-                                                         target: np.zeros(shape = target_data_shape),
+                                                         decoder_input: np.zeros(decoder_input_shape),
                                                          input_sequence_length: test_input_batch_value[0],
                                                          output_sequence_length: [self.__output_size] * np.shape(test_input_batch_value[1])[0]})
 

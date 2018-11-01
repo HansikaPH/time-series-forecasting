@@ -23,21 +23,7 @@ numeric_dataset_log = numeric_dataset_log[,1 : time_series_length]
 for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
   #
-  # stl_result= tryCatch({
-  #   sstl=stl(ts(time_series_log,frequency=7),"period")
-  #   seasonal_vect=as.numeric(sstl$time.series[,1])
-  #   levels_vect=as.numeric(sstl$time.series[,2])
-  #   values_vect=as.numeric(sstl$time.series[,2]+sstl$time.series[,3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-  #   cbind(seasonal_vect,levels_vect,values_vect)
-  # }, error = function(e) {
-  #   seasonal_vect=rep(0,length(time_series_log))   #stl() may fail, and then we would go on with the seasonality vector=0
-  #   levels_vect=time_series_log
-  #   values_vect=time_series_log
-  #   cbind(seasonal_vect, levels_vect, values_vect)
-  # })
-
-
-  level=time_series_log[time_series_length - max_forecast_horizon] #last "trend" point in the input window is the "level" (the value used for the normalization)
+  level=mean(time_series_log[1:(time_series_length - max_forecast_horizon)]) #mean "trend" in the input window is the "level" (the value used for the normalization)
   sav_df=data.frame(id=paste(idr,'|i',sep=''));
   normalized_values = time_series_log - level
 

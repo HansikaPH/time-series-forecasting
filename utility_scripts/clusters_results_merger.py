@@ -5,63 +5,85 @@ import numpy as np
 import argparse
 
 input_path = '../results/errors/'
+output_path = '../results/errors/merged_cluster_results'
 
 # get the different cluster names as external arguments
-argument_parser = argparse.ArgumentParser("Train different forecasting models")
+argument_parser = argparse.ArgumentParser("Concatenate different cluster results of the same dataset")
 argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
 
-output_file_mean_median = input_path + "mean_median_cif2016_"
-output_file_all_smape_errors = input_path + "all_smape_errors_cif2016_"
-output_file_all_mase_errors = input_path + "all_mase_errors_cif2016_"
+# parse the user arguments
+args = argument_parser.parse_args()
+
+dataset_name = args.dataset_name
+
+output_file_mean_median = input_path + "mean_median_" + dataset_name + "_"
+output_file_all_smape_errors = input_path + "all_smape_errors_" + dataset_name + "_"
+output_file_all_mase_errors = input_path + "all_mase_errors_" + dataset_name + "_"
 
 # get the list of all the files matching the regex
-all_smape_errors_files_o6 = [filename for filename in glob.iglob(input_path + "all_smape_errors_cif2016_O6_" + "*")]
-all_smape_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_smape_errors_cif2016_O12_" + "*")]
 
-all_mase_errors_files_o6 = [filename for filename in glob.iglob(input_path + "all_mase_errors_cif2016_O6_" + "*")]
-all_mase_errors_files_o12 = [filename for filename in glob.iglob(input_path + "all_mase_errors_cif2016_O12_" + "*")]
+# smape errors
+all_smape_errors_files = [filename for filename in glob.iglob(input_path + "all_smape_errors_" + dataset_name + "_*")]
+
+# mase errors
+all_mase_errors_files = [filename for filename in glob.iglob(input_path + "all_mase_errors_" + dataset_name + "_*")]
+
+all_mase_errors_dic = {}
+all_smape_errors_dic = {}
 
 # read the files one by one and merge the content
-for filename_smape_o6, filename_smape_o12, filename_mase_o6, filename_mase_o12 in zip(sorted(all_smape_errors_files_o6),
-                                                                                      sorted(
-                                                                                              all_smape_errors_files_o12),
-                                                                                      sorted(all_mase_errors_files_o6),
-                                                                                      sorted(
-                                                                                              all_mase_errors_files_o12)):
-    filename_o6_smape_object = open(filename_smape_o6)
-    filename_o12_smape_object = open(filename_smape_o12)
+for smape_errors_file, mase_errors_file in zip(sorted(all_smape_errors_files),
+                                                         sorted(all_mase_errors_files)):
+    filename_smape_object = open(smape_errors_file)
+    filename_mase_object = open(mase_errors_file)
 
-    filename_o6_mase_object = open(filename_mase_o6)
-    filename_o12_mase_object = open(filename_mase_o12)
-
-    filename_part = filename_smape_o6.split(sep="all_smape_errors_cif2016_O6_", maxsplit=1)[1]
-
-    output_file_all_smape_errors_object = open(output_file_all_smape_errors + filename_part, "w")
-    output_file_all_mase_errors_object = open(output_file_all_mase_errors + filename_part, "w")
-    output_file_mean_median_object = open(output_file_mean_median + filename_part, "w")
+    # TODO: check the regular expression
+    filename_part = smape_errors_file.split(sep="all_smape_errors_" + dataset_name + "[a-zA-Z0-9]+$_" , maxsplit=1)[1]
 
     # read the errors from both files
-    all_errors_o6 = [float(num) for num in filename_o6_smape_object]
-    all_errors_o12 = [float(num) for num in filename_o12_smape_object]
+    all_smape_errors = [float(num) for num in filename_smape_object]
+    all_mase_errors = [float(num) for num in filename_mase_object]
 
-    # merge the errors of the two files
-    all_errors_array = np.array(all_errors_o12 + all_errors_o6, dtype=np.float32)
+    all_mase_errors_dic[filename_part].append(all_mase_errors)
+    all_smape_errors_dic[filename_part].appenf(all_smape_errors)
 
-    # calculate the mean, median. std
-    mean = np.mean(all_errors_array, axis=0)
-    median = np.median(all_errors_array, axis=0)
-    std = np.std(all_errors_array, axis=0)
+# iterate the dictionaries and write to files
+for (smape_key, smape_errors), (mase_key, mase_errors) in zip(all_mase_errors_dic.items(), all_smape_errors_dic.items()):
 
-    # write the mean, median, std to file
-    output_file_mean_median_object.writelines(output_file_mean_median + filename_part)
-    output_file_mean_median_object.writelines("mean_error:" + mean)
-    output_file_mean_median_object.writelines("median_error:" + median)
-    output_file_mean_median_object.writelines("std_error:" + std)
+    # open the all errors smape file
+    output_file_all_smape_errors_object = open(output_file_all_smape_errors + dataset_name + "_" + smape_key, "w")
 
-    # write all errors to file
-    output_file_ranked_error_object.write(np.transpose(all_errors_array))
+    # open the all errors mase file
+    output_file_all_mase_errors_object = open(output_file_all_mase_errors + dataset_name + "_" + mase_key, "w")
 
-    # close all files
-    filename_o6_smape_object.close()
-    filename_o12_smape_object.close()
+    # open the mean errors file
+    output_file_mean_median_object = open(output_file_mean_median + dataset_name + "_" + smape_key, "w")
+
+    # calculate smape mean, std
+    smape_mean = np.mean(smape_errors, axis=0)
+    smape_median = np.median(smape_errors, axis=0)
+    smape_std = np.std(smape_errors, axis=0)
+
+    # calculate mase mean, std
+    mase_mean = np.mean(mase_errors, axis=0)
+    mase_median = np.median(mase_errors, axis=0)
+    mase_std = np.std(mase_errors, axis=0)
+
+    # write to files
+    output_file_all_smape_errors_object.writelines(smape_errors)
+    output_file_all_mase_errors_object.writelines(mase_errors)
+    output_file_mean_median_object.writelines("mean_SMAPE:" + smape_mean)
+    output_file_mean_median_object.writelines("median_SMAPE:" + smape_median)
+    output_file_mean_median_object.writelines("std_SMAPE:" + smape_std)
+
+    output_file_mean_median_object.writelines("")
+    output_file_mean_median_object.writelines("")
+
+    output_file_mean_median_object.writelines("mean_MASE:" + mase_mean)
+    output_file_mean_median_object.writelines("median_MASE:" + mase_median)
+    output_file_mean_median_object.writelines("std_MASE:" + mase_std)
+
+    # close the files
+    output_file_all_smape_errors_object.close()
+    output_file_all_mase_errors_object.close()
     output_file_mean_median_object.close()
