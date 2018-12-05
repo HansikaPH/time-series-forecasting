@@ -16,6 +16,7 @@ class AttentionModelTrainer:
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
         self.__seed = kwargs["seed"]
+        self.__cell_type = kwargs["cell_type"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -25,7 +26,7 @@ class AttentionModelTrainer:
     def train_model(self, **kwargs):
 
         num_hidden_layers = kwargs['num_hidden_layers']
-        lstm_cell_dimension = kwargs["lstm_cell_dimension"]
+        cell_dimension = kwargs["cell_dimension"]
         minibatch_size = kwargs["minibatch_size"]
         max_epoch_size = kwargs["max_epoch_size"]
         max_num_epochs = kwargs["max_num_epochs"]
@@ -33,6 +34,7 @@ class AttentionModelTrainer:
         gaussian_noise_stdev = kwargs["gaussian_noise_stdev"]
         random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
         optimizer_fn = kwargs["optimizer_fn"]
+        # iteration = kwargs["iteration"]
 
         tf.reset_default_graph()
 
@@ -52,19 +54,24 @@ class AttentionModelTrainer:
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
         output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev)
 
         # create the model architecture
 
-        # RNN with the LSTM layer
-        def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
-                                                initializer=weight_initializer)
-            return lstm_cell
+        # RNN with the layer of cells
+        def cell():
+            if self.__cell_type == "LSTM":
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=int(cell_dimension), use_peepholes=self.__use_peepholes,
+                                         initializer=weight_initializer)
+            elif self.__cell_type == "GRU":
+                cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
+            elif self.__cell_type == "RNN":
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+            return cell
 
         # building the encoder network
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
-            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+            cells=[cell() for _ in range(int(num_hidden_layers))])
 
         with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
             training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
@@ -83,18 +90,18 @@ class AttentionModelTrainer:
 
         # decoder cell of the decoder network
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(
-            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+            cells=[cell() for _ in range(int(num_hidden_layers))])
 
         # building the decoder network for training
         with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
             # creating an attention layer
-            training_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension,
+            training_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
                                                                                 memory=training_encoder_outputs,
                                                                                 memory_sequence_length=input_sequence_length)
             # using the attention wrapper to wrap the decoding cell
             training_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
                                                                         attention_mechanism=training_attention_mechanism,
-                                                                        attention_layer_size=lstm_cell_dimension)
+                                                                        attention_layer_size=cell_dimension)
             # create the initial state for the decoder
             training_decoder_initial_state = training_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
                                                                               dtype=tf.float32).clone(
@@ -112,12 +119,12 @@ class AttentionModelTrainer:
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
             # creating an attention layer
-            inference_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension,
+            inference_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
                                                                                  memory=inference_encoder_outputs,
                                                                                  memory_sequence_length=input_sequence_length)
             inference_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
                                                                          attention_mechanism=inference_attention_mechanism,
-                                                                         attention_layer_size=lstm_cell_dimension)
+                                                                         attention_layer_size=cell_dimension)
             # create the initial state for the decoder
             inference_decoder_initial_state = inference_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
                                                                                 dtype=tf.float32).clone(
@@ -192,13 +199,19 @@ class AttentionModelTrainer:
 
         with tf.Session() as session:
             session.run(init_op)
-
+            # print(iteration)
+            # writer_val = tf.summary.FileWriter('./logs/plot_val')
+            # writer_train = tf.summary.FileWriter('./logs/plot_train')
+            # loss_var = tf.Variable(0.0)
+            # tf.summary.scalar("loss", loss_var)
+            # write_op = tf.summary.merge_all()
+            smape_epoch = 0.0
             for epoch in range(max_num_epochs):
                 smape_epoch_list = []
                 print("Epoch->", epoch)
 
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
-
+                training_losses = []
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch,
@@ -218,8 +231,12 @@ class AttentionModelTrainer:
                                                output_sequence_length: [self.__output_size] *
                                                                        np.shape(training_data_batch_value[1])[0]
                                                })
+                        training_losses.append(total_loss_value)
                     except tf.errors.OutOfRangeError:
                         break
+                # summary = session.run(write_op, {loss_var: np.mean(training_losses)})
+                # writer_train.add_summary(summary, epoch)
+                # writer_train.flush()
 
                 if epoch % model_training_configs.INFO_FREQ == 0:
                     session.run(validation_data_iterator.initializer)
@@ -268,11 +285,14 @@ class AttentionModelTrainer:
 
                         except tf.errors.OutOfRangeError:
                             break
+                    # summary = session.run(write_op, {loss_var: np.mean(np.mean(smape_epoch_list))})
+                    # writer_val.add_summary(summary, epoch)
+                    # writer_val.flush()
                 smape_epoch = np.mean(smape_epoch_list)
-                smape_final_list.append(smape_epoch)
+                # smape_final_list.append(smape_epoch)
 
-            smape_final = np.mean(smape_final_list)
+            # smape_final = np.mean(smape_final_list)
+            smape_final = smape_epoch
             print("SMAPE value: {}".format(smape_final))
             session.close()
-
         return smape_final

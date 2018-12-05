@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
+# from matplotlib import pyplot as plt
 
 class AttentionModelTester:
 
@@ -13,7 +14,7 @@ class AttentionModelTester:
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
         self.__seed = kwargs["seed"]
-
+        self.__cell_type = kwargs["cell_type"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -26,7 +27,7 @@ class AttentionModelTester:
         num_hidden_layers = kwargs['num_hidden_layers']
         max_num_epochs = kwargs['max_num_epochs']
         max_epoch_size = kwargs['max_epoch_size']
-        lstm_cell_dimension = kwargs['lstm_cell_dimension']
+        cell_dimension = kwargs['cell_dimension']
         l2_regularization = kwargs['l2_regularization']
         minibatch_size = kwargs['minibatch_size']
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
@@ -54,19 +55,24 @@ class AttentionModelTester:
         input_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
         output_sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev)
 
         # create the model architecture
 
-        # RNN with the LSTM layer
-        def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
-                                                initializer=weight_initializer)
-            return lstm_cell
+        # RNN with the layer of cells
+        def cell():
+            if self.__cell_type == "LSTM":
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=int(cell_dimension), use_peepholes=self.__use_peepholes,
+                                         initializer=weight_initializer)
+            elif self.__cell_type == "GRU":
+                cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
+            elif self.__cell_type == "RNN":
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+            return cell
 
         # building the encoder network
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
-            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+            cells=[cell() for _ in range(int(num_hidden_layers))])
 
         with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
             training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
@@ -85,18 +91,18 @@ class AttentionModelTester:
 
         # decoder cell of the decoder network
         multi_layered_decoder_cell = tf.nn.rnn_cell.MultiRNNCell(
-            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+            cells=[cell() for _ in range(int(num_hidden_layers))])
 
         # building the decoder network for training
         with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
             # creating an attention layer
-            training_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension,
+            training_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
                                                                                 memory=training_encoder_outputs,
                                                                                 memory_sequence_length=input_sequence_length)
             # using the attention wrapper to wrap the decoding cell
             training_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
                                                                         attention_mechanism=training_attention_mechanism,
-                                                                        attention_layer_size=lstm_cell_dimension)
+                                                                        attention_layer_size=cell_dimension, alignment_history=True)
             # create the initial state for the decoder
             training_decoder_initial_state = training_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
                                                                               dtype=tf.float32).clone(
@@ -114,12 +120,12 @@ class AttentionModelTester:
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
             # creating an attention layer
-            inference_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=lstm_cell_dimension,
+            inference_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
                                                                                  memory=inference_encoder_outputs,
                                                                                  memory_sequence_length=input_sequence_length)
             inference_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
                                                                          attention_mechanism=inference_attention_mechanism,
-                                                                         attention_layer_size=lstm_cell_dimension)
+                                                                         attention_layer_size=cell_dimension, alignment_history=True)
             # create the initial state for the decoder
             inference_decoder_initial_state = inference_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
                                                                                 dtype=tf.float32).clone(
@@ -132,7 +138,7 @@ class AttentionModelTester:
                                                                 output_layer=dense_layer)
 
             # perform the decoding
-            inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
+            inference_decoder_outputs, inference_decoder_states, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
 
         # error that should be minimized in the training process
         error = self.__l1_loss(training_decoder_outputs[0], training_target)
@@ -229,7 +235,7 @@ class AttentionModelTester:
                     decoder_input_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
 
                     # get the output of the network for the test input data batch
-                    test_output = session.run(inference_decoder_outputs[0],
+                    test_output, alignments = session.run([inference_decoder_outputs[0], inference_decoder_states.alignment_history.stack()],
                                               feed_dict={input: test_input_batch_value[1],
                                                          decoder_input: np.zeros(decoder_input_shape),
                                                          input_sequence_length: test_input_batch_value[0],
@@ -238,6 +244,12 @@ class AttentionModelTester:
 
                     forecasts = test_output
                     list_of_forecasts.extend(forecasts.tolist())
+
+                    # print(np.shape(alignments))
+                    # plt.plot(alignments[0, 0, 0:21])
+                    # plt.plot(alignments[1, 0, 0:21])
+                    # plt.plot(alignments[2, 0, 0:21])
+                    # plt.show()
 
                 except tf.errors.OutOfRangeError:
                     break

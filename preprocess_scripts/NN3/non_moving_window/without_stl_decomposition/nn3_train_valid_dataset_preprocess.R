@@ -41,7 +41,7 @@ for (validation in c(TRUE,FALSE)) {
     # })
 
 
-    level=time_series_log[time_series_length - max_forecast_horizon] #last "trend" point in the input window is the "level" (the value used for the normalization)
+    level=mean(time_series_log[1:(time_series_length - max_forecast_horizon)]) #mean "trend" in the input window is the "level" (the value used for the normalization)
     sav_df=data.frame(id=paste(idr,'|i',sep=''));
     normalized_values = time_series_log-level
     sav_df=cbind(sav_df, t(normalized_values[1: (time_series_length - max_forecast_horizon)])) #inputs: past values normalized by the level

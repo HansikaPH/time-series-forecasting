@@ -23,7 +23,7 @@ time_series_length = ncol(numeric_dataset_log)
 for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
 
-  level=mean(time_series_log[time_series_length]) #mean "trend" in the input window is the "level" (the value used for the normalization)
+  level=mean(time_series_log) #mean "trend" in the input window is the "level" (the value used for the normalization)
   sav_df=data.frame(id=paste(idr,'|i',sep=''));
   normalized_values = time_series_log-level
 

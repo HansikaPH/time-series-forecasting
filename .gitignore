@@ -17,3 +17,4 @@ smac3-*/
 datasets/
 **/__pycache__/
 .Rhistory
+logs/

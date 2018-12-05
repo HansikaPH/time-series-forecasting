@@ -14,6 +14,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
         self.__seed = kwargs["seed"]
+        self.__cell_type = kwargs["cell_type"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -23,7 +24,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
     def train_model(self, **kwargs):
 
         num_hidden_layers = kwargs['num_hidden_layers']
-        lstm_cell_dimension = kwargs["lstm_cell_dimension"]
+        cell_dimension = kwargs["cell_dimension"]
         minibatch_size = kwargs["minibatch_size"]
         max_epoch_size = kwargs["max_epoch_size"]
         max_num_epochs = kwargs["max_num_epochs"]
@@ -47,19 +48,24 @@ class Seq2SeqModelTrainerWithDenseLayer:
         # placeholder for the sequence lengths
         sequence_length = tf.placeholder(dtype=tf.int32, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev)
 
         # create the model architecture
 
-        # RNN with the LSTM layer
-        def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
-                                                initializer=weight_initializer)
-            return lstm_cell
+        # RNN with the layer of cells
+        def cell():
+            if self.__cell_type == "LSTM":
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=int(cell_dimension), use_peepholes=self.__use_peepholes,
+                                         initializer=weight_initializer)
+            elif self.__cell_type == "GRU":
+                cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
+            elif self.__cell_type == "RNN":
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+            return cell
 
         # building the encoder network
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
-            cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+            cells=[cell() for _ in range(int(num_hidden_layers))])
 
         with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
             training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
@@ -159,6 +165,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         with tf.Session() as session :
             session.run(init_op)
 
+            smape_epoch = 0.0
             for epoch in range(max_num_epochs):
                 smape_epoch_list = []
                 print("Epoch->", epoch)
@@ -221,9 +228,10 @@ class Seq2SeqModelTrainerWithDenseLayer:
                             break
 
                 smape_epoch = np.mean(smape_epoch_list)
-                smape_final_list.append(smape_epoch)
+                # smape_final_list.append(smape_epoch)
 
-            smape_final = np.mean(smape_final_list)
+            # smape_final = np.mean(smape_final_list)
+            smape_final = smape_epoch
             print("SMAPE value: {}".format(smape_final))
             session.close()
 

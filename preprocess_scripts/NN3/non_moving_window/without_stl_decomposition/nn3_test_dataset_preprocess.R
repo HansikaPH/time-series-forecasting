@@ -42,7 +42,7 @@ for (idr in 1: length(nn3_dataset)) {
   # })
 
   sav_df=data.frame(id=paste(idr,'|i',sep='')); #sav_df is the set of input values in the current window
-  level=time_series_log[time_series_length]
+  level=mean(time_series_log[1:time_series_length])
   normalized_values = time_series_log-level
   sav_df=cbind(sav_df, t(normalized_values[1: time_series_length])) #inputs: past values normalized by the level
   sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)

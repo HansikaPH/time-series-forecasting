@@ -52,13 +52,10 @@ for(k in 1 :nrow(forecasts_df)){
   one_ts_forecasts = as.numeric(forecasts_df[k,])
   one_line_test_data = as.numeric(unlist(txt_test_df[k]))
 
-  level_value = one_line_test_data[length(one_line_test_data) - output_size]
-  # seasonal_values = tail(one_line_test_data, output_size)
+  level_value = one_line_test_data[length(one_line_test_data)]
 
   for (ii in 1:output_size) {
-    converted_value = exp(one_ts_forecasts[ii] + level_value
-# + seasonal_values[ii]
-    )
+    converted_value = exp(one_ts_forecasts[ii] + level_value)
     if(contain_zero_values == 1){
       converted_value = converted_value -1
     }

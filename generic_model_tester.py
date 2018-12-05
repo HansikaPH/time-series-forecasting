@@ -1,7 +1,5 @@
 import csv
 import tensorflow as tf
-import numpy as np
-import random
 
 # import the different model types
 
@@ -23,6 +21,8 @@ from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition
     AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
 from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import \
     AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
+from rnn_architectures.attention_model.custom_attention_scheme_2.with_stl_decomposition.non_moving_window.attention_model_tester import \
+    AttentionModelTester as CustomeAttentionModelTester2WithNonMovingWindowWithoutSeasonality
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -71,9 +71,6 @@ def testing(args, config_dictionary):
     input_format = args.input_format
     seed = int(args.seed)
 
-    np.random.seed(seed)
-    random.seed(seed)
-
     if args.without_stl_decomposition:
         without_stl_decomposition = bool(int(args.without_stl_decomposition))
     else:
@@ -83,6 +80,11 @@ def testing(args, config_dictionary):
         with_truncated_backpropagation = bool(int(args.with_truncated_backpropagation))
     else:
         with_truncated_backpropagation = False
+
+    if args.cell_type:
+        cell_type = args.cell_type
+    else:
+        cell_type = "LSTM"
 
     if not with_truncated_backpropagation:
         tbptt_identifier = "without_truncated_backpropagation"
@@ -94,7 +96,7 @@ def testing(args, config_dictionary):
     else:
         stl_decomposition_identifier = "without_stl_decomposition"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
         seed)
     print("Model Testing Started for {}".format(model_identifier))
     print(config_dictionary)
@@ -115,7 +117,8 @@ def testing(args, config_dictionary):
         'output_size': output_size,
         'binary_train_file_path': binary_train_file_path_test_mode,
         'binary_test_file_path': binary_test_file_path_test_mode,
-        'seed': seed
+        'seed': seed,
+        'cell_type': cell_type
     }
 
     # select the model type
@@ -133,31 +136,28 @@ def testing(args, config_dictionary):
             model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
         else:
             model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
+    elif model_type == "custom_attention2":
+        model_tester = CustomeAttentionModelTester2WithNonMovingWindowWithoutSeasonality(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
     num_hidden_layers = config_dictionary['num_hidden_layers']
     max_num_epochs = config_dictionary['max_num_epochs']
     max_epoch_size = config_dictionary['max_epoch_size']
-    lstm_cell_dimension = config_dictionary['lstm_cell_dimension']
+    cell_dimension = config_dictionary['cell_dimension']
     l2_regularization = config_dictionary['l2_regularization']
     minibatch_size = config_dictionary['minibatch_size']
     gaussian_noise_stdev = config_dictionary['gaussian_noise_stdev']
     random_normal_initializer_stdev = config_dictionary['random_normal_initializer_stdev']
-    if 'tbptt_chunk_length' in config_dictionary:
-        tbptt_chunk_length = config_dictionary['tbptt_chunk_length']
-    else:
-        tbptt_chunk_length = 0
 
     list_of_forecasts = model_tester.test_model(num_hidden_layers=int(round(num_hidden_layers)),
-                                                lstm_cell_dimension=int(round(lstm_cell_dimension)),
+                                                cell_dimension=int(round(cell_dimension)),
                                                 minibatch_size=int(round(minibatch_size)),
                                                 max_epoch_size=int(round(max_epoch_size)),
                                                 max_num_epochs=int(round(max_num_epochs)),
                                                 l2_regularization=l2_regularization,
                                                 gaussian_noise_stdev=gaussian_noise_stdev,
                                                 random_normal_initializer_stdev=random_normal_initializer_stdev,
-                                                tbptt_chunk_length=tbptt_chunk_length,
                                                 optimizer_fn=optimizer_fn)
 
     # write the forecasting results to a file

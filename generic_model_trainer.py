@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 import argparse
-from bayes_opt import BayesianOptimization
 from utility_scripts.persist_optimized_config_results import persist_results
 from generic_model_tester import testing
 import re
@@ -48,7 +47,6 @@ BIAS = False
 optimized_config_directory = 'results/optimized_configurations/'
 learning_rate = 0.0
 
-
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
@@ -77,12 +75,26 @@ def read_initial_hyperparameter_values():
 
     return hyperparameter_values_dic
 
+def read_optimal_hyperparameter_values(file_name):
+    # define dictionary to store the hyperparameter values
+    hyperparameter_values_dic = {}
+
+    with open(file_name) as configs_file:
+        configs = configs_file.readlines()
+        for config in configs:
+            if not config.startswith('#') and config.strip():
+                values = [value.strip() for value in (re.split(">>>", config))]
+                hyperparameter_values_dic[values[0]] = float(values[1])
+
+        configs_file.close()
+
+    return hyperparameter_values_dic
 
 
 # Training the time series
 def train_model_smac(configs):
     rate_of_learning = configs["rate_of_learning"]
-    lstm_cell_dimension = configs["lstm_cell_dimension"]
+    cell_dimension = configs["cell_dimension"]
     num_hidden_layers = configs["num_hidden_layers"]
     minibatch_size = configs["minibatch_size"]
     max_epoch_size = configs["max_epoch_size"]
@@ -90,7 +102,6 @@ def train_model_smac(configs):
     l2_regularization = configs["l2_regularization"]
     gaussian_noise_stdev = configs["gaussian_noise_stdev"]
     random_normal_initializer_stdev = configs["random_normal_initializer_stdev"]
-    tbptt_chunk_length = configs["tbptt_chunk_length"]
 
     global learning_rate
     learning_rate = rate_of_learning
@@ -99,99 +110,91 @@ def train_model_smac(configs):
 
     # select the appropriate type of optimizer
     error = model_trainer.train_model(num_hidden_layers=num_hidden_layers,
-                                      lstm_cell_dimension=lstm_cell_dimension,
+                                      cell_dimension=cell_dimension,
                                       minibatch_size=minibatch_size,
                                       max_epoch_size=max_epoch_size,
                                       max_num_epochs=max_num_epochs,
                                       l2_regularization=l2_regularization,
                                       gaussian_noise_stdev=gaussian_noise_stdev,
                                       random_normal_initializer_stdev=random_normal_initializer_stdev,
-                                      tbptt_chunk_length=tbptt_chunk_length,
                                       optimizer_fn=optimizer_fn)
 
     print(model_identifier)
     return error
 
 
-def train_model_bayesian(num_hidden_layers, lstm_cell_dimension, minibatch_size, max_epoch_size, max_num_epochs,
-                         l2_regularization, gaussian_noise_stdev,
-                         random_normal_initializer_stdev, rate_of_learning=0.0, tbptt_chunk_length=0):
-    global learning_rate
-    learning_rate = rate_of_learning
+# def train_model_bayesian(num_hidden_layers, cell_dimension, minibatch_size, max_epoch_size, max_num_epochs,
+#                          l2_regularization, gaussian_noise_stdev,
+#                          random_normal_initializer_stdev, rate_of_learning=0.0, tbptt_chunk_length=0):
+#     global learning_rate
+#     learning_rate = rate_of_learning
+#
+#     error = model_trainer.train_model(num_hidden_layers=int(round(num_hidden_layers)),
+#                                       cell_dimension=int(round(cell_dimension)),
+#                                       minibatch_size=int(round(minibatch_size)),
+#                                       max_epoch_size=int(round(max_epoch_size)),
+#                                       max_num_epochs=int(round(max_num_epochs)),
+#                                       l2_regularization=l2_regularization,
+#                                       gaussian_noise_stdev=gaussian_noise_stdev,
+#                                       random_normal_initializer_stdev=random_normal_initializer_stdev,
+#                                       tbptt_chunk_length=tbptt_chunk_length,
+#                                       optimizer_fn=optimizer_fn)
+#     return -1 * error
 
-    error = model_trainer.train_model(num_hidden_layers=int(round(num_hidden_layers)),
-                                      lstm_cell_dimension=int(round(lstm_cell_dimension)),
-                                      minibatch_size=int(round(minibatch_size)),
-                                      max_epoch_size=int(round(max_epoch_size)),
-                                      max_num_epochs=int(round(max_num_epochs)),
-                                      l2_regularization=l2_regularization,
-                                      gaussian_noise_stdev=gaussian_noise_stdev,
-                                      random_normal_initializer_stdev=random_normal_initializer_stdev,
-                                      tbptt_chunk_length=tbptt_chunk_length,
-                                      optimizer_fn=optimizer_fn)
-    return -1 * error
 
-
-def bayesian_optimization():
-    # to make the random number choices reproducible
-    np.random.seed(seed)
-    random.seed(seed)
-
-    init_points = hyperparameter_tuning_configs.BAYESIAN_INIT_POINTS
-    num_iter = hyperparameter_tuning_configs.BAYESIAN_NUM_ITER
-    gaussian_process_parameters = {'alpha': 1e-4}
-
-    parameters = {'num_hidden_layers': (
-        hyperparameter_values_dic['num_hidden_layers'][0], hyperparameter_values_dic['num_hidden_layers'][1]),
-        'lstm_cell_dimension': (hyperparameter_values_dic['lstm_cell_dimension'][0],
-                                hyperparameter_values_dic['lstm_cell_dimension'][1]),
-        'minibatch_size': (
-            hyperparameter_values_dic['minibatch_size'][0], hyperparameter_values_dic['minibatch_size'][1]),
-        'max_epoch_size': (
-            hyperparameter_values_dic['max_epoch_size'][0], hyperparameter_values_dic['max_epoch_size'][1]),
-        'max_num_epochs': (
-            hyperparameter_values_dic['max_num_epochs'][0], hyperparameter_values_dic['max_num_epochs'][1]),
-        'l2_regularization': (
-            hyperparameter_values_dic['l2_regularization'][0], hyperparameter_values_dic['l2_regularization'][1]),
-        'gaussian_noise_stdev': (hyperparameter_values_dic['gaussian_noise_stdev'][0],
-                                 hyperparameter_values_dic['gaussian_noise_stdev'][1]),
-        'random_normal_initializer_stdev': (hyperparameter_values_dic['random_normal_initializer_stdev'][0],
-                                            hyperparameter_values_dic['random_normal_initializer_stdev'][1])
-    }
-
-    # adding the hyperparameter for learning rate if the optimization is not cocob
-    if optimizer != 'cocob':
-        parameters['rate_of_learning'] = (
-            hyperparameter_values_dic["rate_of_learning"][0], hyperparameter_values_dic["rate_of_learning"][1])
-    if with_truncated_backpropagation:
-        parameters['tbptt_chunk_length'] = (
-            hyperparameter_values_dic["tbptt_chunk_length"][0], hyperparameter_values_dic["tbptt_chunk_length"][1])
-
-    # using bayesian optimizer for hyperparameter optimization
-    bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
-
-    bayesian_optimization.maximize(init_points=init_points, n_iter=num_iter, **gaussian_process_parameters)
-    optimized_configuration = bayesian_optimization.res['max']['max_params']
-    print(optimized_configuration)
-
-    return optimized_configuration
+# def bayesian_optimization():
+#
+#     init_points = hyperparameter_tuning_configs.BAYESIAN_INIT_POINTS
+#     num_iter = hyperparameter_tuning_configs.BAYESIAN_NUM_ITER
+#     gaussian_process_parameters = {'alpha': 1e-4}
+#
+#     parameters = {'num_hidden_layers': (
+#         hyperparameter_values_dic['num_hidden_layers'][0], hyperparameter_values_dic['num_hidden_layers'][1]),
+#         'cell_dimension': (hyperparameter_values_dic['cell_dimension'][0],
+#                                 hyperparameter_values_dic['cell_dimension'][1]),
+#         'minibatch_size': (
+#             hyperparameter_values_dic['minibatch_size'][0], hyperparameter_values_dic['minibatch_size'][1]),
+#         'max_epoch_size': (
+#             hyperparameter_values_dic['max_epoch_size'][0], hyperparameter_values_dic['max_epoch_size'][1]),
+#         'max_num_epochs': (
+#             hyperparameter_values_dic['max_num_epochs'][0], hyperparameter_values_dic['max_num_epochs'][1]),
+#         'l2_regularization': (
+#             hyperparameter_values_dic['l2_regularization'][0], hyperparameter_values_dic['l2_regularization'][1]),
+#         'gaussian_noise_stdev': (hyperparameter_values_dic['gaussian_noise_stdev'][0],
+#                                  hyperparameter_values_dic['gaussian_noise_stdev'][1]),
+#         'random_normal_initializer_stdev': (hyperparameter_values_dic['random_normal_initializer_stdev'][0],
+#                                             hyperparameter_values_dic['random_normal_initializer_stdev'][1])
+#     }
+#
+#     # adding the hyperparameter for learning rate if the optimization is not cocob
+#     if optimizer != 'cocob':
+#         parameters['rate_of_learning'] = (
+#             hyperparameter_values_dic["rate_of_learning"][0], hyperparameter_values_dic["rate_of_learning"][1])
+#     if with_truncated_backpropagation:
+#         parameters['tbptt_chunk_length'] = (
+#             hyperparameter_values_dic["tbptt_chunk_length"][0], hyperparameter_values_dic["tbptt_chunk_length"][1])
+#
+#     # using bayesian optimizer for hyperparameter optimization
+#     bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
+#
+#     bayesian_optimization.maximize(init_points=init_points, n_iter=num_iter, **gaussian_process_parameters)
+#     optimized_configuration = bayesian_optimization.res['max']['max_params']
+#     print(optimized_configuration)
+#
+#     return optimized_configuration
 
 
 def smac():
-    # to make the random number choices reproduceable
-    np.random.rand(seed)
-    random.seed(seed)
-
     # Build Configuration Space which defines all parameters and their ranges
     configuration_space = ConfigurationSpace()
 
     rate_of_learning = UniformFloatHyperparameter("rate_of_learning", hyperparameter_values_dic['rate_of_learning'][0],
                                                   hyperparameter_values_dic['rate_of_learning'][1],
                                                   default_value=hyperparameter_values_dic['rate_of_learning'][0])
-    lstm_cell_dimension = UniformIntegerHyperparameter("lstm_cell_dimension",
-                                                       hyperparameter_values_dic['lstm_cell_dimension'][0],
-                                                       hyperparameter_values_dic['lstm_cell_dimension'][1],
-                                                       default_value=hyperparameter_values_dic['lstm_cell_dimension'][
+    cell_dimension = UniformIntegerHyperparameter("cell_dimension",
+                                                       hyperparameter_values_dic['cell_dimension'][0],
+                                                       hyperparameter_values_dic['cell_dimension'][1],
+                                                       default_value=hyperparameter_values_dic['cell_dimension'][
                                                            0])
     no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers",
                                                     hyperparameter_values_dic['num_hidden_layers'][0],
@@ -223,32 +226,18 @@ def smac():
                                                                  default_value=hyperparameter_values_dic[
                                                                      'random_normal_initializer_stdev'][
                                                                      0])
-    tbptt_chunk_length = UniformIntegerHyperparameter("tbptt_chunk_length",
-                                                      hyperparameter_values_dic['tbptt_chunk_length'][0],
-                                                      hyperparameter_values_dic['tbptt_chunk_length'][1],
-                                                      default_value=hyperparameter_values_dic['tbptt_chunk_length'][0])
 
     # add the hyperparameter for learning rate only if the  optimization is not cocob
     if optimizer == "cocob":
-        if with_truncated_backpropagation:
-            configuration_space.add_hyperparameters(
-                [lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size, max_num_of_epochs,
-                 l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev, tbptt_chunk_length])
-        else:
-            configuration_space.add_hyperparameters(
-                [lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size, max_num_of_epochs,
-                 l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
+        configuration_space.add_hyperparameters(
+            [cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size, max_num_of_epochs,
+             l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
     else:
-        if with_truncated_backpropagation:
-            configuration_space.add_hyperparameters(
-                [rate_of_learning, lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size,
-                 max_num_of_epochs,
-                 l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev, tbptt_chunk_length])
-        else:
-            configuration_space.add_hyperparameters(
-                [rate_of_learning, lstm_cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size,
-                 max_num_of_epochs,
-                 l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
+
+        configuration_space.add_hyperparameters(
+            [rate_of_learning, cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size,
+             max_num_of_epochs,
+             l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
 
     # creating the scenario object
     scenario = Scenario({
@@ -259,7 +248,7 @@ def smac():
     })
 
     # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model_smac)
+    smac = SMAC(scenario=scenario, rng=np.random.RandomState(1), tae_runner=train_model_smac)
 
     incumbent = smac.optimize()
     smape_error = train_model_smac(incumbent)
@@ -287,7 +276,8 @@ if __name__ == '__main__':
                                  help='The tfrecords file for test dataset in the testing mode')
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
-    argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window')
+    argument_parser.add_argument('--cell_type', required=False, help='The cell type of the RNN(LSTM/GRU). Default is LSTM')
+    argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window. Default is 0')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required=True, help='The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True,
@@ -332,6 +322,11 @@ if __name__ == '__main__':
     else:
         with_truncated_backpropagation = False
 
+    if args.cell_type:
+        cell_type = args.cell_type
+    else:
+        cell_type = "LSTM"
+
     if with_truncated_backpropagation:
         tbptt_identifier = "with_truncated_backpropagation"
     else:
@@ -342,7 +337,7 @@ if __name__ == '__main__':
     else:
         stl_decomposition_identifier = "with_stl_decomposition"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
         seed)
     print("Model Training Started for {}".format(model_identifier))
 
@@ -363,7 +358,8 @@ if __name__ == '__main__':
         'binary_train_file_path': binary_train_file_path_train_mode,
         'binary_validation_file_path': binary_validation_file_path_train_mode,
         'contain_zero_values': contain_zero_values,
-        'seed': seed
+        'seed': seed,
+        'cell_type': cell_type
     }
 
     # select the model type
@@ -377,25 +373,24 @@ if __name__ == '__main__':
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
-        if input_format == "non_moving_window":
-            if without_stl_decomposition:
-                model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(**model_kwargs)
-            else:
-                model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(**model_kwargs)
+        if without_stl_decomposition:
+            model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(**model_kwargs)
+        else:
+            model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values()
 
     # select the hyperparameter tuning method
-    if hyperparameter_tuning == "bayesian":
-        optimized_configuration = bayesian_optimization()
-    elif hyperparameter_tuning == "smac":
-        optimized_configuration = smac()
+    # if hyperparameter_tuning == "bayesian":
+    #     optimized_configuration = bayesian_optimization()
+    # elif hyperparameter_tuning == "smac":
+    optimized_configuration = smac()
 
     # NN5 configs
     # optimized_configuration = {
     #     "num_hidden_layers": 4,
-    #     "lstm_cell_dimension": 23,
+    #     "cell_dimension": 23,
     #     "minibatch_size": 20,
     #     "rate_of_learning": 0.2113262220421187676,
     #     "max_epoch_size": 1,
@@ -407,22 +402,22 @@ if __name__ == '__main__':
 
     # NN3 configs
     # optimized_configuration = {
-    #     "num_hidden_layers": 1,
-    #     "lstm_cell_dimension": 23,
-    #     "minibatch_size": 10,
-    #     "rate_of_learning": 0.93262220421187676,
-    #     "max_epoch_size": 2,
-    #     "gaussian_noise_stdev": 0.00023780395225712772,
-    #     "l2_regularization": 0.00015753660121731034,
-    #     "max_num_epochs": 20,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717
+    #     "num_hidden_layers": 2,
+    #     "cell_dimension": 37,
+    #     "minibatch_size": 12,
+    #     "rate_of_learning": 0.0899410575928837,
+    #     "max_epoch_size": 4,
+    #     "gaussian_noise_stdev": 0.0004611126662003522,
+    #     "l2_regularization": 0.0001565549952121513,
+    #     "max_num_epochs": 22,
+    #     "random_normal_initializer_stdev": 0.0005065212074219607
     #     # "tbptt_chunk_length": 5
     # }
 
     # CIF configs
     # optimized_configuration = {
     #     "num_hidden_layers": 1.075789638829622,
-    #     "lstm_cell_dimension": 29,
+    #     "cell_dimension": 29,
     #     "minibatch_size": 20.846339868432239,
     #     "rate_of_learning": 0.0043262220421187676,
     #     "max_epoch_size": 1,
@@ -437,7 +432,7 @@ if __name__ == '__main__':
     # CIF configs 2
     # optimized_configuration = {
     #     "num_hidden_layers": 1.075789638829622,
-    #     "lstm_cell_dimension": 22,
+    #     "cell_dimension": 22,
     #     "minibatch_size": 20.846339868432239,
     #     "rate_of_learning": 0.53262220421187676,
     #     "max_epoch_size": 5,
@@ -447,11 +442,11 @@ if __name__ == '__main__':
     #     "random_normal_initializer_stdev": 0.00027502494731703717
     # }
 
-    # # CIF configs 2
+    # CIF configs 2
     # optimized_configuration = {
     #     "num_hidden_layers": 2,
-    #     "lstm_cell_dimension": 28,
-    #     "minibatch_size": 16,
+    #     "cell_dimension": 28,
+    #     "minibatch_size": 3,
     #     "rate_of_learning": 0.26343183932470754,
     #     "max_epoch_size": 3,
     #     "gaussian_noise_stdev": 0.0007517656514955944,
@@ -461,7 +456,7 @@ if __name__ == '__main__':
     # }
 
     # cif
-    # optimized_configuration = {'num_hidden_layers': 5.0, 'lstm_cell_dimension': 28.471127262736434,
+    # optimized_configuration = {'num_hidden_layers': 5.0, 'cell_dimension': 28.471127262736434,
     #                            'minibatch_size': 10.135034205224617, 'max_epoch_size': 9.1502825822926326,
     #                            'max_num_epochs': 20.962475980675006, 'l2_regularization': 0.0006369387641617046,
     #                            'gaussian_noise_stdev': 0.00057001364478555087,
@@ -471,5 +466,17 @@ if __name__ == '__main__':
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
+    # if cell_type == "LSTM" and (model_type == "stacking" or dataset_name == "cif2016_O6"):
+    #     model_identifier_tmp = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+    #     seed)
+    # else:
+    #     model_identifier_tmp = model_identifier
+
+    # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier_tmp + '.txt')
+
     # test the model
-    testing(args, optimized_configuration)
+    for i in range(1, 11):
+        args.seed = i
+        testing(args, optimized_configuration)
+
+    # testing(args, optimized_configuration)

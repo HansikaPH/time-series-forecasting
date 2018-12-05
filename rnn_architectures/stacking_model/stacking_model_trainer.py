@@ -16,6 +16,7 @@ class StackingModelTrainer:
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
         self.__seed = kwargs["seed"]
+        self.__cell_type = kwargs["cell_type"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -30,7 +31,7 @@ class StackingModelTrainer:
 
         # extract the parameters from the kwargs
         num_hidden_layers = kwargs['num_hidden_layers']
-        lstm_cell_dimension = kwargs['lstm_cell_dimension']
+        cell_dimension = kwargs['cell_dimension']
         minibatch_size = kwargs['minibatch_size']
         max_epoch_size = kwargs['max_epoch_size']
         max_num_epochs = kwargs['max_num_epochs']
@@ -58,15 +59,20 @@ class StackingModelTrainer:
         true_output = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
         sequence_lengths = tf.placeholder(dtype=tf.int64, shape=[None])
 
-        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev, seed=self.__seed)
+        weight_initializer = tf.truncated_normal_initializer(stddev=random_normal_initializer_stdev)
 
-        # RNN with the LSTM layer
-        def lstm_cell():
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=int(lstm_cell_dimension), use_peepholes=self.__use_peepholes,
-                                                initializer=weight_initializer)
-            return lstm_cell
+        # RNN with the layer of cells
+        def cell():
+            if self.__cell_type == "LSTM":
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=int(cell_dimension), use_peepholes=self.__use_peepholes,
+                                         initializer=weight_initializer)
+            elif self.__cell_type == "GRU":
+                cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
+            elif self.__cell_type == "RNN":
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+            return cell
 
-        multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_cell() for _ in range(int(num_hidden_layers))])
+        multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[cell() for _ in range(int(num_hidden_layers))])
 
         with tf.variable_scope('train_scope') as train_scope:
             training_rnn_outputs, training_rnn_states = tf.nn.dynamic_rnn(cell=multi_layered_cell,
@@ -154,6 +160,7 @@ class StackingModelTrainer:
         with tf.Session() as session:
             session.run(init_op)
 
+            smape_epoch = 0.0
             # training_loss_values = []
             for epoch in range(int(max_num_epochs)):
                 smape_epoch_list = []
@@ -225,9 +232,10 @@ class StackingModelTrainer:
                             break
 
                 smape_epoch = np.mean(smape_epoch_list)
-                smape_final_list.append(smape_epoch)
+                # smape_final_list.append(smape_epoch)
 
-            smape_final = np.mean(smape_final_list)
+            # smape_final = np.mean(smape_final_list)
+            smape_final = smape_epoch
             print("SMAPE value: {}".format(smape_final))
             session.close()
 
