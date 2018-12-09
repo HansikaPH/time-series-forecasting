@@ -466,13 +466,8 @@ if __name__ == '__main__':
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
-    # if cell_type == "LSTM" and (model_type == "stacking" or dataset_name == "cif2016_O6"):
-    #     model_identifier_tmp = dataset_name + "_" + model_type + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
-    #     seed)
-    # else:
-    #     model_identifier_tmp = model_identifier
 
-    # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier_tmp + '.txt')
+    # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier + '.txt')
 
     # test the model
     for i in range(1, 11):

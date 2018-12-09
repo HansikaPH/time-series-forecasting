@@ -1,6 +1,6 @@
 library(forecast)
 
-OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/non_moving_window/"
+OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/non_moving_window/without_stl_decomposition/"
 
 file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-train.csv"
 m4_dataset <- readLines(file)
@@ -46,31 +46,16 @@ for (validation in c(TRUE, FALSE)) {
             time_series_length = time_series_length - max_forecast_horizon
             time_series_log = time_series_log[1 : time_series_length]
         }
-        # apply stl
-        stl_result = tryCatch({
-            sstl = stl(ts(time_series_log, frequency = seasonality_period), "period")
-            seasonal_vect = as.numeric(sstl$time.series[, 1])
-            levels_vect = as.numeric(sstl$time.series[, 2])
-            values_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3])# this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-            cbind(seasonal_vect, levels_vect, values_vect)
-        }, error = function(e) {
-            seasonal_vect = rep(0, length(time_series_length))#stl() may fail, and then we would go on with the seasonality vector=0
-            levels_vect = time_series_log
-            values_vect = time_series_log
-            cbind(seasonal_vect, levels_vect, values_vect)
-        })
 
-        level_value = stl_result[time_series_length - max_forecast_horizon, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
+        level_value = mean(time_series_log[1 : (time_series_length - max_forecast_horizon)]) #last "trend" point in the input window is the "level" (the value used for the normalization)
 
         if (validation) {
             # preallocate data frame
-            sav_df = matrix(NA, ncol = (4 + time_series_length + max_forecast_horizon), nrow = 1)
+            sav_df = matrix(NA, ncol = (4 + time_series_length), nrow = 1)
             sav_df = as.data.frame(sav_df)
 
             sav_df[, (time_series_length + 3)] = '|#'
             sav_df[, (time_series_length + 4)] = level_value
-            sav_df[, (time_series_length + 5) : ncol(sav_df)] = (stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1])
-            t
         }else {
             # preallocate data frame
             sav_df = matrix(NA, ncol = (2 + time_series_length), nrow = 1)
@@ -78,7 +63,7 @@ for (validation in c(TRUE, FALSE)) {
         }
 
         sav_df[, 1] = paste(idr - 1, '|i', sep = '')
-        normalized_values = t(stl_result[, 3]) - level_value
+        normalized_values = time_series_log - level_value
 
         sav_df[, 2 : (time_series_length - max_forecast_horizon + 1)] = normalized_values[1 : (time_series_length - max_forecast_horizon)]
 

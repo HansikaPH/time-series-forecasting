@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
+from graph_plotter.graph_plotter import GraphPlotter
 
 class Seq2SeqModelTesterWithDenseLayer:
 
@@ -169,24 +170,28 @@ class Seq2SeqModelTesterWithDenseLayer:
         with tf.Session() as session:
             session.run(init_op)
 
+            # graph plotter object
+            # graph_plotter = GraphPlotter(session, 1)
+
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
 
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch})
-
+                losses = []
                 while True:
                     try:
                         next_training_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
 
                         # model training
-                        session.run(optimizer,
+                        _, loss_val = session.run([optimizer, total_loss],
                                     feed_dict={input: next_training_batch_value[1],
                                                target: next_training_batch_value[2],
                                                sequence_length: next_training_batch_value[0],
                                                })
+                        losses.append(loss_val)
                     except tf.errors.OutOfRangeError:
                         break
-
+                # graph_plotter.plot_train(losses, epoch)
             # applying the model to the test data
 
             list_of_forecasts = []

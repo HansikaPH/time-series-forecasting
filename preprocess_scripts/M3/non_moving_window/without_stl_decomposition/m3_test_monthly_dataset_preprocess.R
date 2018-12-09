@@ -37,29 +37,6 @@ for (idr in 1 : length(m3_dataset)) {
     time_series_log = log(as.numeric(time_series[2 : length(time_series)]))
     time_series_length = length(time_series_log)
 
-    # apply stl
-    # stl_result = tryCatch({
-    #     sstl = stl(ts(time_series_log, frequency = seasonality_period), "period")
-    #     seasonal_vect = as.numeric(sstl$time.series[, 1])
-    #     levels_vect = as.numeric(sstl$time.series[, 2])
-    #     values_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3])# this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-    #     cbind(seasonal_vect, levels_vect, values_vect)
-    # }, error = function(e) {
-    #     seasonal_vect = rep(0, length(time_series_length))#stl() may fail, and then we would go on with the seasonality vector=0
-    #     levels_vect = time_series_log
-    #     values_vect = time_series_log
-    #     cbind(seasonal_vect, levels_vect, values_vect)
-    # })
-    #
-    # seasonality = tryCatch({
-    #     forecast = stlf(ts(stl_result[, 1] , frequency = seasonality_period), "period", h = max_forecast_horizon)
-    #     seasonality_vector = as.numeric(forecast$mean)
-    #     cbind(seasonality_vector)
-    # }, error = function(e) {
-    #     seasonality_vector = rep(0, max_forecast_horizon)   #stl() may fail, and then we would go on with the seasonality vector=0
-    #     cbind(seasonality_vector)
-    # })
-
     level_value = mean(time_series_log) #last "trend" point in the input window is the "level" (the value used for the normalization)
 
 

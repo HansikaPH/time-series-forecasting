@@ -196,6 +196,7 @@ class AttentionModelTrainer:
         with tf.Session() as session :
             session.run(init_op)
 
+            smape_epoch = 0.0
             for epoch in range(max_num_epochs):
                 smape_epoch_list = []
                 print("Epoch->", epoch)
@@ -264,9 +265,10 @@ class AttentionModelTrainer:
                         except tf.errors.OutOfRangeError:
                             break
                 smape_epoch = np.mean(smape_epoch_list)
-                smape_final_list.append(smape_epoch)
+                # smape_final_list.append(smape_epoch)
 
-            smape_final = np.mean(smape_final_list)
+            # smape_final = np.mean(smape_final_list)
+            smape_final = smape_epoch
             print("SMAPE value: {}".format(smape_final))
 
         return smape_final

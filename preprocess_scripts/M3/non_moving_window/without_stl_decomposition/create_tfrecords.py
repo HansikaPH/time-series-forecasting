@@ -10,7 +10,7 @@ if __name__ == '__main__':
         binary_train_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_macro_18.tfrecords',
         binary_validation_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_macro_18v.tfrecords',
         binary_test_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_macro_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_micro_18.tfrecords',
         binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_micro_18v.tfrecords',
         binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_micro_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_industry_18.tfrecords',
         binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_industry_18v.tfrecords',
         binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_industry_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_finance_18.tfrecords',
         binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_finance_18v.tfrecords',
         binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_finance_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_other_18.tfrecords',
         binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_other_18v.tfrecords',
         binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_other_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_demo_18.tfrecords',
         binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_stl_monthly_demo_18v.tfrecords',
         binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_demo_18.tfrecords',
-        without_stl_decomposition=False
+        without_stl_decomposition=True
     )
 
     tfrecord_writer.read_text_data()

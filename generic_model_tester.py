@@ -21,8 +21,6 @@ from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition
     AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
 from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import \
     AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
-from rnn_architectures.attention_model.custom_attention_scheme_2.with_stl_decomposition.non_moving_window.attention_model_tester import \
-    AttentionModelTester as CustomeAttentionModelTester2WithNonMovingWindowWithoutSeasonality
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -136,8 +134,6 @@ def testing(args, config_dictionary):
             model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
         else:
             model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
-    elif model_type == "custom_attention2":
-        model_tester = CustomeAttentionModelTester2WithNonMovingWindowWithoutSeasonality(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']

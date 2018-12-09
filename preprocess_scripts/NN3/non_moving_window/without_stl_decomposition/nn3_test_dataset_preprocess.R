@@ -8,12 +8,11 @@ nn3_dataset <- strsplit(nn3_dataset, ',')
 
 max_forecast_horizon=18
 
+OUTPUT_PATH=paste(OUTPUT_DIR,"nn3_test_",sep='/')
+OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
+OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
+
 for (idr in 1: length(nn3_dataset)) {
-  OUTPUT_PATH=paste(OUTPUT_DIR,"nn3_test_",sep='/')
-  OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
-
-  OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
-
   time_series = nn3_dataset[idr]
   time_series = unlist(time_series, use.names=FALSE)
   time_series_log = log(as.numeric(time_series))
@@ -49,7 +48,6 @@ for (idr in 1: length(nn3_dataset)) {
                #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
   sav_df[,'level']=level
   # sav_df = cbind(sav_df, t(seasonality))
-
   write.table(sav_df, file=OUTPUT_PATH, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
 
   print(idr)
