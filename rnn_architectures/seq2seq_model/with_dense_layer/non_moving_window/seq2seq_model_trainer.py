@@ -3,6 +3,7 @@ import tensorflow as tf
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import model_training_configs
 from configs.global_configs import training_data_configs
+# from graph_plotter.graph_plotter import GraphPlotter
 
 class Seq2SeqModelTrainerWithDenseLayer:
 
@@ -60,7 +61,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
             return cell
 
         # building the encoder network
@@ -135,7 +136,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
 
         # preparing the training data
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        training_dataset = training_dataset.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                                   count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
@@ -157,21 +158,21 @@ class Seq2SeqModelTrainerWithDenseLayer:
         # access the validation data using the iterator
         next_validation_data_batch = validation_data_iterator.get_next()
 
-        smape_final_list = []
-
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
         with tf.Session() as session :
             session.run(init_op)
 
-            smape_epoch = 0.0
+            # graph_plotter = GraphPlotter(session, 2)
+
+            smape_final = 0.0
+            smape_list = []
             for epoch in range(max_num_epochs):
-                smape_epoch_list = []
                 print("Epoch->", epoch)
 
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed:epoch})
-
+                losses = []
                 while True:
                     try:
                         training_data_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed:epoch})
@@ -180,58 +181,55 @@ class Seq2SeqModelTrainerWithDenseLayer:
                                                target: training_data_batch_value[2],
                                                sequence_length: training_data_batch_value[0]
                                                })
+                        losses.append(total_loss_value)
                     except tf.errors.OutOfRangeError:
                         break
+                # graph_plotter.plot_train(losses, epoch)
 
-                if epoch % model_training_configs.INFO_FREQ == 0:
-                    session.run(validation_data_iterator.initializer)
+            session.run(validation_data_iterator.initializer)
 
-                    while True:
-                        try:
-                            # get the batch of validation inputs
-                            validation_data_batch_value = session.run(next_validation_data_batch)
+            while True:
+                try:
+                    # get the batch of validation inputs
+                    validation_data_batch_value = session.run(next_validation_data_batch)
 
-                            # shape for the target data
-                            target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
+                    # shape for the target data
+                    target_data_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
-                            # get the output of the network for the validation input data batch
-                            validation_output = session.run(inference_prediction_output,
-                                feed_dict={input: validation_data_batch_value[1],
-                                           target: np.zeros(target_data_shape),
-                                           sequence_length: validation_data_batch_value[0]
-                                           })
-                            # calculate the smape for the validation data using vectorization
+                    # get the output of the network for the validation input data batch
+                    validation_output = session.run(inference_prediction_output,
+                        feed_dict={input: validation_data_batch_value[1],
+                                   target: np.zeros(target_data_shape),
+                                   sequence_length: validation_data_batch_value[0]
+                                   })
+                    # calculate the smape for the validation data using vectorization
 
-                            # convert the data to remove the preprocessing
-                            true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
-                            level_values = validation_data_batch_value[3][:, 0, 0]
+                    # convert the data to remove the preprocessing
+                    true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
+                    level_values = validation_data_batch_value[3][:, 0, 0]
 
-                            converted_validation_output = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
-                                                                                                   axis=2))
+                    converted_validation_output = np.exp(
+                        true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
+                                                                                           axis=2))
 
-                            actual_values = validation_data_batch_value[2]
-                            converted_actual_values = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values,
-                                                                                                   axis=2))
+                    actual_values = validation_data_batch_value[2]
+                    converted_actual_values = np.exp(
+                        true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values,
+                                                                                           axis=2))
 
-                            if (self.__contain_zero_values):  # to compensate for 0 values in data
-                                converted_validation_output = converted_validation_output - 1
-                                converted_actual_values = converted_actual_values - 1
+                    if (self.__contain_zero_values):  # to compensate for 0 values in data
+                        converted_validation_output = converted_validation_output - 1
+                        converted_actual_values = converted_actual_values - 1
 
-                            # calculate the smape
-                            smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                            (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                            smape_epoch_list.append(smape)
+                    # calculate the smape
+                    smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                    smape_list.append(smape)
 
-                        except tf.errors.OutOfRangeError:
-                            break
+                except tf.errors.OutOfRangeError:
+                    break
 
-                smape_epoch = np.mean(smape_epoch_list)
-                # smape_final_list.append(smape_epoch)
-
-            # smape_final = np.mean(smape_final_list)
-            smape_final = smape_epoch
+            smape_final = np.mean(smape_list)
             print("SMAPE value: {}".format(smape_final))
             session.close()
 

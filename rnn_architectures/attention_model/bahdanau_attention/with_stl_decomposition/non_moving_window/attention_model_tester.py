@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
-# from matplotlib import pyplot as plt
 
 class AttentionModelTester:
 
@@ -67,7 +66,7 @@ class AttentionModelTester:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
             return cell
 
         # building the encoder network
@@ -165,7 +164,7 @@ class AttentionModelTester:
         # preparing the training data
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        training_dataset = training_dataset.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                                   count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
 
@@ -195,19 +194,15 @@ class AttentionModelTester:
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
-        # writer_val = tf.summary.FileWriter('./logs/plot_val')
-        # writer_train = tf.summary.FileWriter('./logs/plot_train')
-        # loss_var = tf.Variable(0.0)
-        # tf.summary.scalar("loss", loss_var)
-        # write_op = tf.summary.merge_all()
 
         with tf.Session() as session:
             session.run(init_op)
 
+
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
-                # losses = []
+                losses = []
                 while True:
                     try:
                         next_training_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed: epoch})
@@ -226,20 +221,10 @@ class AttentionModelTester:
                                                input_sequence_length: next_training_batch_value[0],
                                                output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]
                                                })
-                        # print(loss_val)
-                        # losses.append(loss_val)
-                        # print(next_training_batch_value[1])
-                        # write train and validation summary to tensorflow graphs
+                        losses.append(loss_val)
 
-
-                        # summary = sess.run(write_op, {loss_var: mean_squared_error})
-                        # writer_val.add_summary(summary, i)
-                        # writer_val.flush()
                     except tf.errors.OutOfRangeError:
                         break
-                # summary = session.run(write_op, {loss_var: np.mean(losses)})
-                # writer_train.add_summary(summary, epoch)
-                # writer_train.flush()
             # applying the model to the test data
 
             list_of_forecasts = []
@@ -259,8 +244,6 @@ class AttentionModelTester:
                                                          output_sequence_length: [self.__output_size] * np.shape(test_input_batch_value[1])[0]
                                                          })
 
-                    # print("testing")
-                    # print(test_input_batch_value[1])
                     forecasts = test_output
                     list_of_forecasts.extend(forecasts.tolist())
 

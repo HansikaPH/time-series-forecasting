@@ -17,5 +17,7 @@ num_hidden_layers - 1, 2
 
 rate_of_learning - 0.01, 0.9
 
+rate_of_decay - 0.7, 1
+
 # not needed to set to a meaningful value unless using TBPTT
 tbptt_chunk_length - 15, 25

@@ -46,13 +46,19 @@ BIAS = False
 
 optimized_config_directory = 'results/optimized_configurations/'
 learning_rate = 0.0
+# learning_rate_decay = 0.0
 
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
+    # global_step = tf.Variable(0, trainable=False)
+    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1, decay_rate=learning_rate_decay)
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
 def adam_optimizer_fn(total_loss):
+    # global_step = tf.Variable(0, trainable=False)
+    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
+    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
@@ -94,6 +100,7 @@ def read_optimal_hyperparameter_values(file_name):
 # Training the time series
 def train_model_smac(configs):
     rate_of_learning = configs["rate_of_learning"]
+    # rate_of_decay = configs["rate_of_decay"]
     cell_dimension = configs["cell_dimension"]
     num_hidden_layers = configs["num_hidden_layers"]
     minibatch_size = configs["minibatch_size"]
@@ -105,6 +112,9 @@ def train_model_smac(configs):
 
     global learning_rate
     learning_rate = rate_of_learning
+    
+    # global learning_rate_decay
+    # learning_rate_decay = rate_of_decay
 
     print(configs)
 
@@ -191,6 +201,9 @@ def smac():
     rate_of_learning = UniformFloatHyperparameter("rate_of_learning", hyperparameter_values_dic['rate_of_learning'][0],
                                                   hyperparameter_values_dic['rate_of_learning'][1],
                                                   default_value=hyperparameter_values_dic['rate_of_learning'][0])
+    # rate_of_decay = UniformFloatHyperparameter("rate_of_decay", hyperparameter_values_dic['rate_of_decay'][0],
+    #                                               hyperparameter_values_dic['rate_of_decay'][1],
+    #                                               default_value=hyperparameter_values_dic['rate_of_decay'][1])
     cell_dimension = UniformIntegerHyperparameter("cell_dimension",
                                                        hyperparameter_values_dic['cell_dimension'][0],
                                                        hyperparameter_values_dic['cell_dimension'][1],
@@ -248,7 +261,7 @@ def smac():
     })
 
     # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(1), tae_runner=train_model_smac)
+    smac = SMAC(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model_smac)
 
     incumbent = smac.optimize()
     smape_error = train_model_smac(incumbent)

@@ -66,7 +66,7 @@ class AttentionModelTrainer:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
             return cell
 
         # building the encoder network
@@ -169,7 +169,7 @@ class AttentionModelTrainer:
         # preparing the training data
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
         training_dataset = training_dataset.apply(
-            tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+            tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
@@ -192,22 +192,15 @@ class AttentionModelTrainer:
         # access the validation data using the iterator
         next_validation_data_batch = validation_data_iterator.get_next()
 
-        smape_final_list = []
-
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
         with tf.Session() as session:
             session.run(init_op)
-            # print(iteration)
-            # writer_val = tf.summary.FileWriter('./logs/plot_val')
-            # writer_train = tf.summary.FileWriter('./logs/plot_train')
-            # loss_var = tf.Variable(0.0)
-            # tf.summary.scalar("loss", loss_var)
-            # write_op = tf.summary.merge_all()
-            smape_epoch = 0.0
+
+            smape_final = 0.0
+            smape_list = []
             for epoch in range(max_num_epochs):
-                smape_epoch_list = []
                 print("Epoch->", epoch)
 
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
@@ -234,65 +227,54 @@ class AttentionModelTrainer:
                         training_losses.append(total_loss_value)
                     except tf.errors.OutOfRangeError:
                         break
-                # summary = session.run(write_op, {loss_var: np.mean(training_losses)})
-                # writer_train.add_summary(summary, epoch)
-                # writer_train.flush()
 
-                if epoch % model_training_configs.INFO_FREQ == 0:
-                    session.run(validation_data_iterator.initializer)
-                    while True:
-                        try:
-                            # get the batch of validation inputs
-                            validation_data_batch_value = session.run(next_validation_data_batch)
+            session.run(validation_data_iterator.initializer)
+            while True:
+                try:
+                    # get the batch of validation inputs
+                    validation_data_batch_value = session.run(next_validation_data_batch)
 
-                            # shape for the target data
-                            decoder_input_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
+                    # shape for the target data
+                    decoder_input_shape = [np.shape(validation_data_batch_value[1])[0], self.__output_size, 1]
 
-                            # get the output of the network for the validation input data batch
-                            validation_output = session.run(inference_decoder_outputs[0],
-                                                            feed_dict={input: validation_data_batch_value[1],
-                                                                       decoder_input: np.zeros(decoder_input_shape),
-                                                                       input_sequence_length:
-                                                                           validation_data_batch_value[0],
-                                                                       output_sequence_length: [self.__output_size] *
-                                                                                               np.shape(
-                                                                                                   validation_data_batch_value[
-                                                                                                       1])[0]
-                                                                       })
-                            # calculate the smape for the validation data using vectorization
+                    # get the output of the network for the validation input data batch
+                    validation_output = session.run(inference_decoder_outputs[0],
+                                                    feed_dict={input: validation_data_batch_value[1],
+                                                               decoder_input: np.zeros(decoder_input_shape),
+                                                               input_sequence_length:
+                                                                   validation_data_batch_value[0],
+                                                               output_sequence_length: [self.__output_size] *
+                                                                                       np.shape(
+                                                                                           validation_data_batch_value[
+                                                                                               1])[0]
+                                                               })
+                    # calculate the smape for the validation data using vectorization
 
-                            # convert the data to remove the preprocessing
-                            true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
-                            level_values = validation_data_batch_value[3][:, 0, 0]
+                    # convert the data to remove the preprocessing
+                    true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
+                    level_values = validation_data_batch_value[3][:, 0, 0]
 
-                            converted_validation_output = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
-                                                                                                   axis=2))
+                    converted_validation_output = np.exp(
+                        true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
+                                                                                           axis=2))
 
-                            actual_values = validation_data_batch_value[2]
-                            converted_actual_values = np.exp(
-                                true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values,
-                                                                                                   axis=2))
+                    actual_values = validation_data_batch_value[2]
+                    converted_actual_values = np.exp(
+                        true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(actual_values,
+                                                                                           axis=2))
 
-                            if (self.__contain_zero_values):  # to compensate for 0 values in data
-                                converted_validation_output = converted_validation_output - 1
-                                converted_actual_values = converted_actual_values - 1
+                    if (self.__contain_zero_values):  # to compensate for 0 values in data
+                        converted_validation_output = converted_validation_output - 1
+                        converted_actual_values = converted_actual_values - 1
 
-                            # calculate the smape
-                            smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                            (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                            smape_epoch_list.append(smape)
+                    # calculate the smape
+                    smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                    smape_list.append(smape)
 
-                        except tf.errors.OutOfRangeError:
-                            break
-                    # summary = session.run(write_op, {loss_var: np.mean(np.mean(smape_epoch_list))})
-                    # writer_val.add_summary(summary, epoch)
-                    # writer_val.flush()
-                smape_epoch = np.mean(smape_epoch_list)
-                # smape_final_list.append(smape_epoch)
-
-            # smape_final = np.mean(smape_final_list)
-            smape_final = smape_epoch
+                except tf.errors.OutOfRangeError:
+                    break
+            smape_final = np.mean(smape_list)
             print("SMAPE value: {}".format(smape_final))
             session.close()
         return smape_final

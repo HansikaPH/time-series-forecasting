@@ -32,14 +32,21 @@ LSTM_USE_PEEPHOLES = True
 BIAS = False
 
 learning_rate = 0.0
+# learning_rate_decay = 0.0
 
 
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
+    # global_step = tf.Variable(0, trainable=False)
+    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
+    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
 def adam_optimizer_fn(total_loss):
+    # global_step = tf.Variable(0, trainable=False)
+    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
+    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
@@ -51,6 +58,7 @@ def testing(args, config_dictionary):
     # to make the random number choices reproducible
 
     global learning_rate
+    # global learning_rate_decay
 
     dataset_name = args.dataset_name
     contain_zero_values = int(args.contain_zero_values)
@@ -137,6 +145,7 @@ def testing(args, config_dictionary):
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
+        # learning_rate_decay = config_dictionary['rate_of_decay']
     num_hidden_layers = config_dictionary['num_hidden_layers']
     max_num_epochs = config_dictionary['max_num_epochs']
     max_epoch_size = config_dictionary['max_epoch_size']

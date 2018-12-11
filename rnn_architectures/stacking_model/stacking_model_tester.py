@@ -64,7 +64,7 @@ class StackingModelTester:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
+                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
             return cell
 
         multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[cell() for _ in range(int(num_hidden_layers))])
@@ -118,7 +118,7 @@ class StackingModelTester:
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
         training_dataset = training_dataset.apply(
-            tf.contrib.data.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+            tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
                                                count=int(max_epoch_size), seed=shuffle_seed))
         training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
 
