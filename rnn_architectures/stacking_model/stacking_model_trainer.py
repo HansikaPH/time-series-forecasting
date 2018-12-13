@@ -69,7 +69,7 @@ class StackingModelTrainer:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
             return cell
 
         multi_layered_cell = tf.nn.rnn_cell.MultiRNNCell(cells=[cell() for _ in range(int(num_hidden_layers))])

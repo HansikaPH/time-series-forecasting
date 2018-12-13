@@ -70,7 +70,7 @@ class Seq2SeqModelTesterWithDenseLayer:
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
-                cell = tf.keras.layers.SimpleRNNCell(units=int(cell_dimension), kernel_initializer=weight_initializer)
+                cell = tf.nn.rnn_cell.BasicRNNCell(num_units=int(cell_dimension))
             return cell
 
         # building the encoder network
