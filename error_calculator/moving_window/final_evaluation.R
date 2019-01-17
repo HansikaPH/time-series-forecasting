@@ -1,14 +1,17 @@
-library(TSrepr)
+library(smooth)
 
 args <- commandArgs(trailingOnly = TRUE)
 rnn_forecast_file_path = args[1]
-snaive_forecasts_file_path = args[2]
-errors_file_name = args[3]
-txt_test_file_name = args[4]
-actual_results_file_name = args[5]
+errors_file_name = args[2]
+txt_test_file_name = args[3]
+actual_results_file_name = args[4]
+original_data_file_name = args[5]
 input_size = as.numeric(args[6])
 output_size = as.numeric(args[7])
 contain_zero_values = as.numeric(args[8])
+address_near_zero_insability = as.numeric(args[9])
+non_negative_integer_conversion = as.numeric(args[10])
+seasonality_period = as.numeric(args[11])
 
 root_directory = paste(dirname(getwd()), "time-series-forecasting", sep="/")
 
@@ -33,9 +36,10 @@ txt_test_df=read.csv(file=txt_test_file_full_name,sep = " ",header = FALSE)
 forecasts_file_full_name = paste(root_directory, rnn_forecast_file_path, sep="/")
 forecasts_df=read.csv(forecasts_file_full_name, header = F, sep = ",")
 
-# reading in the snaive forecasts file
-snaive_forecasts_file_full_name = paste(root_directory, snaive_forecasts_file_path, sep="/")
-snaive_forecasts_df = read.csv(snaive_forecasts_file_full_name, header = F, sep=",")
+# reading the original data to calculate the MASE errors
+original_data_file_full_name = paste(root_directory, original_data_file_name, sep="/")
+original_dataset <- readLines(original_data_file_full_name)
+original_dataset <- strsplit(original_dataset, ',')
 
 names(actual_results)[1]="Series"
 actual_results <- actual_results[,-1]
@@ -62,20 +66,40 @@ for(k in 1 :nrow(forecasts_df)){
 
   seasonal_values = one_line_test_data[input_size + 4:length(one_line_test_data)]
 
-    for (ii in 1:output_size) {
+  for (ii in 1:output_size) {
     converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii])
     if(contain_zero_values == 1){
       converted_value = converted_value -1
     }
     converted_forecasts_df[ii] =  converted_value
   }
+  if(non_negative_integer_conversion == 1){
+    converted_forecasts_df[converted_forecasts_df<0] = 0
+    converted_forecasts_df = round(converted_forecasts_df)
+  }
   converted_forecasts_matrix[k,] = converted_forecasts_df
-  mase_vector[k] = mase(unlist(actual_results_df[k,]), converted_forecasts_df, unlist(snaive_forecasts_df[k,]))
+  # print(mean(abs(diff(as.numeric(unlist(original_dataset[k])), lag=seasonality_period, differences=1))))
+  # print(abs(diff(as.numeric(unlist(original_dataset[k])), lag=seasonality_period, differences=1)))
+  mase_vector[k] = MASE(unlist(actual_results_df[k,]), converted_forecasts_df, mean(abs(diff(as.numeric(unlist(original_dataset[k])), lag=seasonality_period, differences=1))))
+  # print(mase_vector[k])
+
+  # print(k)
 }
 
 # calculating the SMAPE
-time_series_wise_SMAPE <- 2*abs(converted_forecasts_matrix-actual_results_df)/(abs(converted_forecasts_matrix)+abs(actual_results_df))
-SMAPEPerSeries <- rowMeans(time_series_wise_SMAPE, na.rm=TRUE)
+if(address_near_zero_insability == 1){
+  # define the custom smape function
+  epsilon = 0.1
+  sum = NULL
+  comparator = data.frame(matrix((0.5 + epsilon), nrow = nrow(actual_results_df), ncol = ncol(actual_results_df)))
+  sum = pmax(comparator, (abs(converted_forecasts_matrix) + abs(actual_results_df) + epsilon))
+  time_series_wise_SMAPE <- 2*abs(converted_forecasts_matrix-actual_results_df)/(sum)
+  SMAPEPerSeries <- rowMeans(time_series_wise_SMAPE, na.rm=TRUE)
+
+}else{
+  time_series_wise_SMAPE <- 2*abs(converted_forecasts_matrix-actual_results_df)/(abs(converted_forecasts_matrix)+abs(actual_results_df))
+  SMAPEPerSeries <- rowMeans(time_series_wise_SMAPE, na.rm=TRUE)
+}
 
 mean_SMAPE = mean(SMAPEPerSeries)
 median_SMAPE = median(SMAPEPerSeries)

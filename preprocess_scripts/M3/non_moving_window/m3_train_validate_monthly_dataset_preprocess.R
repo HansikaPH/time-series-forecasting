@@ -35,7 +35,7 @@ for (validation in c(TRUE, FALSE)) {
         if (validation) {
             OUTPUT_PATH = paste(OUTPUT_PATH, 'v', sep = '')
         }
-        
+
         OUTPUT_PATH = paste(OUTPUT_PATH, 'txt', sep = '.')
 
         time_series = unlist(m3_dataset[idr], use.names = FALSE)
@@ -71,7 +71,6 @@ for (validation in c(TRUE, FALSE)) {
             sav_df[, (time_series_length + 3)] = '|#'
             sav_df[, (time_series_length + 4)] = level_value
             sav_df[, (time_series_length + 5) : ncol(sav_df)] = (stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1])
-            t
         }else {
             # preallocate data frame
             sav_df = matrix(NA, ncol = (2 + time_series_length), nrow = 1)
@@ -85,7 +84,7 @@ for (validation in c(TRUE, FALSE)) {
 
         sav_df[, (2 + time_series_length - max_forecast_horizon)] = '|o'
 
-        sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = tail(normalized_values, max_forecast_horizon)
+        sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = normalized_values[(length(normalized_values) - max_forecast_horizon + 1) : length(normalized_values)]
 
         write.table(sav_df, file = OUTPUT_PATH, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
     }

@@ -60,19 +60,6 @@ for (validation in c(TRUE,FALSE)) {#
 			n=n-maxForecastHorizon
 			ylog=ylog[1:n]
 		}
-		
-		# stlAdj= tryCatch({
-		#   	sstl=stl(ts(ylog,frequency=12),"period")
-		# 		seasonal_vect=as.numeric(sstl$time.series[,1])
-		# 		nnLevels=as.numeric(sstl$time.series[,2])
-		# 		nn_vect=as.numeric(sstl$time.series[,2]+sstl$time.series[,3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-		# 		cbind(seasonal_vect,nnLevels,nn_vect)
-		#   }, error = function(e) {
-		# 		seasonal_vect=rep(0,length(ylog))   #stl() may fail, and then we would go on with the seasonality vector=0
-		# 		nnLevels=ylog
-		# 		nn_vect=ylog
-		# 		cbind(seasonal_vect,nnLevels,nn_vect)
-		# 	})
 
 		if(maxForecastHorizon == 6) {
 			inputSize = inputSize_6

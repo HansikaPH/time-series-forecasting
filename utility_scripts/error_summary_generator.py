@@ -9,6 +9,8 @@ import numpy as np
 from collections import defaultdict
 
 # get the different cluster names as external arguments
+from sympy import principal_branch
+
 argument_parser = argparse.ArgumentParser("Create error summaries")
 argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
 argument_parser.add_argument('--is_merged_cluster_result', required=True, help='1/0 denoting whether the results are merged from multiple clusters or not')
@@ -43,7 +45,6 @@ for smape_errors_file, mase_errors_file in zip(sorted(all_SMAPE_files),
                                                          sorted(all_MASE_files)):
     smape_errors_file_object = open(smape_errors_file, "r")
     mase_errors_file_object = open(mase_errors_file, "r")
-
     file_name_part = re.split(pattern="all_smape_errors_" + dataset_name + "_" , string=smape_errors_file, maxsplit=1)[1]
 
     try:
@@ -70,10 +71,11 @@ for smape_errors_file, mase_errors_file in zip(sorted(all_SMAPE_files),
             current_model_all_mase_errors.append(float(num))
     all_seeds_mase_errors_dic[model_name].append(current_model_all_mase_errors)
 
-print(all_seeds_smape_errors_dic)
-
 # iterate the errors dictionaries to get the average of errors across seeds
 for (smape_model_name, smape_errors), (mase_model_name, mase_errors) in zip(all_seeds_smape_errors_dic.items(), all_seeds_mase_errors_dic.items()):
+    # print(smape_model_name)
+    # print(smape_errors)
+    # print(mase_errors)
     average_smape_errors = np.nanmedian(np.array(smape_errors), axis=0)
     average_mase_errors = np.nanmedian(np.array(mase_errors), axis=0)
 

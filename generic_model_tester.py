@@ -4,23 +4,32 @@ import tensorflow as tf
 # import the different model types
 
 # stacking model
-from rnn_architectures.stacking_model.stacking_model_tester import StackingModelTester as StackingModelTester
+from rnn_architectures.stacking_model.stacking_model_tester import \
+    StackingModelTester as StackingModelTester
 
 # seq2seq model with decoder
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_tester import \
-    Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.unaccumulated_error.seq2seq_model_tester import \
+    Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindowUnaccumulatedError
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.accumulated_error.seq2seq_model_tester import \
+    Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindowAccumulatedError
 
 # seq2seq model with dense layer
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_tester import \
-    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindow
-from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_tester import \
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.unaccumulated_error.seq2seq_model_tester import \
+    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumulated_error.seq2seq_model_tester import \
+    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindowAccumulatedError
+from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_tester import \
     Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithoutSeasonality
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterWithNonMovingWindowWithSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.accumulated_error.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.accumulated_error.attention_model_tester import \
+    AttentionModelTester as AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -66,11 +75,14 @@ def testing(args, config_dictionary):
     binary_test_file_path_test_mode = args.binary_test_file_test_mode
     txt_test_file_path = args.txt_test_file
     actual_results_file_path = args.actual_results_file
+    original_data_file_path = args.original_data_file
+
     if (args.input_size):
         input_size = int(args.input_size)
     else:
         input_size = 0
     output_size = int(args.forecast_horizon)
+    seasonality_period = int(args.seasonality_period)
     optimizer = args.optimizer
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
@@ -92,6 +104,21 @@ def testing(args, config_dictionary):
     else:
         cell_type = "LSTM"
 
+    if args.with_accumulated_error:
+        with_accumulated_error = bool(int(args.with_accumulated_error))
+    else:
+        with_accumulated_error = False
+
+    if args.address_near_zero_instability:
+        address_near_zero_instability = bool(int(args.address_near_zero_instability))
+    else:
+        address_near_zero_instability = False
+
+    if args.non_negative_integer_conversion:
+        non_negative_integer_conversion = bool(int(args.non_negative_integer_conversion))
+    else:
+        non_negative_integer_conversion = False
+
     if not with_truncated_backpropagation:
         tbptt_identifier = "without_truncated_backpropagation"
     else:
@@ -102,7 +129,12 @@ def testing(args, config_dictionary):
     else:
         stl_decomposition_identifier = "without_stl_decomposition"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+    if with_accumulated_error:
+        accumulated_error_identifier = "with_accumulated_error"
+    else:
+        accumulated_error_identifier = "without_accumulated_error"
+
+    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + accumulated_error_identifier + "_" + str(
         seed)
     print("Model Testing Started for {}".format(model_identifier))
     print(config_dictionary)
@@ -131,17 +163,29 @@ def testing(args, config_dictionary):
     if model_type == "stacking":
         model_tester = StackingModelTester(**model_kwargs)
     elif model_type == "seq2seq":
-        model_tester = Seq2SeqModelTesterWithNonMovingWindow(**model_kwargs)
+        if with_accumulated_error:
+            model_tester = Seq2SeqModelTesterWithNonMovingWindowAccumulatedError(**model_kwargs)
+        else:
+            model_tester = Seq2SeqModelTesterWithNonMovingWindowUnaccumulatedError(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindow(**model_kwargs)
+            if with_accumulated_error:
+                model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowAccumulatedError(**model_kwargs)
+            else:
+                model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
         if without_stl_decomposition:
-            model_tester = AttentionModelTesterWithNonMovingWindowWithSeasonality(**model_kwargs)
+            if with_accumulated_error:
+                model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
+            else:
+                model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
         else:
-            model_tester = AttentionModelTesterWithNonMovingWindowWithoutSeasonality(**model_kwargs)
+            if with_accumulated_error:
+                model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
+            else:
+                model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
@@ -174,17 +218,16 @@ def testing(args, config_dictionary):
 
     # invoke the final evaluation R script
     error_file_name = model_identifier + '.txt'
-    snaive_forecasts_file_path = model_testing_configs.SNAIVE_FORECASTS_DIRECTORY + dataset_name + '.txt'
 
     if input_format == "moving_window":
-        invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
-                         actual_results_file_path, str(input_size), str(output_size), str(contain_zero_values)), True,
+        invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
+                         actual_results_file_path, original_data_file_path, str(input_size), str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), True,
                         False)
     else:
         if without_stl_decomposition:
-            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
-                             actual_results_file_path, str(output_size), str(contain_zero_values)), False, True)
+            invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
+                             actual_results_file_path, original_data_file_path, str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), False, True)
         else:
-            invoke_r_script((rnn_forecasts_file_path, snaive_forecasts_file_path, error_file_name, txt_test_file_path,
-                             actual_results_file_path,
-                             str(output_size), str(contain_zero_values)), False, False)
+            invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
+                             actual_results_file_path, original_data_file_path,
+                             str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), False, False)

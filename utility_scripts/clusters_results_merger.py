@@ -43,7 +43,6 @@ for smape_errors_file, mase_errors_file in zip(sorted(all_smape_errors_files),
     filename_mase_object = open(mase_errors_file)
 
     filename_part = re.split(pattern="all_smape_errors_" + dataset_name + "_" + "[a-zA-Z0-9]+_" , string=smape_errors_file, maxsplit=1)[1]
-    print(mase_errors_file)
 
     # try:
     #     model_seed = int(filename_part.rsplit('_', 1)[1].split('.')[0])
@@ -80,7 +79,7 @@ for (smape_key, smape_errors), (mase_key, mase_errors) in zip(all_smape_errors_d
     output_file_all_mase_errors_object = open(output_file_all_mase_errors + mase_key, "w")
 
     # open the mean errors file
-    output_file_mean_median_object = open(output_file_mean_median + smape_key, "w")
+    # output_file_mean_median_object = open(output_file_mean_median + smape_key, "w")
 
     # calculate smape mean, std
     # smape_mean = np.mean(smape_errors, axis=0)
@@ -109,4 +108,4 @@ for (smape_key, smape_errors), (mase_key, mase_errors) in zip(all_smape_errors_d
     # close the files
     output_file_all_smape_errors_object.close()
     output_file_all_mase_errors_object.close()
-    output_file_mean_median_object.close()
+    # output_file_mean_median_object.close()

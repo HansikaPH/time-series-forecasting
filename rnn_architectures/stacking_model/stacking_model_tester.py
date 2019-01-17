@@ -117,9 +117,10 @@ class StackingModelTester:
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(
-            tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
-                                               count=int(max_epoch_size), seed=shuffle_seed))
+        # training_dataset = training_dataset.apply(
+        #     tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        #                                        count=int(max_epoch_size), seed=shuffle_seed))
+        training_dataset = training_dataset.repeat(count=int(max_epoch_size))
         training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
 
         # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches

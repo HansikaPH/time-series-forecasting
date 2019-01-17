@@ -1,16 +1,18 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
-from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
+from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader as NonMovingWindowTFRecordReader
+from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader as MovingWindowTFRecordReader
 from configs.global_configs import training_data_configs
-# from matplotlib import pyplot as plt
 
-class AttentionModelTester:
+
+class Seq2SeqModelTester:
 
     def __init__(self, **kwargs):
         self.__use_bias = kwargs["use_bias"]
         self.__use_peepholes = kwargs["use_peepholes"]
         self.__output_size = kwargs["output_size"]
+        self.__input_size = kwargs["input_size"]
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
         self.__seed = kwargs["seed"]
@@ -48,7 +50,9 @@ class AttentionModelTester:
 
         testing_input = input
 
-        training_target = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
+        training_outputs = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
+        training_targets = tf.placeholder(dtype=tf.float32, shape=[None, None, self.__output_size])
+
         decoder_input = tf.placeholder(dtype=tf.float32, shape=[None, self.__output_size, 1])
 
         # placeholder for the sequence lengths
@@ -63,7 +67,7 @@ class AttentionModelTester:
         def cell():
             if self.__cell_type == "LSTM":
                 cell = tf.nn.rnn_cell.LSTMCell(num_units=int(cell_dimension), use_peepholes=self.__use_peepholes,
-                                         initializer=weight_initializer)
+                                               initializer=weight_initializer)
             elif self.__cell_type == "GRU":
                 cell = tf.nn.rnn_cell.GRUCell(num_units=int(cell_dimension), kernel_initializer=weight_initializer)
             elif self.__cell_type == "RNN":
@@ -74,17 +78,23 @@ class AttentionModelTester:
         multi_layered_encoder_cell = tf.nn.rnn_cell.MultiRNNCell(
             cells=[cell() for _ in range(int(num_hidden_layers))])
 
+        # define actual_batch_size
+        actual_batch_size = tf.placeholder(dtype=tf.int32, shape=[])
+
+        training_encoder_initial_state = multi_layered_encoder_cell.zero_state(batch_size=actual_batch_size, dtype=tf.float32)
+
         with tf.variable_scope('train_encoder_scope') as encoder_train_scope:
             training_encoder_outputs, training_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                 initial_state=training_encoder_initial_state,
                                                                                  inputs=training_input,
                                                                                  sequence_length=input_sequence_length,
                                                                                  dtype=tf.float32)
 
         with tf.variable_scope(encoder_train_scope, reuse=tf.AUTO_REUSE) as encoder_inference_scope:
-            inference_encoder_outputs, inference_encoder_states = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
-                                                                                    inputs=testing_input,
-                                                                                    sequence_length=input_sequence_length,
-                                                                                    dtype=tf.float32)
+            inference_encoder_outputs, inference_encoder_state = tf.nn.dynamic_rnn(cell=multi_layered_encoder_cell,
+                                                                                   inputs=testing_input,
+                                                                                   sequence_length=input_sequence_length,
+                                                                                   dtype=tf.float32)
 
         # the final projection layer to convert the output to the desired dimension
         dense_layer = Dense(units=1, use_bias=self.__use_bias, kernel_initializer=weight_initializer)
@@ -95,23 +105,13 @@ class AttentionModelTester:
 
         # building the decoder network for training
         with tf.variable_scope('decoder_train_scope') as decoder_train_scope:
-            # creating an attention layer
-            training_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
-                                                                                memory=training_encoder_outputs,
-                                                                                memory_sequence_length=input_sequence_length)
-            # using the attention wrapper to wrap the decoding cell
-            training_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
-                                                                        attention_mechanism=training_attention_mechanism,
-                                                                        attention_layer_size=cell_dimension, alignment_history=True)
             # create the initial state for the decoder
-            training_decoder_initial_state = training_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
-                                                                              dtype=tf.float32).clone(
-                cell_state=training_encoder_state)
             training_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                sequence_length=output_sequence_length,
-                                                                               sampling_probability=0.0)
-            training_decoder = tf.contrib.seq2seq.BasicDecoder(cell=training_decoder_cell, helper=training_helper,
-                                                               initial_state=training_decoder_initial_state,
+                                                                               sampling_probability=0.0,
+                                                                               name="training_helper")
+            training_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell, helper=training_helper,
+                                                               initial_state=training_encoder_state,
                                                                output_layer=dense_layer)
 
             # perform the decoding
@@ -119,29 +119,21 @@ class AttentionModelTester:
 
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
-            # creating an attention layer
-            inference_attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=cell_dimension,
-                                                                                 memory=inference_encoder_outputs,
-                                                                                 memory_sequence_length=input_sequence_length)
-            inference_decoder_cell = tf.contrib.seq2seq.AttentionWrapper(cell=multi_layered_decoder_cell,
-                                                                         attention_mechanism=inference_attention_mechanism,
-                                                                         attention_layer_size=cell_dimension, alignment_history=True)
             # create the initial state for the decoder
-            inference_decoder_initial_state = inference_decoder_cell.zero_state(batch_size=tf.shape(input)[0],
-                                                                                dtype=tf.float32).clone(
-                cell_state=training_encoder_state)
             inference_helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(inputs=decoder_input,
                                                                                 sequence_length=output_sequence_length,
-                                                                                sampling_probability=1.0)
-            inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=inference_decoder_cell, helper=inference_helper,
-                                                                initial_state=inference_decoder_initial_state,
+                                                                                sampling_probability=1.0,
+                                                                                name="inference_helper")
+            inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=multi_layered_decoder_cell,
+                                                                helper=inference_helper,
+                                                                initial_state=inference_encoder_state,
                                                                 output_layer=dense_layer)
 
             # perform the decoding
-            inference_decoder_outputs, inference_decoder_states, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
+            inference_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=inference_decoder)
 
         # error that should be minimized in the training process
-        error = self.__l1_loss(training_decoder_outputs[0], training_target)
+        error = self.__l1_loss(training_outputs, training_targets)
 
         # l2 regularization of the trainable model parameters
         l2_loss = 0.0
@@ -156,22 +148,27 @@ class AttentionModelTester:
         optimizer = optimizer_fn(total_loss)
 
         # create the Dataset objects for the training and test data
-        training_dataset = tf.data.TFRecordDataset(filenames = [self.__binary_train_file_path], compression_type = "ZLIB")
-        test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type = "ZLIB")
+        training_dataset = tf.data.TFRecordDataset(filenames=[self.__binary_train_file_path], compression_type="ZLIB")
+        test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type="ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader()
+        non_moving_window_tfrecord_reader = NonMovingWindowTFRecordReader()
+        moving_window_tfrecord_reader = MovingWindowTFRecordReader(self.__input_size, self.__output_size)
 
         # preparing the training data
         # randomly shuffle the time series within the dataset
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
-                                                                  count=int(max_epoch_size), seed=shuffle_seed))
-        training_dataset = training_dataset.map(tfrecord_reader.validation_data_parser)
+        training_dataset = training_dataset.apply(
+            tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+                                                    count=int(max_epoch_size), seed=shuffle_seed))
+        training_dataset = training_dataset.map(moving_window_tfrecord_reader.validation_data_parser)
 
         # create the batches by padding the datasets to make the variable sequence lengths fixed within the individual batches
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
-                                                                     padded_shapes=([], [tf.Dimension(None), 1], [self.__output_size, 1], [1, 1]))
+                                                                     padded_shapes=(
+                                                                         [], [tf.Dimension(None), self.__input_size],
+                                                                         [tf.Dimension(None), self.__output_size],
+                                                                         [tf.Dimension(None), self.__output_size + 1]))
 
         # get an iterator to the batches
         training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
@@ -180,11 +177,11 @@ class AttentionModelTester:
         next_training_data_batch = training_data_batch_iterator.get_next()
 
         # preparing the test data
-        test_dataset = test_dataset.map(tfrecord_reader.test_data_parser)
+        test_dataset = test_dataset.map(non_moving_window_tfrecord_reader.test_data_parser)
 
         # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
         padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size), padded_shapes=(
-        [], [tf.Dimension(None), 1], [1, 1]))
+            [], [tf.Dimension(None), 1], [self.__output_size + 1, 1]))
 
         # get an iterator to the test input data batch
         test_input_iterator = padded_test_input_data.make_one_shot_iterator()
@@ -200,26 +197,55 @@ class AttentionModelTester:
 
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
-                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
 
+                session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
                 while True:
                     try:
-                        next_training_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed: epoch})
+                        next_training_batch_value = session.run(next_training_data_batch,
+                                                                feed_dict={shuffle_seed: epoch})
+                        actual_batch_size_value = np.shape(next_training_batch_value[0])[0]
+                        training_encoder_state_value = session.run(training_encoder_initial_state, feed_dict={actual_batch_size: actual_batch_size_value})
+                        training_predictions = []
 
-                        training_input_value = session.run(training_input,
-                                                           feed_dict={input: next_training_batch_value[1]})
+                        for i in range(np.shape(next_training_batch_value[1])[1]):
+                            # splitting the input and output batch
+                            splitted_input = np.expand_dims(next_training_batch_value[1][:, i, :], axis=2)
+                            splitted_output = np.expand_dims(next_training_batch_value[2][:, i, :], axis=2)
 
-                        decoder_input_value = np.hstack((np.expand_dims(training_input_value[:, -1, :], axis=1),
-                                                         next_training_batch_value[2][:, :-1, :]))
+                            # get the values of the input and output sequence lengths
+                            length_comparison_array = np.greater([i + 1] * np.shape(splitted_input)[0],
+                                                                 next_training_batch_value[0])
+                            input_sequence_length_values = np.where(length_comparison_array, 0, self.__input_size)
+                            output_sequence_length_values = np.where(length_comparison_array, 0, self.__output_size)
 
-                        # model training
-                        session.run(optimizer,
-                                    feed_dict={input: next_training_batch_value[1],
-                                               training_target: next_training_batch_value[2],
-                                               decoder_input: decoder_input_value,
-                                               input_sequence_length: next_training_batch_value[0],
-                                               output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]
-                                               })
+                            # define the teacher input signal for the decoder
+                            decoder_input_value = np.hstack(
+                                (np.expand_dims(splitted_input[:, -1, :], axis=1), splitted_output[:, :-1, :]))
+
+                            # get the predictions
+                            training_decoder_outputs_value, training_encoder_state_value = session.run(
+                                [training_decoder_outputs, training_encoder_state], feed_dict= {
+                                    input: splitted_input,
+                                    decoder_input: decoder_input_value,
+                                    input_sequence_length: input_sequence_length_values,
+                                    output_sequence_length: output_sequence_length_values,
+                                    training_encoder_initial_state: training_encoder_state_value
+                                })
+
+                            training_prediction_output_values = np.ma.masked_array(
+                                np.reshape(np.squeeze(training_decoder_outputs_value[0]),
+                                           newshape=(actual_batch_size_value, self.__output_size)))
+                            training_prediction_output_values[output_sequence_length_values == 0] = 0
+                            training_predictions.append(np.squeeze(training_prediction_output_values))
+
+                        training_predictions = np.transpose(np.reshape(np.array(training_predictions), newshape=(np.shape(next_training_batch_value[1])[1], actual_batch_size_value, self.__output_size)), (1, 0, 2))
+
+                        # backpropagate the accumulated errors
+                        session.run(optimizer, feed_dict={
+                            training_outputs: np.array(training_predictions),
+                            training_targets: next_training_batch_value[2]
+                        })
+
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -228,6 +254,7 @@ class AttentionModelTester:
             list_of_forecasts = []
             while True:
                 try:
+
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
@@ -235,21 +262,16 @@ class AttentionModelTester:
                     decoder_input_shape = [np.shape(test_input_batch_value[1])[0], self.__output_size, 1]
 
                     # get the output of the network for the test input data batch
-                    test_output, alignments = session.run([inference_decoder_outputs[0], inference_decoder_states.alignment_history.stack()],
+                    test_output = session.run(inference_decoder_outputs[0],
                                               feed_dict={input: test_input_batch_value[1],
                                                          decoder_input: np.zeros(decoder_input_shape),
                                                          input_sequence_length: test_input_batch_value[0],
-                                                         output_sequence_length: [self.__output_size] * np.shape(test_input_batch_value[1])[0]
-                                                         })
+                                                         output_sequence_length: [self.__output_size] *
+                                                                                 np.shape(test_input_batch_value[1])[
+                                                                                     0]})
 
                     forecasts = test_output
                     list_of_forecasts.extend(forecasts.tolist())
-
-                    # print(np.shape(alignments))
-                    # plt.plot(alignments[0, 0, 0:21])
-                    # plt.plot(alignments[1, 0, 0:21])
-                    # plt.plot(alignments[2, 0, 0:21])
-                    # plt.show()
 
                 except tf.errors.OutOfRangeError:
                     break

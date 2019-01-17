@@ -22,6 +22,7 @@ logs/
 generic_model_trainer_2.py
 generic_model_trainer_3.py
 generic_model_tester_2.py
+generic_model_tester_3.py
 
 cif2016_o12.txt
 cif2016_o6.txt

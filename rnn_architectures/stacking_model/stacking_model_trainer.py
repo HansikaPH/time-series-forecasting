@@ -15,6 +15,8 @@ class StackingModelTrainer:
         self.__binary_train_file_path = kwargs["binary_train_file_path"]
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
+        self.__address_near_zero_instability = kwargs["address_near_zero_instability"]
+        self.__non_negative_integer_conversion = kwargs["non_negative_integer_conversion"]
         self.__seed = kwargs["seed"]
         self.__cell_type = kwargs["cell_type"]
 
@@ -128,9 +130,11 @@ class StackingModelTrainer:
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
-        training_dataset = training_dataset.apply(
-            tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
-                                               count=int(max_epoch_size), seed=shuffle_seed))
+        # training_dataset = training_dataset.apply(
+        #     tf.data.experimental.shuffle_and_repeat(buffer_size=training_data_configs.SHUFFLE_BUFFER_SIZE,
+        #                                        count=int(max_epoch_size), seed=shuffle_seed))
+        training_dataset = training_dataset.repeat(count=int(max_epoch_size))
+
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
         padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
@@ -216,10 +220,25 @@ class StackingModelTrainer:
                         converted_validation_output = converted_validation_output - 1
                         converted_actual_values = converted_actual_values - 1
 
-                    # calculate the smape
-                    smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
-                                    (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                    smape_list.append(smape)
+                    if self.__non_negative_integer_conversion:
+                        converted_validation_output[converted_validation_output < 0] = 0
+                        converted_validation_output = np.round(converted_validation_output)
+
+                        converted_actual_values[converted_actual_values < 0] = 0
+                        converted_actual_values = np.round(converted_actual_values)
+
+                    if self.__address_near_zero_instability:
+                        # calculate the smape
+                        epsilon = 0.1
+                        sum = np.maximum(np.abs(converted_validation_output) + np.abs(converted_actual_values) + epsilon, 0.5 + epsilon)
+                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                        sum) * 2
+                        smape_list.append(smape)
+                    else:
+                        # calculate the smape
+                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                                        (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
+                        smape_list.append(smape)
 
                 except tf.errors.OutOfRangeError:
                     break

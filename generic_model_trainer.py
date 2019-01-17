@@ -4,7 +4,6 @@ import argparse
 from utility_scripts.persist_optimized_config_results import persist_results
 from generic_model_tester import testing
 import re
-import random
 
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -21,20 +20,28 @@ from rnn_architectures.stacking_model.stacking_model_trainer import \
     StackingModelTrainer as StackingModelTrainer
 
 # seq2seq model with decoder
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.seq2seq_model_trainer import \
-    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindow
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
+    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError
+from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.accumulated_error.seq2seq_model_trainer import \
+    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError
 
 # seq2seq model with dense layer
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.seq2seq_model_trainer import \
-    Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindow
-from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.seq2seq_model_trainer import \
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
+    Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError
+from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumulated_error.seq2seq_model_trainer import \
+    Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError
+from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_trainer import \
     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerMovingWindow
 
 # attention model
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithoutSeasonality
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerWithNonMovingWindowWithSeasonality
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_trainer import \
+    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.accumulated_error.attention_model_trainer import \
+    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_trainer import \
+    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError
+from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.accumulated_error.attention_model_trainer import \
+    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -46,6 +53,8 @@ BIAS = False
 
 optimized_config_directory = 'results/optimized_configurations/'
 learning_rate = 0.0
+
+
 # learning_rate_decay = 0.0
 
 # function to create the optimizer
@@ -81,6 +90,7 @@ def read_initial_hyperparameter_values():
 
     return hyperparameter_values_dic
 
+
 def read_optimal_hyperparameter_values(file_name):
     # define dictionary to store the hyperparameter values
     hyperparameter_values_dic = {}
@@ -112,7 +122,7 @@ def train_model_smac(configs):
 
     global learning_rate
     learning_rate = rate_of_learning
-    
+
     # global learning_rate_decay
     # learning_rate_decay = rate_of_decay
 
@@ -205,10 +215,10 @@ def smac():
     #                                               hyperparameter_values_dic['rate_of_decay'][1],
     #                                               default_value=hyperparameter_values_dic['rate_of_decay'][1])
     cell_dimension = UniformIntegerHyperparameter("cell_dimension",
-                                                       hyperparameter_values_dic['cell_dimension'][0],
-                                                       hyperparameter_values_dic['cell_dimension'][1],
-                                                       default_value=hyperparameter_values_dic['cell_dimension'][
-                                                           0])
+                                                  hyperparameter_values_dic['cell_dimension'][0],
+                                                  hyperparameter_values_dic['cell_dimension'][1],
+                                                  default_value=hyperparameter_values_dic['cell_dimension'][
+                                                      0])
     no_hidden_layers = UniformIntegerHyperparameter("num_hidden_layers",
                                                     hyperparameter_values_dic['num_hidden_layers'][0],
                                                     hyperparameter_values_dic['num_hidden_layers'][1],
@@ -277,6 +287,10 @@ if __name__ == '__main__':
     argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
     argument_parser.add_argument('--contain_zero_values', required=True,
                                  help='Whether the dataset contains zero values(0/1)')
+    argument_parser.add_argument('--address_near_zero_instability', required=False,
+                                 help='Whether to use a custom SMAPE function to address near zero instability(0/1). Default is 0')
+    argument_parser.add_argument('--non_negative_integer_conversion', required=False,
+                                 help='Whether to convert the final forecasts to non negative integers(0/1). Default is 0')
     argument_parser.add_argument('--initial_hyperparameter_values_file', required=True,
                                  help='The file for the initial hyperparameter configurations')
     argument_parser.add_argument('--binary_train_file_train_mode', required=True,
@@ -289,8 +303,12 @@ if __name__ == '__main__':
                                  help='The tfrecords file for test dataset in the testing mode')
     argument_parser.add_argument('--txt_test_file', required=True, help='The txt file for test dataset')
     argument_parser.add_argument('--actual_results_file', required=True, help='The txt file of the actual results')
-    argument_parser.add_argument('--cell_type', required=False, help='The cell type of the RNN(LSTM/GRU). Default is LSTM')
-    argument_parser.add_argument('--input_size', required=False, help='The input size of the moving window. Default is 0')
+    argument_parser.add_argument('--original_data_file', required=True, help='The txt file of the original dataset')
+    argument_parser.add_argument('--cell_type', required=False,
+                                 help='The cell type of the RNN(LSTM/GRU/RNN). Default is LSTM')
+    argument_parser.add_argument('--input_size', required=False,
+                                 help='The input size of the moving window. Default is 0')
+    argument_parser.add_argument('--seasonality_period', required=True, help='The seasonality period of the time series')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required=True, help='The type of the optimizer(cocob/adam/adagrad...)')
     argument_parser.add_argument('--hyperparameter_tuning', required=True,
@@ -302,6 +320,8 @@ if __name__ == '__main__':
                                  help='Whether not to use stl decomposition(0/1). Default is 0')
     argument_parser.add_argument('--with_truncated_backpropagation', required=False,
                                  help='Whether not to use truncated backpropagation(0/1). Default is 0')
+    argument_parser.add_argument('--with_accumulated_error', required=False,
+                                 help='Whether to accumulate errors over the moving windows. Default is 0')
     argument_parser.add_argument('--seed', required=True, help='Integer seed to use as the random seed')
 
     # parse the user arguments
@@ -340,6 +360,21 @@ if __name__ == '__main__':
     else:
         cell_type = "LSTM"
 
+    if args.with_accumulated_error:
+        with_accumulated_error = bool(int(args.with_accumulated_error))
+    else:
+        with_accumulated_error = False
+
+    if args.address_near_zero_instability:
+        address_near_zero_instability = bool(int(args.address_near_zero_instability))
+    else:
+        address_near_zero_instability = False
+
+    if args.non_negative_integer_conversion:
+        non_negative_integer_conversion = bool(int(args.non_negative_integer_conversion))
+    else:
+        non_negative_integer_conversion = False
+
     if with_truncated_backpropagation:
         tbptt_identifier = "with_truncated_backpropagation"
     else:
@@ -350,7 +385,12 @@ if __name__ == '__main__':
     else:
         stl_decomposition_identifier = "with_stl_decomposition"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + str(
+    if with_accumulated_error:
+        accumulated_error_identifier = "with_accumulated_error"
+    else:
+        accumulated_error_identifier = "without_accumulated_error"
+
+    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + accumulated_error_identifier + "_" + str(
         seed)
     print("Model Training Started for {}".format(model_identifier))
 
@@ -371,6 +411,8 @@ if __name__ == '__main__':
         'binary_train_file_path': binary_train_file_path_train_mode,
         'binary_validation_file_path': binary_validation_file_path_train_mode,
         'contain_zero_values': contain_zero_values,
+        'address_near_zero_instability': address_near_zero_instability,
+        'non_negative_integer_conversion': non_negative_integer_conversion,
         'seed': seed,
         'cell_type': cell_type
     }
@@ -379,17 +421,29 @@ if __name__ == '__main__':
     if model_type == "stacking":
         model_trainer = StackingModelTrainer(**model_kwargs)
     elif model_type == "seq2seq":
-        model_trainer = Seq2SeqModelTrainerWithNonMovingWindow(**model_kwargs)
+        if with_accumulated_error:
+            model_trainer = Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError(**model_kwargs)
+        else:
+            model_trainer = Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindow(**model_kwargs)
+            if with_accumulated_error:
+                model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError(**model_kwargs)
+            else:
+                model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
     elif model_type == "attention":
         if without_stl_decomposition:
-            model_trainer = AttentionModelTrainerWithNonMovingWindowWithSeasonality(**model_kwargs)
+            if with_accumulated_error:
+                model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
+            else:
+                model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
         else:
-            model_trainer = AttentionModelTrainerWithNonMovingWindowWithoutSeasonality(**model_kwargs)
+            if with_accumulated_error:
+                model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
+            else:
+                model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values()
@@ -464,7 +518,7 @@ if __name__ == '__main__':
     #     "max_epoch_size": 3,
     #     "gaussian_noise_stdev": 0.0007517656514955944,
     #     "l2_regularization": 0.00022259525510874703,
-    #     "max_num_epochs": 14,
+    #     "max_num_epochs": 1,
     #     "random_normal_initializer_stdev": 0.0005827304210740794
     # }
 
@@ -477,14 +531,13 @@ if __name__ == '__main__':
     #                            'rate_of_learning': 0.20172634121590136}
 
     # persist the optimized configuration to a file
-    persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
-
+    # persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
     # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier + '.txt')
 
     # test the model
-    for i in range(1, 11):
-        args.seed = i
-        testing(args, optimized_configuration)
+    # for i in range(1, 11):
+    #     args.seed = i
+    #     testing(args, optimized_configuration)
 
     # testing(args, optimized_configuration)

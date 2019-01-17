@@ -28,10 +28,6 @@ time_series_length = ncol(numeric_dataset_log)
 
 for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
-  print(time_series_log)
-
-  write.table(t(time_series_log), file="nikan_test", row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
-
 
   stl_result= tryCatch({
     sstl=stl(ts(time_series_log,frequency=7),"period")

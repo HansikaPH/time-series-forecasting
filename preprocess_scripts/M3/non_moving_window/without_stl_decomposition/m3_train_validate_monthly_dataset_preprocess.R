@@ -70,7 +70,7 @@ for (validation in c(TRUE, FALSE)) {
 
         sav_df[, (2 + time_series_length - max_forecast_horizon)] = '|o'
 
-        sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = tail(normalized_values, max_forecast_horizon)
+        sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = normalized_values[(length(normalized_values) - max_forecast_horizon + 1) : length(normalized_values)]
 
         write.table(sav_df, file = OUTPUT_PATH, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
     }
