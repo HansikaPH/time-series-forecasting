@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
-# from matplotlib import pyplot as plt
+from configs.global_configs import gpu_configs
 
 class AttentionModelTester:
 
@@ -196,7 +196,12 @@ class AttentionModelTester:
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
-        with tf.Session() as session:
+        # define the GPU options
+        gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
+
+        with tf.Session(
+                config=tf.ConfigProto(log_device_placement=gpu_configs.log_device_placement, allow_soft_placement=True,
+                                      gpu_options=gpu_options)) as session:
             session.run(init_op)
 
             for epoch in range(int(max_num_epochs)):
@@ -224,8 +229,11 @@ class AttentionModelTester:
             # applying the model to the test data
 
             list_of_forecasts = []
+            i = 0
             while True:
                 try:
+                    i = i + 1
+                    print(i)
                     # get the batch of test inputs
                     test_input_batch_value = session.run(test_input_data_batch)
 
@@ -242,6 +250,19 @@ class AttentionModelTester:
 
                     forecasts = test_output
                     list_of_forecasts.extend(forecasts.tolist())
+
+                    # print(alignments)
+                    if i == 1:
+                        # self.plot_attention(alignments[0, 4, :])
+                        # print(np.shape(alignments))
+                        print(np.shape(alignments[0, 14, :]))
+                        print(alignments[0, 14, :])
+
+                    if i == 5:
+                        # self.plot_attention(alignments[0, 4, :])
+                        # print(np.shape(alignments))
+                        print(np.shape(alignments[0, 2, :]))
+                        print(alignments[0, 2, :])
 
                 except tf.errors.OutOfRangeError:
                     break

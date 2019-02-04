@@ -15,3 +15,7 @@ class hyperparameter_tuning_configs:
 
 class training_data_configs:
     SHUFFLE_BUFFER_SIZE = 20000
+
+class gpu_configs:
+    visible_device_list = "0, 1"
+    log_device_placement = False

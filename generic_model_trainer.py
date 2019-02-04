@@ -3,7 +3,7 @@ import tensorflow as tf
 import argparse
 from utility_scripts.persist_optimized_config_results import persist_results
 from generic_model_tester import testing
-import re
+from utility_scripts.hyperparameter_scripts.hyperparameter_config_reader import read_initial_hyperparameter_values
 
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -73,38 +73,6 @@ def adam_optimizer_fn(total_loss):
 
 def cocob_optimizer_fn(total_loss):
     return cocob_optimizer.COCOB().minimize(loss=total_loss)
-
-
-def read_initial_hyperparameter_values():
-    # define dictionary to store the hyperparameter values
-    hyperparameter_values_dic = {}
-
-    with open(initial_hyperparameter_values_file) as configs_file:
-        configs = configs_file.readlines()
-        for config in configs:
-            if not config.startswith('#') and config.strip():
-                values = [value.strip() for value in (re.split("-|,", config))]
-                hyperparameter_values_dic[values[0]] = [float(values[1]), float(values[2])]
-
-        configs_file.close()
-
-    return hyperparameter_values_dic
-
-
-def read_optimal_hyperparameter_values(file_name):
-    # define dictionary to store the hyperparameter values
-    hyperparameter_values_dic = {}
-
-    with open(file_name) as configs_file:
-        configs = configs_file.readlines()
-        for config in configs:
-            if not config.startswith('#') and config.strip():
-                values = [value.strip() for value in (re.split(">>>", config))]
-                hyperparameter_values_dic[values[0]] = float(values[1])
-
-        configs_file.close()
-
-    return hyperparameter_values_dic
 
 
 # Training the time series
@@ -446,7 +414,7 @@ if __name__ == '__main__':
                 model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
-    hyperparameter_values_dic = read_initial_hyperparameter_values()
+    hyperparameter_values_dic = read_initial_hyperparameter_values(initial_hyperparameter_values_file)
 
     # select the hyperparameter tuning method
     # if hyperparameter_tuning == "bayesian":
@@ -531,13 +499,13 @@ if __name__ == '__main__':
     #                            'rate_of_learning': 0.20172634121590136}
 
     # persist the optimized configuration to a file
-    # persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
+    persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
     # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier + '.txt')
 
     # test the model
-    # for i in range(1, 11):
-    #     args.seed = i
-    #     testing(args, optimized_configuration)
+    for i in range(1, 11):
+        args.seed = i
+        testing(args, optimized_configuration)
 
     # testing(args, optimized_configuration)

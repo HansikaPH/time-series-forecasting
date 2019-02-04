@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader
 from configs.global_configs import training_data_configs
-# from graph_plotter.graph_plotter import GraphPlotter
+from configs.global_configs import gpu_configs
 
 class Seq2SeqModelTesterWithDenseLayer:
 
@@ -168,7 +168,12 @@ class Seq2SeqModelTesterWithDenseLayer:
         # setup variable initialization
         init_op = tf.global_variables_initializer()
 
-        with tf.Session() as session:
+        # define the GPU options
+        gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
+
+        with tf.Session(
+                config=tf.ConfigProto(log_device_placement=gpu_configs.log_device_placement, allow_soft_placement=True,
+                                      gpu_options=gpu_options)) as session:
             session.run(init_op)
 
             # graph plotter object

@@ -9,8 +9,6 @@ import numpy as np
 from collections import defaultdict
 
 # get the different cluster names as external arguments
-from sympy import principal_branch
-
 argument_parser = argparse.ArgumentParser("Create error summaries")
 argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
 argument_parser.add_argument('--is_merged_cluster_result', required=True, help='1/0 denoting whether the results are merged from multiple clusters or not')
@@ -90,7 +88,7 @@ for (smape_model_name, smape_errors), (mase_model_name, mase_errors) in zip(all_
     mean_MASE = np.mean(average_mase_errors)
     median_MASE = np.median(average_mase_errors)
 
-    current_model_errors_df = pd.DataFrame([smape_model_name, mean_SMAPE, median_SMAPE, mean_MASE, median_MASE])
+    # current_model_errors_df = pd.DataFrame([smape_model_name, mean_SMAPE, median_SMAPE, mean_MASE, median_MASE])
     all_errors_df.loc[-1] = [smape_model_name, mean_SMAPE, median_SMAPE, mean_MASE, median_MASE]
     all_errors_df.index = all_errors_df.index + 1
 
