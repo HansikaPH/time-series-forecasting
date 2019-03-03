@@ -180,7 +180,8 @@ class Seq2SeqModelTester:
         init_op = tf.global_variables_initializer()
 
         # define the GPU options
-        gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
+        # gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
+        gpu_options = tf.GPUOptions(allow_growth=True)
 
         with tf.Session(
                 config=tf.ConfigProto(log_device_placement=gpu_configs.log_device_placement, allow_soft_placement=True,

@@ -115,7 +115,7 @@ class AttentionModelTester:
                                                                output_layer=dense_layer)
 
             # perform the decoding
-            training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder=training_decoder)
+            training_decoder_outputs, training_decoder_states, _ = tf.contrib.seq2seq.dynamic_decode(decoder=training_decoder)
 
         # building the decoder network for inference
         with tf.variable_scope(decoder_train_scope, reuse=tf.AUTO_REUSE) as decoder_inference_scope:
@@ -199,15 +199,14 @@ class AttentionModelTester:
         # define the GPU options
         gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
 
+        file_object = open("weights.txt", "a")
         with tf.Session(
                 config=tf.ConfigProto(log_device_placement=gpu_configs.log_device_placement, allow_soft_placement=True,
                                       gpu_options=gpu_options)) as session:
             session.run(init_op)
-
             for epoch in range(int(max_num_epochs)):
                 print("Epoch->", epoch)
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
-
                 while True:
                     try:
                         next_training_batch_value = session.run(next_training_data_batch, feed_dict={shuffle_seed: epoch})
@@ -216,16 +215,23 @@ class AttentionModelTester:
                                                          next_training_batch_value[2][:, :-1, :]))
 
                         # model training
-                        session.run(optimizer,
+                        _, attn_weights = session.run([optimizer, training_decoder_states.alignment_history.stack()],
                                     feed_dict={input: next_training_batch_value[1],
                                                training_target: next_training_batch_value[2],
                                                decoder_input: decoder_input_value,
                                                input_sequence_length: next_training_batch_value[0],
                                                output_sequence_length: [self.__output_size] * np.shape(next_training_batch_value[1])[0]
                                                })
+
+                        variables_names = [v.name for v in tf.trainable_variables()]
+                        values = session.run(variables_names)
+                        for k, v in zip(variables_names, values):
+                            print("Variable: ", k)
+                            print(v)
+                        # for i in range(np.shape(attn_weights)[0]):
+                        #     np.savetxt(file_object, attn_weights[i], delimiter=",")
                     except tf.errors.OutOfRangeError:
                         break
-
             # applying the model to the test data
 
             list_of_forecasts = []
@@ -252,17 +258,9 @@ class AttentionModelTester:
                     list_of_forecasts.extend(forecasts.tolist())
 
                     # print(alignments)
-                    if i == 1:
-                        # self.plot_attention(alignments[0, 4, :])
-                        # print(np.shape(alignments))
-                        print(np.shape(alignments[0, 14, :]))
-                        print(alignments[0, 14, :])
-
-                    if i == 5:
-                        # self.plot_attention(alignments[0, 4, :])
-                        # print(np.shape(alignments))
-                        print(np.shape(alignments[0, 2, :]))
-                        print(alignments[0, 2, :])
+                    # if i == 2:
+                    #     print(alignments[0, 8, :])
+                    print(alignments[:, 8, :])
 
                 except tf.errors.OutOfRangeError:
                     break

@@ -13,6 +13,7 @@ address_near_zero_insability = as.numeric(args[9])
 non_negative_integer_conversion = as.numeric(args[10])
 seasonality_period = as.numeric(args[11])
 
+
 root_directory = paste(dirname(getwd()), "time-series-forecasting", sep="/")
 
 # errors file name
@@ -64,15 +65,13 @@ for(k in 1 :nrow(forecasts_df)){
   one_line_test_data = as.numeric(txt_test_df[finalindex,])
   level_value = one_line_test_data[input_size + 3]
 
-  seasonal_values = one_line_test_data[input_size + 4:length(one_line_test_data)]
+  seasonal_values = one_line_test_data[(input_size + 4): (3 + input_size + output_size)]
 
-  for (ii in 1:output_size) {
-    converted_value = exp(one_ts_forecasts[ii] + level_value + seasonal_values[ii])
-    if(contain_zero_values == 1){
-      converted_value = converted_value -1
+  converted_forecasts_df = exp(one_ts_forecasts + level_value + seasonal_values)
+  if(contain_zero_values == 1){
+      converted_forecasts_df = converted_forecasts_df -1
     }
-    converted_forecasts_df[ii] =  converted_value
-  }
+
   if(non_negative_integer_conversion == 1){
     converted_forecasts_df[converted_forecasts_df<0] = 0
     converted_forecasts_df = round(converted_forecasts_df)

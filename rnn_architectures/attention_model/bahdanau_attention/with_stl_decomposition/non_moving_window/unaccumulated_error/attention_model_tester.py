@@ -256,17 +256,20 @@ class AttentionModelTester:
 
 
                     # print(alignments)
-                    if i == 2:
+                    if i == 7:
                         # self.plot_attention(alignments[0, 4, :])
                         # print(np.shape(alignments))
-                        print(np.shape(alignments[0, 2, :]))
-                        print(alignments[0, 2, :])
+                        # print(np.shape(alignments[0, 2, :]))
+                        # print(alignments[0, 2, :])
+                        print(alignments[0, 26, :])
+                        print(alignments[0, 27, :])
 
-                    if i == 6:
-                        # self.plot_attention(alignments[0, 4, :])
-                        # print(np.shape(alignments))
-                        print(np.shape(alignments[0, 2, :]))
-                        print(alignments[0, 2, :])
+                    # if i == 2:
+                    #     # self.plot_attention(alignments[0, 4, :])
+                    #     # print(np.shape(alignments))
+                    #     # print(np.shape(alignments[0, 6, :]))
+                    #     # print(alignments[0, 6, :])
+                    #     print(alignments[0, 1, :])
 
                 except tf.errors.OutOfRangeError:
                     break

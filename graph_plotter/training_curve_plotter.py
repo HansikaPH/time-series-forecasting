@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-class GraphPlotter:
+class CurvePlotter:
     def __init__(self, session, no_of_curves):
         self.__session = session
         self.__writer_train = tf.summary.FileWriter('./logs/plot_train')

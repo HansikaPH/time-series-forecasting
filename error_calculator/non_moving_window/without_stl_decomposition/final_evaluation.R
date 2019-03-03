@@ -1,5 +1,3 @@
-library(ggplot2)
-library(reshape2)
 library(smooth)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -59,13 +57,11 @@ for(k in 1 :nrow(forecasts_df)){
 
   level_value = as.numeric(one_line_test_data[length(one_line_test_data)])
 
-  for (ii in 1:output_size) {
-    converted_value = exp(one_ts_forecasts[ii] + level_value)
-    if(contain_zero_values == 1){
-      converted_value = converted_value -1
+  converted_forecasts_df = exp(one_ts_forecasts + level_value)
+  if(contain_zero_values == 1){
+      converted_forecasts_df = converted_forecasts_df -1
     }
-    converted_forecasts_df[ii] =  converted_value
-  }
+
   if(non_negative_integer_conversion == 1){
     converted_forecasts_df[converted_forecasts_df<0] = 0
     converted_forecasts_df = round(converted_forecasts_df)

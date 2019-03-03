@@ -18,8 +18,8 @@ numeric_dataset_log = log(numeric_dataset)
 
 time_series_length = ncol(numeric_dataset_log)
 
-idr=3
-# for (idr in 1: nrow(numeric_dataset_log)) {
+
+for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
 
   stl_result= tryCatch({
@@ -36,22 +36,20 @@ idr=3
   })
 
   level=stl_result[time_series_length - max_forecast_horizon, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
-  # levels[idr] = level
-  print(level)
-  # sav_df=data.frame(id=paste(idr,'|i',sep=''));
+  sav_df=data.frame(id=paste(idr,'|i',sep=''));
   normalized_values = stl_result[,3]-level
-  # sav_df=cbind(sav_df, t(normalized_values[1: (time_series_length - max_forecast_horizon)])) #inputs: past values normalized by the level
-  #
-  # sav_df[,'o']='|o'
-  # sav_df=cbind(sav_df, t(normalized_values[(time_series_length - max_forecast_horizon + 1) :length(normalized_values)])) #outputs: future values normalized by the level.
-  #
-  # sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
-  # #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-  # sav_df[,'level']=level
-  #
-  # sav_df = cbind(sav_df, t(stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1]))
-  #
-  write.table(normalized_values, file="validation.csv", row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
+  sav_df=cbind(sav_df, t(normalized_values[1: (time_series_length - max_forecast_horizon)])) #inputs: past values normalized by the level
 
-  # print(idr)
-# }#through all series from one file
+  sav_df[,'o']='|o'
+  sav_df=cbind(sav_df, t(normalized_values[(time_series_length - max_forecast_horizon + 1) :length(normalized_values)])) #outputs: future values normalized by the level.
+
+  sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
+  #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
+  sav_df[,'level']=level
+
+  sav_df = cbind(sav_df, t(stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1]))
+
+  write.table(sav_df, file=OUTPUT_PATH56, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
+
+  print(idr)
+}#through all series from one file

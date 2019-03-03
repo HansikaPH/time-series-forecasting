@@ -1,0 +1,19 @@
+Model_Name,Value,x,Output
+GRUcell_adagrad,34,G_AG,Decoder
+GRUcell_adagrad,38,G_A,Decoder
+GRUcell_adagrad,36,G_C,Decoder
+GRUcell_adagrad,35,L_AG,Decoder
+GRUcell_adagrad,48,L_A,Decoder
+GRUcell_adagrad,22,L_C,Decoder
+GRUcell_adagrad,49,R_AG,Decoder
+GRUcell_adagrad,39,R_A,Decoder
+GRUcell_adagrad,30,R_C,Decoder
+GRUcell_adagrad,46,G_AG,Dense Layer
+GRUcell_adagrad,21,G_A,Dense Layer
+GRUcell_adagrad,15,G_C,Dense Layer
+GRUcell_adagrad,44,L_AG,Dense Layer
+GRUcell_adagrad,20,L_A,Dense Layer
+GRUcell_adagrad,32,L_C,Dense Layer
+GRUcell_adagrad,40,R_AG,Dense Layer
+GRUcell_adagrad,50,R_A,Dense Layer
+GRUcell_adagrad,27,R_C,Dense Layer

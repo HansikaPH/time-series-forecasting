@@ -5,7 +5,7 @@ from tfrecords_handler.moving_window.tfrecord_reader import TFRecordReader as Mo
 from tfrecords_handler.non_moving_window.tfrecord_reader import TFRecordReader as NonMovingWindowTFRecordReader
 from configs.global_configs import model_training_configs
 from configs.global_configs import training_data_configs
-from graph_plotter.graph_plotter import GraphPlotter
+from graph_plotter.training_curve_plotter import CurvePlotter
 from configs.global_configs import gpu_configs
 
 
@@ -221,7 +221,7 @@ class AttentionModelTrainer:
 
             smape_final = 0.0
             smape_list = []
-            graph_plotter = GraphPlotter(session, 1)
+            graph_plotter = CurvePlotter(session, 1)
             for epoch in range(max_num_epochs):
                 print("Epoch->", epoch)
                 session.run(training_data_batch_iterator.initializer, feed_dict={shuffle_seed: epoch})
