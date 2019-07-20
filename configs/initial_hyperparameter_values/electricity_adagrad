@@ -1,0 +1,18 @@
+gaussian_noise_stdev - 0.0001, 0.08
+
+random_normal_initializer_stdev - 0.0001, 0.0008
+
+l2_regularization - 0.0001, 0.08
+
+cell_dimension - 15, 25
+
+# 3, 8
+max_epoch_size - 2, 10
+
+max_num_epochs - 2, 30
+
+minibatch_size - 30, 900
+
+num_hidden_layers - 1, 2
+
+rate_of_learning - 0.01, 0.9

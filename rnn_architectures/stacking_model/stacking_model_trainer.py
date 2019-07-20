@@ -16,9 +16,10 @@ class StackingModelTrainer:
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
         self.__address_near_zero_instability = kwargs["address_near_zero_instability"]
-        self.__non_negative_integer_conversion = kwargs["non_negative_integer_conversion"]
+        self.__integer_conversion = kwargs["integer_conversion"]
         self.__seed = kwargs["seed"]
         self.__cell_type = kwargs["cell_type"]
+        self.__without_stl_decomposition = kwargs["without_stl_decomposition"]
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -41,8 +42,6 @@ class StackingModelTrainer:
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         optimizer_fn = kwargs['optimizer_fn']
         random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
-
-        print(kwargs)
 
         tf.reset_default_graph()
 
@@ -147,7 +146,7 @@ class StackingModelTrainer:
         validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-        padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+        padded_validation_dataset = validation_dataset.padded_batch(batch_size=int(minibatch_size),
                                                                     padded_shapes=validation_padded_shapes)
 
         # get an iterator to the validation data
@@ -178,6 +177,7 @@ class StackingModelTrainer:
 
                 while True:
                     try:
+
                         training_data_batch_value = session.run(next_training_data_batch,
                                                                 feed_dict={shuffle_seed: epoch})
 
@@ -214,37 +214,62 @@ class StackingModelTrainer:
 
                     level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
+                    lambda_val = -0.7
                     last_validation_outputs = validation_output[array_first_dimension, last_indices]
-                    converted_validation_output = np.exp(
-                        true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
-
                     actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                    converted_actual_values = np.exp(
-                        true_seasonality_values + level_values[:, np.newaxis] + actual_values)
 
-                    if (self.__contain_zero_values):  # to compensate for 0 values in data
+                    if(self.__without_stl_decomposition):
+
+                    # converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+                        converted_validation_output = np.exp(last_validation_outputs)
+                    # print(converted_validation_output)
+                    # converted_validation_output = np.exp(
+                    #     true_seasonality_values + (last_validation_outputs * level_values[:, np.newaxis]))
+                    # converted_validation_output = np.exp(
+                    #         true_seasonality_values + last_validation_outputs)
+                    # converted_validation_output = np.sign((true_seasonality_values  + last_validation_outputs) * lambda_val + 1) * np.abs((true_seasonality_values + last_validation_outputs) * lambda_val + 1) ** (1/lambda_val)
+                        converted_actual_values = np.exp(actual_values)
+
+                    else:
+                        converted_validation_output = np.exp(
+                            true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+                        converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
+                    # print(converted_actual_values)
+                    # converted_actual_values = np.exp(
+                    #     true_seasonality_values + (actual_values * level_values[:, np.newaxis]))
+                    # converted_actual_values = np.exp(
+                    #     true_seasonality_values + actual_values)
+                    # converted_actual_values = np.sign((true_seasonality_values + actual_values) * lambda_val + 1) * np.abs((true_seasonality_values + actual_values) * lambda_val + 1) ** (1/lambda_val)
+
+                    if self.__contain_zero_values:  # to compensate for 0 values in data
                         converted_validation_output = converted_validation_output - 1
                         converted_actual_values = converted_actual_values - 1
 
-                    if self.__non_negative_integer_conversion:
-                        converted_validation_output[converted_validation_output < 0] = 0
-                        converted_validation_output = np.round(converted_validation_output)
+                    if self.__without_stl_decomposition:
+                        converted_validation_output = converted_validation_output * level_values[:, np.newaxis]
+                        converted_actual_values = converted_actual_values * level_values[:, np.newaxis]
 
-                        converted_actual_values[converted_actual_values < 0] = 0
+                    if self.__integer_conversion:
+                        converted_validation_output = np.round(converted_validation_output)
                         converted_actual_values = np.round(converted_actual_values)
+
+                    converted_validation_output[converted_validation_output < 0] = 0
+                    converted_actual_values[converted_actual_values < 0] = 0
 
                     if self.__address_near_zero_instability:
                         # calculate the smape
                         epsilon = 0.1
                         sum = np.maximum(np.abs(converted_validation_output) + np.abs(converted_actual_values) + epsilon, 0.5 + epsilon)
-                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                        smape_values = (np.abs(converted_validation_output - converted_actual_values) /
                                         sum) * 2
-                        smape_list.append(smape)
+                        smape_values_per_series = np.mean(smape_values, axis=1)
+                        smape_list.extend(smape_values_per_series)
                     else:
                         # calculate the smape
-                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                        smape_values = (np.abs(converted_validation_output - converted_actual_values) /
                                         (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                        smape_list.append(smape)
+                        smape_values_per_series = np.mean(smape_values, axis=1)
+                        smape_list.extend(smape_values_per_series)
 
                 except tf.errors.OutOfRangeError:
                     break
@@ -253,4 +278,4 @@ class StackingModelTrainer:
             print("SMAPE value: {}".format(smape_final))
             session.close()
 
-        return smape_final
+        return float(smape_final), smape_list

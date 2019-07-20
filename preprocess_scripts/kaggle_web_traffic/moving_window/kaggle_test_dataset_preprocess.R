@@ -12,7 +12,7 @@ seasonality_period=7
 INPUT_SIZE_MULTIP=1.25
 input_size = round(seasonality_period * INPUT_SIZE_MULTIP)
 
-OUTPUT_PATH=paste(OUTPUT_DIR,"kaggle_test_",sep='/')
+OUTPUT_PATH=paste(OUTPUT_DIR,"kaggle_scaled_test_",sep='/')
 OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
 OUTPUT_PATH=paste(OUTPUT_PATH,'i', input_size, sep='')
 
@@ -20,14 +20,17 @@ OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
 unlink(OUTPUT_PATH)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
-numeric_dataset = numeric_dataset + 1
+# numeric_dataset = numeric_dataset + 1
 
-numeric_dataset_log = log(numeric_dataset)
+# numeric_dataset_log = log(numeric_dataset)
 
-time_series_length = ncol(numeric_dataset_log)
+time_series_length = ncol(numeric_dataset)
 
-for (idr in 1: nrow(numeric_dataset_log)) {
-  time_series_log = numeric_dataset_log[idr, ]
+for (idr in 1: nrow(numeric_dataset)) {
+  time_series = numeric_dataset[idr,]
+  mean = mean(time_series)
+  time_series = time_series/mean
+  time_series_log = log(time_series + 1)
 
   stl_result= tryCatch({
     sstl=stl(ts(time_series_log,frequency=seasonality_period),"period")
@@ -58,7 +61,7 @@ for (idr in 1: nrow(numeric_dataset_log)) {
   input_windows = input_windows - level_values
 
 
-  sav_df = matrix(NA, ncol = (3 + input_size + max_forecast_horizon), nrow = length(level_values))
+  sav_df = matrix(NA, ncol = (4 + input_size + max_forecast_horizon), nrow = length(level_values))
   sav_df = as.data.frame(sav_df)
 
   sav_df[, 1] = paste(idr, '|i', sep = '')
@@ -66,9 +69,10 @@ for (idr in 1: nrow(numeric_dataset_log)) {
 
   sav_df[, (input_size + 2)] = '|#'
   sav_df[, (input_size + 3)] = level_values
+  sav_df[, (input_size + 4)] = rep(mean, length(level_values))
 
   seasonality_windows = matrix(rep(t(seasonality),each=length(level_values)),nrow=length(level_values))
-  sav_df[(input_size + 4) : ncol(sav_df)] = seasonality_windows
+  sav_df[(input_size + 5) : ncol(sav_df)] = seasonality_windows
 
   write.table(sav_df, file = OUTPUT_PATH, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
 }#through all series from one file

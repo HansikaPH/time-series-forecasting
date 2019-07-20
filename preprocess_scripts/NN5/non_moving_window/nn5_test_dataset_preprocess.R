@@ -20,7 +20,6 @@ numeric_dataset_log = log(numeric_dataset)
 
 time_series_length = ncol(numeric_dataset_log)
 
-
 for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
 
@@ -36,7 +35,6 @@ for (idr in 1: nrow(numeric_dataset_log)) {
     values_vect=time_series_log
     cbind(seasonal_vect, levels_vect, values_vect)
   })
-
 
   seasonality_56 = tryCatch({
     forecast = stlf(ts(stl_result[,1] , frequency = 7), "period",h=56)

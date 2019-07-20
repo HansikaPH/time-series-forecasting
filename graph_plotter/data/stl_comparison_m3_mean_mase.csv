@@ -1,0 +1,73 @@
+Model_Name,MASE,x,Model
+Seq2Seq,1.14355142908744,v,With STL Decomposition
+Seq2Seq,0.934380931708403,v,With STL Decomposition
+Seq2Seq,0.957207170553452,v,With STL Decomposition
+Seq2Seq,0.96838099714529,v,With STL Decomposition
+Seq2Seq,0.979010382133533,v,With STL Decomposition
+Seq2Seq,0.931560580543146,v,With STL Decomposition
+Seq2Seq,0.982710585363224,v,With STL Decomposition
+Seq2Seq,0.960623780398976,v,With STL Decomposition
+Seq2Seq,0.941407422698554,v,With STL Decomposition
+S2SD Moving Win.,0.875792374910262,v,With STL Decomposition
+S2SD Moving Win.,0.922450100960256,v,With STL Decomposition
+S2SD Moving Win.,0.901369768129923,v,With STL Decomposition
+S2SD Non Moving Win.,0.912974803991262,v,With STL Decomposition
+S2SD Non Moving Win.,0.924777940676884,v,With STL Decomposition
+S2SD Non Moving Win.,0.894351454113105,v,With STL Decomposition
+S2SD Moving Win.,0.883122907944641,v,With STL Decomposition
+S2SD Moving Win.,0.919355351920068,v,With STL Decomposition
+S2SD Moving Win.,0.89554730749543,v,With STL Decomposition
+S2SD Non Moving Win.,0.923251662716548,v,With STL Decomposition
+S2SD Non Moving Win.,0.919632137891977,v,With STL Decomposition
+S2SD Non Moving Win.,0.896072826749299,v,With STL Decomposition
+S2SD Moving Win.,0.902076039271645,v,With STL Decomposition
+S2SD Moving Win.,0.982418555745584,v,With STL Decomposition
+S2SD Moving Win.,0.915610073447535,v,With STL Decomposition
+S2SD Non Moving Win.,0.932496175229724,v,With STL Decomposition
+S2SD Non Moving Win.,0.925860673915288,v,With STL Decomposition
+S2SD Non Moving Win.,0.931660492882462,v,With STL Decomposition
+Stacked,0.880270266018355,v,With STL Decomposition
+Stacked,0.900991712804084,v,With STL Decomposition
+Stacked,0.882758775677853,v,With STL Decomposition
+Stacked,0.864490408245612,v,With STL Decomposition
+Stacked,0.866028411741944,v,With STL Decomposition
+Stacked,0.872833327472394,v,With STL Decomposition
+Stacked,0.886741324553772,v,With STL Decomposition
+Stacked,0.979005436892041,v,With STL Decomposition
+Stacked,0.900166183553947,v,With STL Decomposition
+Seq2Seq,1.40295848589149,v,Without STL Decomposition
+Seq2Seq,1.82586862500425,v,Without STL Decomposition
+Seq2Seq,1.43944068203683,v,Without STL Decomposition
+Seq2Seq,1.41373475597951,v,Without STL Decomposition
+Seq2Seq,1.3552202425517,v,Without STL Decomposition
+Seq2Seq,1.46359432288747,v,Without STL Decomposition
+Seq2Seq,1.60015972307594,v,Without STL Decomposition
+Seq2Seq,1.58092004972531,v,Without STL Decomposition
+Seq2Seq,1.57788927187634,v,Without STL Decomposition
+S2SD Moving Win.,1.72160754967077,v,Without STL Decomposition
+S2SD Moving Win.,1.37376870712918,v,Without STL Decomposition
+S2SD Moving Win.,1.75077335113533,v,Without STL Decomposition
+S2SD Non Moving Win.,1.0678436766696,v,Without STL Decomposition
+S2SD Non Moving Win.,1.25713450592247,v,Without STL Decomposition
+S2SD Non Moving Win.,1.0773235890577,v,Without STL Decomposition
+S2SD Moving Win.,1.68691522605101,v,Without STL Decomposition
+S2SD Moving Win.,1.6984113182538,v,Without STL Decomposition
+S2SD Moving Win.,1.91665308923669,v,Without STL Decomposition
+S2SD Non Moving Win.,1.09949272365086,v,Without STL Decomposition
+S2SD Non Moving Win.,1.35301343374638,v,Without STL Decomposition
+S2SD Non Moving Win.,1.10254282716935,v,Without STL Decomposition
+S2SD Moving Win.,1.54346556247855,v,Without STL Decomposition
+S2SD Moving Win.,1.47004970830614,v,Without STL Decomposition
+S2SD Moving Win.,1.14892671370444,v,Without STL Decomposition
+S2SD Non Moving Win.,1.47062084719394,v,Without STL Decomposition
+S2SD Non Moving Win.,1.4392436252766,v,Without STL Decomposition
+S2SD Non Moving Win.,1.06716264386117,v,Without STL Decomposition
+Stacked,1.17955953525873,v,Without STL Decomposition
+Stacked,1.27033044546558,v,Without STL Decomposition
+Stacked,1.13843250596053,v,Without STL Decomposition
+Stacked,1.26546102294339,v,Without STL Decomposition
+Stacked,1.30734705121188,v,Without STL Decomposition
+Stacked,1.40016018423976,v,Without STL Decomposition
+Stacked,1.21238272001393,v,Without STL Decomposition
+Stacked,1.12860808177002,v,Without STL Decomposition
+Stacked,1.20668727476611,v,Without STL Decomposition

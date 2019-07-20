@@ -24,12 +24,12 @@ class Seq2SeqModelTester:
     def test_model(self, **kwargs):
 
         # optimized hyperparameters
-        num_hidden_layers = kwargs['num_hidden_layers']
-        max_num_epochs = kwargs['max_num_epochs']
-        max_epoch_size = kwargs['max_epoch_size']
-        cell_dimension = kwargs['cell_dimension']
+        num_hidden_layers = int(kwargs['num_hidden_layers'])
+        max_num_epochs = int(kwargs['max_num_epochs'])
+        max_epoch_size = int(kwargs['max_epoch_size'])
+        cell_dimension = int(kwargs['cell_dimension'])
         l2_regularization = kwargs['l2_regularization']
-        minibatch_size = kwargs['minibatch_size']
+        minibatch_size = int(kwargs['minibatch_size'])
         gaussian_noise_stdev = kwargs['gaussian_noise_stdev']
         random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
         optimizer_fn = kwargs['optimizer_fn']

@@ -3,13 +3,13 @@ from tfrecords_handler.non_moving_window.tfrecord_writer import TFRecordWriter
 if __name__ == '__main__':
     tfrecord_writer = TFRecordWriter(
         output_size = 59,
-        train_file_path = '../../../../datasets/text_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_stl_59.txt',
-        validate_file_path = '../../../../datasets/text_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_stl_59v.txt',
+        train_file_path = '../../../../datasets/text_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_59.txt',
+        validate_file_path = '../../../../datasets/text_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_59v.txt',
         test_file_path = '../../../../datasets/text_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_test_59.txt',
-        binary_train_file_path = '../../../../datasets/binary_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_stl_59.tfrecords',
-        binary_validation_file_path = '../../../../datasets/binary_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_stl_59v.tfrecords',
+        binary_train_file_path = '../../../../datasets/binary_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_59.tfrecords',
+        binary_validation_file_path = '../../../../datasets/binary_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_59v.tfrecords',
         binary_test_file_path = '../../../../datasets/binary_data/kaggle_web_traffic/non_moving_window/without_stl_decomposition/kaggle_test_59.tfrecords',
-        without_stl_decomposition = True
+        without_stl_decomposition = False
     )
 
     tfrecord_writer.read_text_data()

@@ -1,0 +1,91 @@
+Model_Name,SMAPE,x,Model
+Seq2Seq,0.517653531122109,v,With STL Decomp.
+Seq2Seq,0.499002009468676,v,With STL Decomp.
+Seq2Seq,0.468860499824773,v,With STL Decomp.
+Seq2Seq,0.517653531122109,v,With STL Decomp.
+Seq2Seq,0.493398108768733,v,With STL Decomp.
+Seq2Seq,0.52462185702063,v,With STL Decomp.
+Seq2Seq,0.514463214697968,v,With STL Decomp.
+Seq2Seq,0.507012809760177,v,With STL Decomp.
+Seq2Seq,0.489546937757805,v,With STL Decomp.
+S2SD Moving Win.,0.517654969744169,v,With STL Decomp.
+S2SD Moving Win.,0.517620765364788,v,With STL Decomp.
+S2SD Moving Win.,0.487951233272816,v,With STL Decomp.
+S2SD Non Moving Win.,0.522870010205117,v,With STL Decomp.
+S2SD Non Moving Win.,0.469038372219982,v,With STL Decomp.
+S2SD Non Moving Win.,0.473329643675366,v,With STL Decomp.
+S2SD Moving Win.,0.517626930006435,v,With STL Decomp.
+S2SD Moving Win.,0.510855514733502,v,With STL Decomp.
+S2SD Moving Win.,0.517737802727217,v,With STL Decomp.
+S2SD Non Moving Win.,0.52278158376585,v,With STL Decomp.
+S2SD Non Moving Win.,0.473721163193973,v,With STL Decomp.
+S2SD Non Moving Win.,0.497441284104662,v,With STL Decomp.
+S2SD Moving Win.,0.51578455606913,v,With STL Decomp.
+S2SD Moving Win.,0.491185123314144,v,With STL Decomp.
+S2SD Moving Win.,0.479640721371037,v,With STL Decomp.
+S2SD Non Moving Win.,0.497227458126963,v,With STL Decomp.
+S2SD Non Moving Win.,0.477557916928906,v,With STL Decomp.
+S2SD Non Moving Win.,0.479403041457696,v,With STL Decomp.
+Stacked,0.472293564874733,v,With STL Decomp.
+Stacked,0.471090564700593,v,With STL Decomp.
+Stacked,0.467329520387359,v,With STL Decomp.
+Stacked,0.471187000080495,v,With STL Decomp.
+Stacked,0.471292774511487,v,With STL Decomp.
+Stacked,0.471369599902714,v,With STL Decomp.
+Stacked,0.477935691089769,v,With STL Decomp.
+Stacked,0.466965616969266,v,With STL Decomp.
+Stacked,0.473784851676792,v,With STL Decomp.
+Stacked(IW+),0.470882617871273,v,With STL Decomp.
+Stacked(IW+),0.463491507031137,v,With STL Decomp.
+Stacked(IW+),0.464591222999432,v,With STL Decomp.
+Stacked(IW+),0.464137178681602,v,With STL Decomp.
+Stacked(IW+),0.465227947503337,v,With STL Decomp.
+Stacked(IW+),0.465442272458883,v,With STL Decomp.
+Stacked(IW+),0.470831599142004,v,With STL Decomp.
+Stacked(IW+),0.467555574513208,v,With STL Decomp.
+Stacked(IW+),0.475868105736731,v,With STL Decomp.
+Seq2Seq,0.685990042868991,v,Without STL Decomp.
+Seq2Seq,0.504757105070781,v,Without STL Decomp.
+Seq2Seq,0.504438617953044,v,Without STL Decomp.
+Seq2Seq,0.712497558166944,v,Without STL Decomp.
+Seq2Seq,0.477976172465697,v,Without STL Decomp.
+Seq2Seq,0.683589797239139,v,Without STL Decomp.
+Seq2Seq,0.513958360645593,v,Without STL Decomp.
+Seq2Seq,0.498353026083549,v,Without STL Decomp.
+Seq2Seq,0.516920850243652,v,Without STL Decomp.
+S2SD Moving Win.,0.51080407933819,v,Without STL Decomp.
+S2SD Moving Win.,0.512023980799246,v,Without STL Decomp.
+S2SD Moving Win.,0.517135999372051,v,Without STL Decomp.
+S2SD Non Moving Win.,0.465677601746957,v,Without STL Decomp.
+S2SD Non Moving Win.,0.460828188745081,v,Without STL Decomp.
+S2SD Non Moving Win.,0.47691470001559,v,Without STL Decomp.
+S2SD Moving Win.,0.512428197522667,v,Without STL Decomp.
+S2SD Moving Win.,0.511078929967515,v,Without STL Decomp.
+S2SD Moving Win.,0.498335895511668,v,Without STL Decomp.
+S2SD Non Moving Win.,0.497662859254174,v,Without STL Decomp.
+S2SD Non Moving Win.,0.460689939513236,v,Without STL Decomp.
+S2SD Non Moving Win.,0.477186530982882,v,Without STL Decomp.
+S2SD Moving Win.,0.507056314328886,v,Without STL Decomp.
+S2SD Moving Win.,0.496943044503207,v,Without STL Decomp.
+S2SD Moving Win.,0.508185313739607,v,Without STL Decomp.
+S2SD Non Moving Win.,0.474095909068902,v,Without STL Decomp.
+S2SD Non Moving Win.,0.463719055943507,v,Without STL Decomp.
+S2SD Non Moving Win.,0.482661978887119,v,Without STL Decomp.
+Stacked,0.456750051950279,v,Without STL Decomp.
+Stacked,0.456199853442328,v,Without STL Decomp.
+Stacked,0.463458570079289,v,Without STL Decomp.
+Stacked,0.458774533472582,v,Without STL Decomp.
+Stacked,0.461246371012336,v,Without STL Decomp.
+Stacked,0.459008124365503,v,Without STL Decomp.
+Stacked,0.460023811413745,v,Without STL Decomp.
+Stacked,0.457729631042944,v,Without STL Decomp.
+Stacked,0.460150253319235,v,Without STL Decomp.
+Stacked(IW+),0.459014271544192,v,Without STL Decomp.
+Stacked(IW+),0.456857134318373,v,Without STL Decomp.
+Stacked(IW+),0.460118556348072,v,Without STL Decomp.
+Stacked(IW+),0.456818533553874,v,Without STL Decomp.
+Stacked(IW+),0.463246127371743,v,Without STL Decomp.
+Stacked(IW+),0.461181297557882,v,Without STL Decomp.
+Stacked(IW+),0.456895692997668,v,Without STL Decomp.
+Stacked(IW+),0.459189628637619,v,Without STL Decomp.
+Stacked(IW+),0.457876530433945,v,Without STL Decomp.

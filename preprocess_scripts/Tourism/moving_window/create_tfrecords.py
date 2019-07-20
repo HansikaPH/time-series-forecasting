@@ -4,12 +4,12 @@ if __name__ == '__main__':
     tfrecord_writer = TFRecordWriter(
         input_size = 15,
         output_size = 24,
-        train_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_stl_24i15.txt',
-        validate_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_stl_24i15v.txt',
-        test_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_test_24i15.txt',
-        binary_train_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_stl_24i15.tfrecords',
-        binary_validation_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_stl_24i15v.tfrecords',
-        binary_test_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_test_24i15.tfrecords'
+        train_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_stl_level_group1_24i15.txt',
+        validate_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_stl_level_group1_24i15v.txt',
+        test_file_path = '../../../datasets/text_data/Tourism/moving_window/tourism_test_level_group1_24i15.txt',
+        binary_train_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_stl_level_group1_24i15.tfrecords',
+        binary_validation_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_stl_level_group1_24i15v.tfrecords',
+        binary_test_file_path = '../../../datasets/binary_data/Tourism/moving_window/tourism_test_level_group1_24i15.tfrecords'
     )
 
     tfrecord_writer.read_text_data()

@@ -7,7 +7,7 @@ m4_dataset <- strsplit(m4_dataset, ',')
 
 output_file_name = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ets_forecasts/m4.txt"
 
-# calculate the seasonal naive forecast
+# calculate the ets forecast
 for (i in 2 : length(m4_dataset)) {
     time_series = unlist(m4_dataset[i], use.names = FALSE)
     time_series = as.numeric(time_series[2 : length(time_series)])

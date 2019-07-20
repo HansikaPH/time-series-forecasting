@@ -1,0 +1,217 @@
+Model_Name,Mean_SMAPE_Rank,Optimizer,Dataset,x,Model_Name_2
+seq2seq_GRU,31,Adagrad,CIF,y,S2S_GRU
+seq2seq_LSTM,27,Adagrad,CIF,y,S2S_LSTM
+seq2seq_ERNN,32,Adagrad,CIF,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,34,Adagrad,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,28,Adagrad,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,33,Adagrad,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,20,Adagrad,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,37,Adagrad,CIF,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,22,Adagrad,CIF,y,S2SD_ERNN
+stacking_GRU,7,Adagrad,CIF,y,Stacked_GRU
+stacking_LSTM,4,Adagrad,CIF,y,Stacked_LSTM
+stacking_ERNN,10,Adagrad,CIF,y,Stacked_ERNN
+seq2seq_GRU,35,Adam,CIF,y,S2S_GRU
+seq2seq_LSTM,14,Adam,CIF,y,S2S_LSTM
+seq2seq_ERNN,36,Adam,CIF,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,23,Adam,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,17,Adam,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,1,Adam,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,13,Adam,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,26,Adam,CIF,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,5,Adam,CIF,y,S2SD_ERNN
+stacking_GRU,16,Adam,CIF,y,Stacked_GRU
+stacking_LSTM,3,Adam,CIF,y,Stacked_LSTM
+stacking_ERNN,9,Adam,CIF,y,Stacked_ERNN
+seq2seq_GRU,21,Cocob,CIF,y,S2S_GRU
+seq2seq_LSTM,19,Cocob,CIF,y,S2S_LSTM
+seq2seq_ERNN,38,Cocob,CIF,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,15,Cocob,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,18,Cocob,CIF,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,30,Cocob,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,25,Cocob,CIF,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,8,Cocob,CIF,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,24,Cocob,CIF,y,S2SD_ERNN
+stacking_GRU,6,Cocob,CIF,y,Stacked_GRU
+stacking_LSTM,2,Cocob,CIF,y,Stacked_LSTM
+stacking_ERNN,11,Cocob,CIF,y,Stacked_ERNN
+seq2seq_GRU,32,Adagrad,Wikipedia Web Traffic,y,S2S_GRU
+seq2seq_LSTM,32,Adagrad,Wikipedia Web Traffic,y,S2S_LSTM
+seq2seq_ERNN,26,Adagrad,Wikipedia Web Traffic,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,31,Adagrad,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,35,Adagrad,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,28,Adagrad,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,36,Adagrad,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,27,Adagrad,Wikipedia Web Traffic,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,19,Adagrad,Wikipedia Web Traffic,y,S2SD_ERNN
+stacking_GRU,11,Adagrad,Wikipedia Web Traffic,y,Stacked_GRU
+stacking_LSTM,8,Adagrad,Wikipedia Web Traffic,y,Stacked_LSTM
+stacking_ERNN,3,Adagrad,Wikipedia Web Traffic,y,Stacked_ERNN
+seq2seq_GRU,23,Adam,Wikipedia Web Traffic,y,S2S_GRU
+seq2seq_LSTM,20,Adam,Wikipedia Web Traffic,y,S2S_LSTM
+seq2seq_ERNN,25,Adam,Wikipedia Web Traffic,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,29,Adam,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,5,Adam,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,24,Adam,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,13,Adam,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,18,Adam,Wikipedia Web Traffic,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,14,Adam,Wikipedia Web Traffic,y,S2SD_ERNN
+stacking_GRU,7,Adam,Wikipedia Web Traffic,y,Stacked_GRU
+stacking_LSTM,9,Adam,Wikipedia Web Traffic,y,Stacked_LSTM
+stacking_ERNN,1,Adam,Wikipedia Web Traffic,y,Stacked_ERNN
+seq2seq_GRU,10,Cocob,Wikipedia Web Traffic,y,S2S_GRU
+seq2seq_LSTM,37,Cocob,Wikipedia Web Traffic,y,S2S_LSTM
+seq2seq_ERNN,22,Cocob,Wikipedia Web Traffic,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,17,Cocob,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,12,Cocob,Wikipedia Web Traffic,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,30,Cocob,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,21,Cocob,Wikipedia Web Traffic,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,15,Cocob,Wikipedia Web Traffic,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,16,Cocob,Wikipedia Web Traffic,y,S2SD_ERNN
+stacking_GRU,4,Cocob,Wikipedia Web Traffic,y,Stacked_GRU
+stacking_LSTM,6,Cocob,Wikipedia Web Traffic,y,Stacked_LSTM
+stacking_ERNN,2,Cocob,Wikipedia Web Traffic,y,Stacked_ERNN
+seq2seq_GRU,38,Adagrad,M3,y,S2S_GRU
+seq2seq_LSTM,33,Adagrad,M3,y,S2S_LSTM
+seq2seq_ERNN,37,Adagrad,M3,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,6,Adagrad,M3,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,18,Adagrad,M3,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,9,Adagrad,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,23,Adagrad,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,17,Adagrad,M3,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,28,Adagrad,M3,y,S2SD_ERNN
+stacking_GRU,7,Adagrad,M3,y,Stacked_GRU
+stacking_LSTM,1,Adagrad,M3,y,Stacked_LSTM
+stacking_ERNN,10,Adagrad,M3,y,Stacked_ERNN
+seq2seq_GRU,29,Adam,M3,y,S2S_GRU
+seq2seq_LSTM,35,Adam,M3,y,S2S_LSTM
+seq2seq_ERNN,32,Adam,M3,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,22,Adam,M3,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,24,Adam,M3,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,20,Adam,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,21,Adam,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,36,Adam,M3,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,25,Adam,M3,y,S2SD_ERNN
+stacking_GRU,15,Adam,M3,y,Stacked_GRU
+stacking_LSTM,3,Adam,M3,y,Stacked_LSTM
+stacking_ERNN,34,Adam,M3,y,Stacked_ERNN
+seq2seq_GRU,31,Cocob,M3,y,S2S_GRU
+seq2seq_LSTM,26,Cocob,M3,y,S2S_LSTM
+seq2seq_ERNN,30,Cocob,M3,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,16,Cocob,M3,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,11,Cocob,M3,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,12,Cocob,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,13,Cocob,M3,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,19,Cocob,M3,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,27,Cocob,M3,y,S2SD_ERNN
+stacking_GRU,8,Cocob,M3,y,Stacked_GRU
+stacking_LSTM,5,Cocob,M3,y,Stacked_LSTM
+stacking_ERNN,14,Cocob,M3,y,Stacked_ERNN
+seq2seq_GRU,27,Adagrad,NN5,y,S2S_GRU
+seq2seq_LSTM,28,Adagrad,NN5,y,S2S_LSTM
+seq2seq_ERNN,34,Adagrad,NN5,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,23,Adagrad,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,23,Adagrad,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,23,Adagrad,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,23,Adagrad,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,19,Adagrad,NN5,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,20,Adagrad,NN5,y,S2SD_ERNN
+stacking_GRU,4,Adagrad,NN5,y,Stacked_GRU
+stacking_LSTM,6,Adagrad,NN5,y,Stacked_LSTM
+stacking_ERNN,10,Adagrad,NN5,y,Stacked_ERNN
+seq2seq_GRU,32,Adam,NN5,y,S2S_GRU
+seq2seq_LSTM,35,Adam,NN5,y,S2S_LSTM
+seq2seq_ERNN,31,Adam,NN5,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,12,Adam,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,16,Adam,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,21,Adam,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,14,Adam,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,37,Adam,NN5,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,36,Adam,NN5,y,S2SD_ERNN
+stacking_GRU,5,Adam,NN5,y,Stacked_GRU
+stacking_LSTM,1,Adam,NN5,y,Stacked_LSTM
+stacking_ERNN,9,Adam,NN5,y,Stacked_ERNN
+seq2seq_GRU,22,Cocob,NN5,y,S2S_GRU
+seq2seq_LSTM,15,Cocob,NN5,y,S2S_LSTM
+seq2seq_ERNN,33,Cocob,NN5,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,29,Cocob,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,11,Cocob,NN5,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,13,Cocob,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,30,Cocob,NN5,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,17,Cocob,NN5,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,18,Cocob,NN5,y,S2SD_ERNN
+stacking_GRU,7,Cocob,NN5,y,Stacked_GRU
+stacking_LSTM,2,Cocob,NN5,y,Stacked_LSTM
+stacking_ERNN,8,Cocob,NN5,y,Stacked_ERNN
+seq2seq_GRU,17,Adagrad,Tourism,y,S2S_GRU
+seq2seq_LSTM,29,Adagrad,Tourism,y,S2S_LSTM
+seq2seq_ERNN,23,Adagrad,Tourism,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,4,Adagrad,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,30,Adagrad,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,18,Adagrad,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,12,Adagrad,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,6,Adagrad,Tourism,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,38,Adagrad,Tourism,y,S2SD_ERNN
+stacking_GRU,31,Adagrad,Tourism,y,Stacked_GRU
+stacking_LSTM,19,Adagrad,Tourism,y,Stacked_LSTM
+stacking_ERNN,27,Adagrad,Tourism,y,Stacked_ERNN
+seq2seq_GRU,22,Adam,Tourism,y,S2S_GRU
+seq2seq_LSTM,11,Adam,Tourism,y,S2S_LSTM
+seq2seq_ERNN,24,Adam,Tourism,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,2,Adam,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,25,Adam,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,20,Adam,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,13,Adam,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,9,Adam,Tourism,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,15,Adam,Tourism,y,S2SD_ERNN
+stacking_GRU,35,Adam,Tourism,y,Stacked_GRU
+stacking_LSTM,37,Adam,Tourism,y,Stacked_LSTM
+stacking_ERNN,36,Adam,Tourism,y,Stacked_ERNN
+seq2seq_GRU,14,Cocob,Tourism,y,S2S_GRU
+seq2seq_LSTM,21,Cocob,Tourism,y,S2S_LSTM
+seq2seq_ERNN,32,Cocob,Tourism,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,5,Cocob,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,26,Cocob,Tourism,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,7,Cocob,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,16,Cocob,Tourism,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,3,Cocob,Tourism,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,8,Cocob,Tourism,y,S2SD_ERNN
+stacking_GRU,34,Cocob,Tourism,y,Stacked_GRU
+stacking_LSTM,28,Cocob,Tourism,y,Stacked_LSTM
+stacking_ERNN,33,Cocob,Tourism,y,Stacked_ERNN
+seq2seq_GRU,12,Adagrad,M4,y,S2S_GRU
+seq2seq_LSTM,32,Adagrad,M4,y,S2S_LSTM
+seq2seq_ERNN,38,Adagrad,M4,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,3,Adagrad,M4,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,11,Adagrad,M4,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,4,Adagrad,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,9,Adagrad,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,5,Adagrad,M4,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,26,Adagrad,M4,y,S2SD_ERNN
+stacking_GRU,18,Adagrad,M4,y,Stacked_GRU
+stacking_LSTM,15,Adagrad,M4,y,Stacked_LSTM
+stacking_ERNN,27,Adagrad,M4,y,Stacked_ERNN
+seq2seq_GRU,37,Adam,M4,y,S2S_GRU
+seq2seq_LSTM,36,Adam,M4,y,S2S_LSTM
+seq2seq_ERNN,33,Adam,M4,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,8,Adam,M4,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,34,Adam,M4,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,7,Adam,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,10,Adam,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,21,Adam,M4,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,31,Adam,M4,y,S2SD_ERNN
+stacking_GRU,19,Adam,M4,y,Stacked_GRU
+stacking_LSTM,22,Adam,M4,y,Stacked_LSTM
+stacking_ERNN,35,Adam,M4,y,Stacked_ERNN
+seq2seq_GRU,20,Cocob,M4,y,S2S_GRU
+seq2seq_LSTM,29,Cocob,M4,y,S2S_LSTM
+seq2seq_ERNN,30,Cocob,M4,y,S2S_ERNN
+seq2seqwithdenselayer_mw_GRU,13,Cocob,M4,y,S2SD_GRU
+seq2seqwithdenselayer_nmw_GRU,16,Cocob,M4,y,S2SD_GRU
+seq2seqwithdenselayer_mw_LSTM,6,Cocob,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_nmw_LSTM,14,Cocob,M4,y,S2SD_LSTM
+seq2seqwithdenselayer_mw_ERNN,24,Cocob,M4,y,S2SD_ERNN
+seq2seqwithdenselayer_nmw_ERNN,17,Cocob,M4,y,S2SD_ERNN
+stacking_GRU,23,Cocob,M4,y,Stacked_GRU
+stacking_LSTM,28,Cocob,M4,y,Stacked_LSTM
+stacking_ERNN,25,Cocob,M4,y,Stacked_ERNN

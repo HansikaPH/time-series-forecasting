@@ -24,46 +24,46 @@ class TFRecordWriter:
         self.__list_of_test_inputs = []
         self.__list_of_test_metadata = []
 
-        # Reading the training dataset.
-        train_df = pd.read_csv(self.__train_file_path, nrows=10)
-
-        float_cols = [c for c in train_df if train_df[c].dtype == "float64"]
-        float32_cols = {c: np.float32 for c in float_cols}
-
-        train_df = pd.read_csv(self.__train_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
-
-        train_df = train_df.rename(columns={0: 'series'})
-
-        # Returns unique number of time series in the dataset.
-        series = pd.unique(train_df['series'])
-
-        # Construct input and output training tuples for each time series.
-        for ser in series:
-            one_series_df = train_df[train_df['series'] == ser]
-            inputs_df = one_series_df.iloc[:, range(1, (self.__input_size + 1))]
-            outputs_df = one_series_df.iloc[:, range((self.__input_size + 2), (self.__input_size + self.__output_size + 2))]
-            self.__list_of_training_inputs.append(np.ascontiguousarray(inputs_df, dtype=np.float32))
-            self.__list_of_training_outputs.append(np.ascontiguousarray(outputs_df, dtype=np.float32))
-
-        # Reading the validation dataset.
-        val_df = pd.read_csv(self.__validate_file_path, nrows=10)
-
-        float_cols = [c for c in val_df if val_df[c].dtype == "float64"]
-        float32_cols = {c: np.float32 for c in float_cols}
-
-        val_df = pd.read_csv(self.__validate_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
-
-        val_df = val_df.rename(columns={0: 'series'})
-        series = pd.unique(val_df['series'])
-
-        for ser in series:
-            one_series_df = val_df[val_df['series'] == ser]
-            inputs_df_test = one_series_df.iloc[:, range(1, (self.__input_size + 1))]
-            metadata_df = one_series_df.iloc[:, range((self.__input_size + self.__output_size + 3), one_series_df.shape[1])]
-            outputs_df_test = one_series_df.iloc[:, range((self.__input_size + 2), (self.__input_size + self.__output_size + 2))]
-            self.__list_of_validation_inputs.append(np.ascontiguousarray(inputs_df_test, dtype=np.float32))
-            self.__list_of_validation_outputs.append(np.ascontiguousarray(outputs_df_test, dtype=np.float32))
-            self.__list_of_validation_metadata.append(np.ascontiguousarray(metadata_df, dtype=np.float32))
+        # # Reading the training dataset.
+        # train_df = pd.read_csv(self.__train_file_path, nrows=10)
+        #
+        # float_cols = [c for c in train_df if train_df[c].dtype == "float64"]
+        # float32_cols = {c: np.float32 for c in float_cols}
+        #
+        # train_df = pd.read_csv(self.__train_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
+        #
+        # train_df = train_df.rename(columns={0: 'series'})
+        #
+        # # Returns unique number of time series in the dataset.
+        # series = pd.unique(train_df['series'])
+        #
+        # # Construct input and output training tuples for each time series.
+        # for ser in series:
+        #     one_series_df = train_df[train_df['series'] == ser]
+        #     inputs_df = one_series_df.iloc[:, range(1, (self.__input_size + 1))]
+        #     outputs_df = one_series_df.iloc[:, range((self.__input_size + 2), (self.__input_size + self.__output_size + 2))]
+        #     self.__list_of_training_inputs.append(np.ascontiguousarray(inputs_df, dtype=np.float32))
+        #     self.__list_of_training_outputs.append(np.ascontiguousarray(outputs_df, dtype=np.float32))
+        #
+        # # Reading the validation dataset.
+        # val_df = pd.read_csv(self.__validate_file_path, nrows=10)
+        #
+        # float_cols = [c for c in val_df if val_df[c].dtype == "float64"]
+        # float32_cols = {c: np.float32 for c in float_cols}
+        #
+        # val_df = pd.read_csv(self.__validate_file_path, sep=" ", header=None, engine='c', dtype=float32_cols)
+        #
+        # val_df = val_df.rename(columns={0: 'series'})
+        # series = pd.unique(val_df['series'])
+        #
+        # for ser in series:
+        #     one_series_df = val_df[val_df['series'] == ser]
+        #     inputs_df_test = one_series_df.iloc[:, range(1, (self.__input_size + 1))]
+        #     metadata_df = one_series_df.iloc[:, range((self.__input_size + self.__output_size + 3), one_series_df.shape[1])]
+        #     outputs_df_test = one_series_df.iloc[:, range((self.__input_size + 2), (self.__input_size + self.__output_size + 2))]
+        #     self.__list_of_validation_inputs.append(np.ascontiguousarray(inputs_df_test, dtype=np.float32))
+        #     self.__list_of_validation_outputs.append(np.ascontiguousarray(outputs_df_test, dtype=np.float32))
+        #     self.__list_of_validation_metadata.append(np.ascontiguousarray(metadata_df, dtype=np.float32))
 
         # Reading the test file.
         test_df = pd.read_csv(self.__test_file_path, nrows=10)

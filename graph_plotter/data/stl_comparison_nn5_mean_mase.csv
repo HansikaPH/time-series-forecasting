@@ -1,0 +1,91 @@
+Model_Name,MASE,x,Model
+Seq2Seq,1.08706306306306,v,With STL Decomposition
+Seq2Seq,1.11243243243243,v,With STL Decomposition
+Seq2Seq,1.08478828828829,v,With STL Decomposition
+Seq2Seq,1.08721171171171,v,With STL Decomposition
+Seq2Seq,1.16456306306306,v,With STL Decomposition
+Seq2Seq,1.03464414414414,v,With STL Decomposition
+Seq2Seq,1.13684234234234,v,With STL Decomposition
+Seq2Seq,1.11234684684685,v,With STL Decomposition
+Seq2Seq,1.11500900900901,v,With STL Decomposition
+S2SD Moving Win.,1.08617117117117,v,With STL Decomposition
+S2SD Moving Win.,1.00534684684685,v,With STL Decomposition
+S2SD Moving Win.,1.09541891891892,v,With STL Decomposition
+S2SD Non Moving Win.,1.08617117117117,v,With STL Decomposition
+S2SD Non Moving Win.,1.03877477477478,v,With STL Decomposition
+S2SD Non Moving Win.,0.997563063063063,v,With STL Decomposition
+S2SD Moving Win.,1.08617117117117,v,With STL Decomposition
+S2SD Moving Win.,1.0846981981982,v,With STL Decomposition
+S2SD Moving Win.,1.01394594594595,v,With STL Decomposition
+S2SD Non Moving Win.,1.08617117117117,v,With STL Decomposition
+S2SD Non Moving Win.,1.01601351351351,v,With STL Decomposition
+S2SD Non Moving Win.,1.0976036036036,v,With STL Decomposition
+S2SD Moving Win.,1.08294144144144,v,With STL Decomposition
+S2SD Moving Win.,1.32960810810811,v,With STL Decomposition
+S2SD Moving Win.,1.03982432432432,v,With STL Decomposition
+S2SD Non Moving Win.,1.08412162162162,v,With STL Decomposition
+S2SD Non Moving Win.,1.25074774774775,v,With STL Decomposition
+S2SD Non Moving Win.,1.05363963963964,v,With STL Decomposition
+Stacked,0.872135135135135,v,With STL Decomposition
+Stacked,0.874369369369369,v,With STL Decomposition
+Stacked,0.885261261261261,v,With STL Decomposition
+Stacked,0.884900900900901,v,With STL Decomposition
+Stacked,0.860472972972973,v,With STL Decomposition
+Stacked,0.8635,v,With STL Decomposition
+Stacked,0.940369369369369,v,With STL Decomposition
+Stacked,0.938238738738738,v,With STL Decomposition
+Stacked,0.931878378378378,v,With STL Decomposition
+Stacked(IW+),0.930806306306307,v,With STL Decomposition
+Stacked(IW+),0.983445945945946,v,With STL Decomposition
+Stacked(IW+),0.874378378378379,v,With STL Decomposition
+Stacked(IW+),0.916963963963964,v,With STL Decomposition
+Stacked(IW+),0.866950450450451,v,With STL Decomposition
+Stacked(IW+),0.859554054054054,v,With STL Decomposition
+Stacked(IW+),0.916846846846847,v,With STL Decomposition
+Stacked(IW+),0.900031531531531,v,With STL Decomposition
+Stacked(IW+),0.922828828828829,v,With STL Decomposition
+Seq2Seq,1.32184294697401,v,Without STL Decomposition
+Seq2Seq,1.18565422588944,v,Without STL Decomposition
+Seq2Seq,1.0645258022369,v,Without STL Decomposition
+Seq2Seq,1.23200256829709,v,Without STL Decomposition
+Seq2Seq,1.64931451965379,v,Without STL Decomposition
+Seq2Seq,1.3459413252361,v,Without STL Decomposition
+Seq2Seq,1.09087188943111,v,Without STL Decomposition
+Seq2Seq,1.27984028767452,v,Without STL Decomposition
+Seq2Seq,1.25607516092325,v,Without STL Decomposition
+S2SD Moving Win.,0.997425904852652,v,Without STL Decomposition
+S2SD Moving Win.,0.983537915493499,v,Without STL Decomposition
+S2SD Moving Win.,0.987487443505825,v,Without STL Decomposition
+S2SD Non Moving Win.,1.02956944365112,v,Without STL Decomposition
+S2SD Non Moving Win.,0.994472586367782,v,Without STL Decomposition
+S2SD Non Moving Win.,1.00906373910947,v,Without STL Decomposition
+S2SD Moving Win.,1.73162223983465,v,Without STL Decomposition
+S2SD Moving Win.,1.05209366739847,v,Without STL Decomposition
+S2SD Moving Win.,0.985898640087413,v,Without STL Decomposition
+S2SD Non Moving Win.,1.01771150566204,v,Without STL Decomposition
+S2SD Non Moving Win.,1.00996204444247,v,Without STL Decomposition
+S2SD Non Moving Win.,1.02569555089643,v,Without STL Decomposition
+S2SD Moving Win.,1.14728463117032,v,Without STL Decomposition
+S2SD Moving Win.,0.997930373470069,v,Without STL Decomposition
+S2SD Moving Win.,1.02237225867203,v,Without STL Decomposition
+S2SD Non Moving Win.,1.33936096414346,v,Without STL Decomposition
+S2SD Non Moving Win.,0.955282997492658,v,Without STL Decomposition
+S2SD Non Moving Win.,0.960554352534734,v,Without STL Decomposition
+Stacked,1.01053768656447,v,Without STL Decomposition
+Stacked,0.965146427294303,v,Without STL Decomposition
+Stacked,0.963477727313384,v,Without STL Decomposition
+Stacked,1.05924399309748,v,Without STL Decomposition
+Stacked,1.0234290619013,v,Without STL Decomposition
+Stacked,1.10485118000737,v,Without STL Decomposition
+Stacked,0.999175969207302,v,Without STL Decomposition
+Stacked,0.938717135464804,v,Without STL Decomposition
+Stacked,0.970279954428836,v,Without STL Decomposition
+Stacked(IW+),0.969503262408598,v,Without STL Decomposition
+Stacked(IW+),0.895453670363479,v,Without STL Decomposition
+Stacked(IW+),0.911316852226232,v,Without STL Decomposition
+Stacked(IW+),0.945045733732905,v,Without STL Decomposition
+Stacked(IW+),0.906797768858575,v,Without STL Decomposition
+Stacked(IW+),0.907068495300649,v,Without STL Decomposition
+Stacked(IW+),0.934600497733483,v,Without STL Decomposition
+Stacked(IW+),0.892278618907877,v,Without STL Decomposition
+Stacked(IW+),0.922619954219982,v,Without STL Decomposition

@@ -13,22 +13,22 @@ max_forecast_horizon = 18
 for (validation in c(TRUE, FALSE)) {
     for (idr in 1 : length(m3_dataset)) {
         if (idr <= 474 && idr >= 1) { #Macro Series
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_micro_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_micro_", sep = '/')
         }
         else if (idr <= 808 && idr > 474) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_industry_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_industry_", sep = '/')
         }
         else if (idr <= 1120 && idr > 808) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_macro_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_macro_", sep = '/')
         }
         else if (idr <= 1265 && idr > 1120) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_finance_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_finance_", sep = '/')
         }
         else if (idr <= 1376 && idr > 1265) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_demo_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_demo_", sep = '/')
         }
         else if (idr > 1376) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_stl_monthly_other_", sep = '/')
+            OUTPUT_PATH = paste(OUTPUT_DIR, "m3_monthly_other_", sep = '/')
         }
         OUTPUT_PATH = paste(OUTPUT_PATH, max_forecast_horizon, sep = '')
         if (validation) {
@@ -38,7 +38,9 @@ for (validation in c(TRUE, FALSE)) {
         OUTPUT_PATH = paste(OUTPUT_PATH, 'txt', sep = '.')
 
         time_series = unlist(m3_dataset[idr], use.names = FALSE)
-        time_series_log = log(as.numeric(time_series[2 : length(time_series)]))
+        mean = mean(as.numeric(time_series[2 : length(time_series)]))
+        time_series = (as.numeric(time_series[2 : length(time_series)]))/mean
+        time_series_log = log(time_series)
         time_series_length = length(time_series_log)
 
 
@@ -47,16 +49,30 @@ for (validation in c(TRUE, FALSE)) {
             time_series_log = time_series_log[1 : time_series_length]
         }
 
-        level_value = mean(time_series_log[1 : (time_series_length - max_forecast_horizon)]) #last "trend" point in the input window is the "level" (the value used for the normalization)
+        # apply stl
+        stl_result = tryCatch({
+            sstl = stl(ts(time_series_log, frequency = seasonality_period), "period")
+            seasonal_vect = as.numeric(sstl$time.series[, 1])
+            levels_vect = as.numeric(sstl$time.series[, 2])
+            values_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3])# this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
+            cbind(seasonal_vect, levels_vect, values_vect)
+        }, error = function(e) {
+            seasonal_vect = rep(0, length(time_series_length))#stl() may fail, and then we would go on with the seasonality vector=0
+            levels_vect = time_series_log
+            values_vect = time_series_log
+            cbind(seasonal_vect, levels_vect, values_vect)
+        })
+
+        level_value = mean #last "trend" point in the input window is the "level" (the value used for the normalization)
 
         if (validation) {
             # preallocate data frame
-            sav_df = matrix(NA, ncol = (4 + time_series_length), nrow = 1)
+            sav_df = matrix(NA, ncol = (4 + time_series_length + max_forecast_horizon), nrow = 1)
             sav_df = as.data.frame(sav_df)
 
             sav_df[, (time_series_length + 3)] = '|#'
             sav_df[, (time_series_length + 4)] = level_value
-            # sav_df[, (time_series_length + 5) : ncol(sav_df)] = (stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1])
+            sav_df[, (time_series_length + 5) : ncol(sav_df)] = (stl_result[(time_series_length - max_forecast_horizon + 1) : time_series_length,1])
         }else {
             # preallocate data frame
             sav_df = matrix(NA, ncol = (2 + time_series_length), nrow = 1)
@@ -64,7 +80,7 @@ for (validation in c(TRUE, FALSE)) {
         }
 
         sav_df[, 1] = paste(idr, '|i', sep = '')
-        normalized_values = time_series_log - level_value
+        normalized_values = time_series_log
 
         sav_df[, 2 : (time_series_length - max_forecast_horizon + 1)] = normalized_values[1 : (time_series_length - max_forecast_horizon)]
 

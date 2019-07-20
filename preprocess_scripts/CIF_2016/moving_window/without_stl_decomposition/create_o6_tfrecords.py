@@ -10,7 +10,7 @@ if __name__ == '__main__':
         binary_train_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif_6i7.tfrecords',
         binary_validation_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif_6i7v.tfrecords',
         binary_test_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif6test.tfrecords',
-        without_stl_decomposition = True
+        without_stl_decomposition = False
     )
 
     tfrecord_writer.read_text_data()

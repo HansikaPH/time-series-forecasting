@@ -41,21 +41,14 @@ LSTM_USE_PEEPHOLES = True
 BIAS = False
 
 learning_rate = 0.0
-# learning_rate_decay = 0.0
 
 
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
-    # global_step = tf.Variable(0, trainable=False)
-    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
-    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
 def adam_optimizer_fn(total_loss):
-    # global_step = tf.Variable(0, trainable=False)
-    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
-    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
@@ -67,7 +60,6 @@ def testing(args, config_dictionary):
     # to make the random number choices reproducible
 
     global learning_rate
-    # global learning_rate_decay
 
     dataset_name = args.dataset_name
     contain_zero_values = int(args.contain_zero_values)
@@ -114,10 +106,10 @@ def testing(args, config_dictionary):
     else:
         address_near_zero_instability = False
 
-    if args.non_negative_integer_conversion:
-        non_negative_integer_conversion = bool(int(args.non_negative_integer_conversion))
+    if args.integer_conversion:
+        integer_conversion = bool(int(args.integer_conversion))
     else:
-        non_negative_integer_conversion = False
+        integer_conversion = False
 
     if not with_truncated_backpropagation:
         tbptt_identifier = "without_truncated_backpropagation"
@@ -175,21 +167,20 @@ def testing(args, config_dictionary):
                 model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
-    elif model_type == "attention":
-        if without_stl_decomposition:
-            if with_accumulated_error:
-                model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
-            else:
-                model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
-        else:
-            if with_accumulated_error:
-                model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
-            else:
-                model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
+    # elif model_type == "attention":
+    #     if without_stl_decomposition:
+    #         if with_accumulated_error:
+    #             model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
+    #         else:
+    #             model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
+    #     else:
+    #         if with_accumulated_error:
+    #             model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
+    #         else:
+    #             model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']
-        # learning_rate_decay = config_dictionary['rate_of_decay']
     num_hidden_layers = config_dictionary['num_hidden_layers']
     max_num_epochs = config_dictionary['max_num_epochs']
     max_epoch_size = config_dictionary['max_epoch_size']
@@ -220,14 +211,12 @@ def testing(args, config_dictionary):
     error_file_name = model_identifier + '.txt'
 
     if input_format == "moving_window":
-        invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
-                         actual_results_file_path, original_data_file_path, str(input_size), str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), True,
-                        False)
+            invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
+                             actual_results_file_path, original_data_file_path, str(input_size), str(output_size),
+                             str(contain_zero_values), str(int(address_near_zero_instability)),
+                             str(int(integer_conversion)), str(int(seasonality_period)), str(int(without_stl_decomposition))), True)
+
     else:
-        if without_stl_decomposition:
             invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
-                             actual_results_file_path, original_data_file_path, str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), False, True)
-        else:
-            invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
-                             actual_results_file_path, original_data_file_path,
-                             str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(non_negative_integer_conversion)), str(int(seasonality_period))), False, False)
+                             actual_results_file_path, original_data_file_path, str(output_size), str(contain_zero_values), str(int(address_near_zero_instability)), str(int(integer_conversion)), str(int(seasonality_period)), str(int(without_stl_decomposition))), False)
+

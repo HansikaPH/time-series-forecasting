@@ -1,7 +1,6 @@
 import argparse
 import csv
 
-# get the different cluster names as external arguments
 argument_parser = argparse.ArgumentParser("Calculate the time series length")
 argument_parser.add_argument('--data_file', required=True, help='The full name of the data file')
 argument_parser.add_argument('--output_file', required=True, help='The full name of the output file')

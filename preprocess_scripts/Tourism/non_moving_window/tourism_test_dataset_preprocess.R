@@ -34,6 +34,7 @@ for (idr in 1 : length(tourism_dataset)) {
         values_vect = time_series_log
         cbind(seasonal_vect, levels_vect, values_vect)
     })
+    
 
     seasonality = tryCatch({
         forecast = stlf(ts(stl_result[, 1] , frequency = seasonality_period), "period", h = max_forecast_horizon)

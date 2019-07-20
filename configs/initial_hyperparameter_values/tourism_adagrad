@@ -9,10 +9,10 @@ cell_dimension - 20, 25
 # 3, 8
 max_epoch_size - 2, 10
 
-max_num_epochs - 2, 25
+max_num_epochs - 3, 25
 
-minibatch_size - 20, 80
+minibatch_size - 10, 90
 
 num_hidden_layers - 1, 2
 
-rate_of_learning - 0.01, 0.9
+rate_of_learning - 0.001, 0.9

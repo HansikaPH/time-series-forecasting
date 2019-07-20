@@ -5,27 +5,31 @@ nn5_dataset <-as.data.frame(file)
 
 max_forecast_horizon=59
 
-OUTPUT_PATH=paste(OUTPUT_DIR,"kaggle_stl_",sep='/')
+OUTPUT_PATH=paste(OUTPUT_DIR,"kaggle_",sep='/')
 OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
 
 OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
 unlink(OUTPUT_PATH)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
-numeric_dataset = numeric_dataset + 1
+#numeric_dataset = numeric_dataset + 1
 
-numeric_dataset_log = log(numeric_dataset)
+#numeric_dataset_log = log(numeric_dataset)
 
-time_series_length = ncol(numeric_dataset_log)
+time_series_length = ncol(numeric_dataset)
 time_series_length = time_series_length - max_forecast_horizon
-numeric_dataset_log = numeric_dataset_log[,1 : time_series_length]
+#numeric_dataset_log = numeric_dataset_log[,1 : time_series_length]
 
-for (idr in 1: nrow(numeric_dataset_log)) {
-  time_series_log = numeric_dataset_log[idr, ]
+for (idr in 1: nrow(numeric_dataset)) {
+  time_series = numeric_dataset[idr, ]
+  mean = mean(time_series)
+  time_series = time_series/mean
+  time_series_log = log(time_series[1 : time_series_length] + 1)
+  
   #
-  level=mean(time_series_log[1:(time_series_length - max_forecast_horizon)]) #mean "trend" in the input window is the "level" (the value used for the normalization)
+  level=mean #mean "trend" in the input window is the "level" (the value used for the normalization)
   sav_df=data.frame(id=paste(idr,'|i',sep=''));
-  normalized_values = time_series_log - level
+  normalized_values = time_series_log
 
   sav_df=cbind(sav_df, t(normalized_values[1: (time_series_length - max_forecast_horizon)]))
 

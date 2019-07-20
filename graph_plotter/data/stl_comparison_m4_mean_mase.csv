@@ -1,0 +1,39 @@
+Model_Name,MASE,x,Model
+Seq2Seq,1.05251294791667,v,With STL Decomposition
+Seq2Seq,1.79366091666667,v,With STL Decomposition
+Seq2Seq,1.10647895833333,v,With STL Decomposition
+Seq2Seq,1.29770528125,v,With STL Decomposition
+Seq2Seq,1.64762472916667,v,With STL Decomposition
+Seq2Seq,1.17743151041667,v,With STL Decomposition
+Seq2Seq,2.06152409375,v,With STL Decomposition
+Seq2Seq,1.31111246875,v,With STL Decomposition
+Seq2Seq,1.17988894791667,v,With STL Decomposition
+S2SD Moving Win.,1.00456944088698,v,With STL Decomposition
+S2SD Moving Win.,1.03598299830789,v,With STL Decomposition
+S2SD Moving Win.,1.05340817751092,v,With STL Decomposition
+S2SD Non Moving Win.,1.0514075,v,With STL Decomposition
+S2SD Non Moving Win.,1.32466882291667,v,With STL Decomposition
+S2SD Non Moving Win.,1.06662664583333,v,With STL Decomposition
+S2SD Moving Win.,1.00691136735657,v,With STL Decomposition
+S2SD Moving Win.,1.03405470098637,v,With STL Decomposition
+S2SD Moving Win.,1.02306152083333,v,With STL Decomposition
+S2SD Non Moving Win.,1.045548125,v,With STL Decomposition
+S2SD Non Moving Win.,1.04980432291667,v,With STL Decomposition
+S2SD Non Moving Win.,1.0587579375,v,With STL Decomposition
+S2SD Moving Win.,1.00946895293606,v,With STL Decomposition
+S2SD Moving Win.,1.10733233816512,v,With STL Decomposition
+S2SD Moving Win.,1.12602411889821,v,With STL Decomposition
+S2SD Non Moving Win.,1.13748370833333,v,With STL Decomposition
+S2SD Non Moving Win.,1.27242265625,v,With STL Decomposition
+S2SD Non Moving Win.,1.08252830208333,v,With STL Decomposition
+Stacked,1.09550245321514,v,With STL Decomposition
+Stacked,1.09901349178042,v,With STL Decomposition
+Stacked,1.12030474448396,v,With STL Decomposition
+Stacked,1.06195548701959,v,With STL Decomposition
+Stacked,1.10868910376385,v,With STL Decomposition
+Stacked,1.15048328594586,v,With STL Decomposition
+Stacked,1.14622063742526,v,With STL Decomposition
+Stacked,1.64030864704161,v,With STL Decomposition
+Stacked,1.13451460279499,v,With STL Decomposition
+S2SD Moving Win.,2.12116563541667,v,Without STL Decomposition
+Stacked,1.69572528125,v,Without STL Decomposition

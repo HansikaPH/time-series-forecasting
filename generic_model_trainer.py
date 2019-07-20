@@ -47,6 +47,9 @@ from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposit
 from external_packages import cocob_optimizer
 
 from configs.global_configs import hyperparameter_tuning_configs
+from configs.global_configs import model_training_configs
+
+import csv
 
 LSTM_USE_PEEPHOLES = True
 BIAS = False
@@ -54,20 +57,12 @@ BIAS = False
 optimized_config_directory = 'results/optimized_configurations/'
 learning_rate = 0.0
 
-
-# learning_rate_decay = 0.0
-
 # function to create the optimizer
 def adagrad_optimizer_fn(total_loss):
-    # global_step = tf.Variable(0, trainable=False)
-    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1, decay_rate=learning_rate_decay)
     return tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
 def adam_optimizer_fn(total_loss):
-    # global_step = tf.Variable(0, trainable=False)
-    # rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=1,
-    #                                   decay_rate=learning_rate_decay)
     return tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss)
 
 
@@ -77,8 +72,15 @@ def cocob_optimizer_fn(total_loss):
 
 # Training the time series
 def train_model_smac(configs):
-    rate_of_learning = configs["rate_of_learning"]
-    # rate_of_decay = configs["rate_of_decay"]
+    error, _ = train_model(configs)
+    return error
+
+# final execution with the optimized config
+def train_model(configs):
+    if "rate_of_learning" in configs.keys():
+        rate_of_learning = configs["rate_of_learning"]
+        global learning_rate
+        learning_rate = rate_of_learning
     cell_dimension = configs["cell_dimension"]
     num_hidden_layers = configs["num_hidden_layers"]
     minibatch_size = configs["minibatch_size"]
@@ -88,16 +90,10 @@ def train_model_smac(configs):
     gaussian_noise_stdev = configs["gaussian_noise_stdev"]
     random_normal_initializer_stdev = configs["random_normal_initializer_stdev"]
 
-    global learning_rate
-    learning_rate = rate_of_learning
-
-    # global learning_rate_decay
-    # learning_rate_decay = rate_of_decay
-
     print(configs)
 
     # select the appropriate type of optimizer
-    error = model_trainer.train_model(num_hidden_layers=num_hidden_layers,
+    error, error_list = model_trainer.train_model(num_hidden_layers=num_hidden_layers,
                                       cell_dimension=cell_dimension,
                                       minibatch_size=minibatch_size,
                                       max_epoch_size=max_epoch_size,
@@ -108,69 +104,7 @@ def train_model_smac(configs):
                                       optimizer_fn=optimizer_fn)
 
     print(model_identifier)
-    return error
-
-
-# def train_model_bayesian(num_hidden_layers, cell_dimension, minibatch_size, max_epoch_size, max_num_epochs,
-#                          l2_regularization, gaussian_noise_stdev,
-#                          random_normal_initializer_stdev, rate_of_learning=0.0, tbptt_chunk_length=0):
-#     global learning_rate
-#     learning_rate = rate_of_learning
-#
-#     error = model_trainer.train_model(num_hidden_layers=int(round(num_hidden_layers)),
-#                                       cell_dimension=int(round(cell_dimension)),
-#                                       minibatch_size=int(round(minibatch_size)),
-#                                       max_epoch_size=int(round(max_epoch_size)),
-#                                       max_num_epochs=int(round(max_num_epochs)),
-#                                       l2_regularization=l2_regularization,
-#                                       gaussian_noise_stdev=gaussian_noise_stdev,
-#                                       random_normal_initializer_stdev=random_normal_initializer_stdev,
-#                                       tbptt_chunk_length=tbptt_chunk_length,
-#                                       optimizer_fn=optimizer_fn)
-#     return -1 * error
-
-
-# def bayesian_optimization():
-#
-#     init_points = hyperparameter_tuning_configs.BAYESIAN_INIT_POINTS
-#     num_iter = hyperparameter_tuning_configs.BAYESIAN_NUM_ITER
-#     gaussian_process_parameters = {'alpha': 1e-4}
-#
-#     parameters = {'num_hidden_layers': (
-#         hyperparameter_values_dic['num_hidden_layers'][0], hyperparameter_values_dic['num_hidden_layers'][1]),
-#         'cell_dimension': (hyperparameter_values_dic['cell_dimension'][0],
-#                                 hyperparameter_values_dic['cell_dimension'][1]),
-#         'minibatch_size': (
-#             hyperparameter_values_dic['minibatch_size'][0], hyperparameter_values_dic['minibatch_size'][1]),
-#         'max_epoch_size': (
-#             hyperparameter_values_dic['max_epoch_size'][0], hyperparameter_values_dic['max_epoch_size'][1]),
-#         'max_num_epochs': (
-#             hyperparameter_values_dic['max_num_epochs'][0], hyperparameter_values_dic['max_num_epochs'][1]),
-#         'l2_regularization': (
-#             hyperparameter_values_dic['l2_regularization'][0], hyperparameter_values_dic['l2_regularization'][1]),
-#         'gaussian_noise_stdev': (hyperparameter_values_dic['gaussian_noise_stdev'][0],
-#                                  hyperparameter_values_dic['gaussian_noise_stdev'][1]),
-#         'random_normal_initializer_stdev': (hyperparameter_values_dic['random_normal_initializer_stdev'][0],
-#                                             hyperparameter_values_dic['random_normal_initializer_stdev'][1])
-#     }
-#
-#     # adding the hyperparameter for learning rate if the optimization is not cocob
-#     if optimizer != 'cocob':
-#         parameters['rate_of_learning'] = (
-#             hyperparameter_values_dic["rate_of_learning"][0], hyperparameter_values_dic["rate_of_learning"][1])
-#     if with_truncated_backpropagation:
-#         parameters['tbptt_chunk_length'] = (
-#             hyperparameter_values_dic["tbptt_chunk_length"][0], hyperparameter_values_dic["tbptt_chunk_length"][1])
-#
-#     # using bayesian optimizer for hyperparameter optimization
-#     bayesian_optimization = BayesianOptimization(train_model_bayesian, parameters)
-#
-#     bayesian_optimization.maximize(init_points=init_points, n_iter=num_iter, **gaussian_process_parameters)
-#     optimized_configuration = bayesian_optimization.res['max']['max_params']
-#     print(optimized_configuration)
-#
-#     return optimized_configuration
-
+    return error, error_list
 
 def smac():
     # Build Configuration Space which defines all parameters and their ranges
@@ -179,9 +113,6 @@ def smac():
     rate_of_learning = UniformFloatHyperparameter("rate_of_learning", hyperparameter_values_dic['rate_of_learning'][0],
                                                   hyperparameter_values_dic['rate_of_learning'][1],
                                                   default_value=hyperparameter_values_dic['rate_of_learning'][0])
-    # rate_of_decay = UniformFloatHyperparameter("rate_of_decay", hyperparameter_values_dic['rate_of_decay'][0],
-    #                                               hyperparameter_values_dic['rate_of_decay'][1],
-    #                                               default_value=hyperparameter_values_dic['rate_of_decay'][1])
     cell_dimension = UniformIntegerHyperparameter("cell_dimension",
                                                   hyperparameter_values_dic['cell_dimension'][0],
                                                   hyperparameter_values_dic['cell_dimension'][1],
@@ -226,8 +157,8 @@ def smac():
     else:
 
         configuration_space.add_hyperparameters(
-            [rate_of_learning, cell_dimension, no_hidden_layers, minibatch_size, max_epoch_size,
-             max_num_of_epochs,
+            [rate_of_learning, cell_dimension, minibatch_size, max_epoch_size,
+             max_num_of_epochs, no_hidden_layers,
              l2_regularization, gaussian_noise_stdev, random_normal_initializer_stdev])
 
     # creating the scenario object
@@ -235,17 +166,14 @@ def smac():
         "run_obj": "quality",
         "runcount-limit": hyperparameter_tuning_configs.SMAC_RUNCOUNT_LIMIT,
         "cs": configuration_space,
-        "deterministic": "true"
+        "deterministic": "true",
+        "abort_on_first_run_crash": "false"
     })
 
     # optimize using an SMAC object
     smac = SMAC(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model_smac)
 
     incumbent = smac.optimize()
-    smape_error = train_model_smac(incumbent)
-
-    print("Optimized configuration: {}".format(incumbent))
-    print("Optimized Value: {}\n".format(smape_error))
     return incumbent.get_dictionary()
 
 
@@ -257,8 +185,8 @@ if __name__ == '__main__':
                                  help='Whether the dataset contains zero values(0/1)')
     argument_parser.add_argument('--address_near_zero_instability', required=False,
                                  help='Whether to use a custom SMAPE function to address near zero instability(0/1). Default is 0')
-    argument_parser.add_argument('--non_negative_integer_conversion', required=False,
-                                 help='Whether to convert the final forecasts to non negative integers(0/1). Default is 0')
+    argument_parser.add_argument('--integer_conversion', required=False,
+                                 help='Whether to convert the final forecasts to integers(0/1). Default is 0')
     argument_parser.add_argument('--initial_hyperparameter_values_file', required=True,
                                  help='The file for the initial hyperparameter configurations')
     argument_parser.add_argument('--binary_train_file_train_mode', required=True,
@@ -338,10 +266,10 @@ if __name__ == '__main__':
     else:
         address_near_zero_instability = False
 
-    if args.non_negative_integer_conversion:
-        non_negative_integer_conversion = bool(int(args.non_negative_integer_conversion))
+    if args.integer_conversion:
+        integer_conversion = bool(int(args.integer_conversion))
     else:
-        non_negative_integer_conversion = False
+        integer_conversion = False
 
     if with_truncated_backpropagation:
         tbptt_identifier = "with_truncated_backpropagation"
@@ -380,9 +308,10 @@ if __name__ == '__main__':
         'binary_validation_file_path': binary_validation_file_path_train_mode,
         'contain_zero_values': contain_zero_values,
         'address_near_zero_instability': address_near_zero_instability,
-        'non_negative_integer_conversion': non_negative_integer_conversion,
+        'integer_conversion': integer_conversion,
         'seed': seed,
-        'cell_type': cell_type
+        'cell_type': cell_type,
+        'without_stl_decomposition': without_stl_decomposition
     }
 
     # select the model type
@@ -401,17 +330,17 @@ if __name__ == '__main__':
                 model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
-    elif model_type == "attention":
-        if without_stl_decomposition:
-            if with_accumulated_error:
-                model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
-            else:
-                model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
-        else:
-            if with_accumulated_error:
-                model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
-            else:
-                model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
+    # elif model_type == "attention":
+    #     if without_stl_decomposition:
+    #         if with_accumulated_error:
+    #             model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
+    #         else:
+    #             model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
+    #     else:
+    #         if with_accumulated_error:
+    #             model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
+    #         else:
+    #             model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values(initial_hyperparameter_values_file)
@@ -502,6 +431,20 @@ if __name__ == '__main__':
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
     # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier + '.txt')
+
+    # get the validation errors for the best hyperparameter configs
+    smape_error, smape_error_list = train_model(optimized_configuration)
+
+    # print(smape_error_list)
+
+    # write the final list of validation errors to a file
+    validation_errors_file = model_training_configs.VALIDATION_ERRORS_DIRECTORY + model_identifier + ".csv"
+    with open(validation_errors_file, "w") as output:
+        writer = csv.writer(output, lineterminator='\n')
+        writer.writerow(smape_error_list)
+
+    print("Optimized configuration: {}".format(optimized_configuration))
+    print("Optimized Value: {}\n".format(smape_error))
 
     # test the model
     for i in range(1, 11):

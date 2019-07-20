@@ -60,6 +60,7 @@ for (idr in 2 : length(m4_dataset)) {
         seasonality_vector = rep(0, max_forecast_horizon)   #stl() may fail, and then we would go on with the seasonality vector=0
         cbind(seasonality_vector)
     })
+    
 
     level_value = stl_result[time_series_length, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
 

@@ -17,9 +17,10 @@ class Seq2SeqModelTrainerWithDenseLayer:
         self.__binary_validation_file_path = kwargs["binary_validation_file_path"]
         self.__contain_zero_values = kwargs["contain_zero_values"]
         self.__address_near_zero_instability = kwargs["address_near_zero_instability"]
-        self.__non_negative_integer_conversion = kwargs["non_negative_integer_conversion"]
+        self.__integer_conversion = kwargs["integer_conversion"]
         self.__seed = kwargs["seed"]
         self.__cell_type = kwargs["cell_type"]
+        self.__without_stl_decomposition = kwargs['without_stl_decomposition']
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -28,11 +29,11 @@ class Seq2SeqModelTrainerWithDenseLayer:
     # Training the time series
     def train_model(self, **kwargs):
 
-        num_hidden_layers = kwargs['num_hidden_layers']
-        cell_dimension = kwargs["cell_dimension"]
-        minibatch_size = kwargs["minibatch_size"]
-        max_epoch_size = kwargs["max_epoch_size"]
-        max_num_epochs = kwargs["max_num_epochs"]
+        num_hidden_layers = int(kwargs['num_hidden_layers'])
+        cell_dimension = int(kwargs["cell_dimension"])
+        minibatch_size = int(kwargs["minibatch_size"])
+        max_epoch_size = int(kwargs["max_epoch_size"])
+        max_num_epochs = int(kwargs["max_num_epochs"])
         l2_regularization = kwargs["l2_regularization"]
         gaussian_noise_stdev = kwargs["gaussian_noise_stdev"]
         random_normal_initializer_stdev = kwargs['random_normal_initializer_stdev']
@@ -153,7 +154,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         training_dataset = training_dataset.repeat(count=int(max_epoch_size))
         training_dataset = training_dataset.map(tfrecord_reader.train_data_parser)
 
-        padded_training_data_batches = training_dataset.padded_batch(batch_size=minibatch_size,
+        padded_training_data_batches = training_dataset.padded_batch(batch_size=int(minibatch_size),
                                                                      padded_shapes=train_padded_shapes)
 
         training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
@@ -163,7 +164,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         validation_dataset = validation_dataset.map(tfrecord_reader.validation_data_parser)
 
         # create a single batch from all the validation time series by padding the datasets to make the variable sequence lengths fixed
-        padded_validation_dataset = validation_dataset.padded_batch(batch_size=minibatch_size,
+        padded_validation_dataset = validation_dataset.padded_batch(batch_size=int(minibatch_size),
                                                                     padded_shapes=validation_padded_shapes)
 
         # get an iterator to the validation data
@@ -226,34 +227,49 @@ class Seq2SeqModelTrainerWithDenseLayer:
                     level_values = validation_data_batch_value[3][array_first_dimension, last_indices, 0]
 
                     actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
-                    converted_actual_values = np.exp(
+
+                    if self.__without_stl_decomposition:
+                        converted_actual_values = np.exp(actual_values)
+                        converted_validation_output = np.exp(validation_output)
+
+                    else:
+                        converted_actual_values = np.exp(
                         true_seasonality_values + level_values[:, np.newaxis] + actual_values)
 
-                    converted_validation_output = np.exp(
-                        true_seasonality_values + level_values[:, np.newaxis] + validation_output)
+                        converted_validation_output = np.exp(
+                            true_seasonality_values + level_values[:, np.newaxis] + validation_output)
+
                     if (self.__contain_zero_values):  # to compensate for 0 values in data
                         converted_validation_output = converted_validation_output - 1
                         converted_actual_values = converted_actual_values - 1
 
-                    if self.__non_negative_integer_conversion:
-                        converted_validation_output[converted_validation_output < 0] = 0
-                        converted_validation_output = np.round(converted_validation_output)
+                    if self.__without_stl_decomposition:
+                        converted_actual_values = converted_actual_values * level_values[:, np.newaxis]
+                        converted_validation_output = converted_validation_output * level_values[:, np.newaxis]
 
-                        converted_actual_values[converted_actual_values < 0] = 0
+                    if self.__integer_conversion:
+                        converted_validation_output = np.round(converted_validation_output)
                         converted_actual_values = np.round(converted_actual_values)
+
+                    converted_validation_output[converted_validation_output < 0] = 0
+                    converted_actual_values[converted_actual_values < 0] = 0
 
                     if self.__address_near_zero_instability:
                         # calculate the smape
                         epsilon = 0.1
-                        sum = np.maximum(np.abs(converted_validation_output) + np.abs(converted_actual_values) + epsilon, 0.5 + epsilon)
-                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                        sum = np.maximum(
+                            np.abs(converted_validation_output) + np.abs(converted_actual_values) + epsilon,
+                            0.5 + epsilon)
+                        smape_values = (np.abs(converted_validation_output - converted_actual_values) /
                                         sum) * 2
-                        smape_list.append(smape)
+                        smape_values_per_series = np.mean(smape_values, axis=1)
+                        smape_list.extend(smape_values_per_series)
                     else:
                         # calculate the smape
-                        smape = np.mean(np.abs(converted_validation_output - converted_actual_values) /
+                        smape_values = (np.abs(converted_validation_output - converted_actual_values) /
                                         (np.abs(converted_validation_output) + np.abs(converted_actual_values))) * 2
-                        smape_list.append(smape)
+                        smape_values_per_series = np.mean(smape_values, axis=1)
+                        smape_list.extend(smape_values_per_series)
 
                 except tf.errors.OutOfRangeError:
                     break
@@ -262,4 +278,4 @@ class Seq2SeqModelTrainerWithDenseLayer:
             print("SMAPE value: {}".format(smape_final))
             session.close()
 
-        return smape_final
+        return float(smape_final), smape_list

@@ -1,4 +1,5 @@
 library(smooth)
+library(MASS)
 
 args <- commandArgs(trailingOnly = TRUE)
 forecast_file_path = args[1]
@@ -9,7 +10,7 @@ original_data_file_name = args[5]
 output_size = as.numeric(args[6])
 contain_zero_values = as.numeric(args[7])
 address_near_zero_insability = as.numeric(args[8])
-non_negative_integer_conversion = as.numeric(args[9])
+integer_conversion = as.numeric(args[9])
 seasonality_period = as.numeric(args[10])
 
 root_directory = paste(dirname(getwd()), "time-series-forecasting", sep="/")
@@ -41,6 +42,9 @@ original_data_file_full_name = paste(root_directory, original_data_file_name, se
 original_dataset <- readLines(original_data_file_full_name)
 original_dataset <- strsplit(original_dataset, ',')
 
+# persisting the final forecasts
+processed_forecasts_file <- paste(root_directory, "/results/processed_rnn_forecasts/", errors_file_name, sep = "")
+
 names(actual_results)[1]="Series"
 
 actual_results <- actual_results[,-1]
@@ -62,13 +66,17 @@ for(k in 1 :nrow(forecasts_df)){
       converted_forecasts_df = converted_forecasts_df -1
     }
 
-  if(non_negative_integer_conversion == 1){
-    converted_forecasts_df[converted_forecasts_df<0] = 0
+  converted_forecasts_df[converted_forecasts_df<0] = 0
+
+  if(integer_conversion == 1){
     converted_forecasts_df = round(converted_forecasts_df)
   }
   converted_forecasts_matrix[k,] = converted_forecasts_df
   mase_vector[k] = MASE(unlist(actual_results_df[k,]), converted_forecasts_df, mean(abs(diff(as.numeric(unlist(original_dataset[k])), lag=seasonality_period, differences=1))))
 }
+
+# persisting the converted forecasts
+write.matrix(converted_forecasts_matrix, processed_forecasts_file, sep=",")
 
 # calculating the SMAPE
 if(address_near_zero_insability == 1){
