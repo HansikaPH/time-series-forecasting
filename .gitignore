@@ -31,3 +31,6 @@ nn3.txt
 nn5.txt
 
 **/tbptt*/*
+
+nn_error_testing.nb.html
+nn_error_testing.Rmd

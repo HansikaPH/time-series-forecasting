@@ -10,5 +10,5 @@ meltData <- melt(seasonalities)
 
 p <- ggplot(meltData, aes(factor(variable), value))
 p + geom_violin() + geom_boxplot(width=0.1, aes(fill=variable), outlier.shape=NA) +
-  ggtitle("Box Plots of Seasonality Strengths") +
+  # ggtitle("Violin Plots of Seasonality Strengths") +
     xlab("Dataset Names") + ylab("Seasonality Strengths")  + theme(text = element_text(size=20), legend.position = "none")

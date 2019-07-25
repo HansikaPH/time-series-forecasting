@@ -5,8 +5,8 @@ library(reshape2)
 # data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Input_Comparison.csv", header=TRUE, sep=",")
 # data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Cell_Comparison.csv", header=TRUE, sep=",")
 # data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Optimizer_Comparison.csv", header=TRUE, sep=",")
-# data <- read.csv(file = "graph_plotter/ensemble_data/error_comparison_m4_other_median_smape.csv", header = TRUE, sep = ",")
-data <- read.csv(file="graph_plotter/ensemble_data/error_comparison_stacked_rank_mase.csv", header=TRUE, sep=",")
+data <- read.csv(file = "graph_plotter/ensemble_data/error_comparison_kaggle_mean_mase.csv", header = TRUE, sep = ",")
+#data <- read.csv(file="graph_plotter/ensemble_data/error_comparison_stacked_rank_smape.csv", header=TRUE, sep=",")
 # data <- read.csv(file="graph_plotter/ensemble_data/All_MASE_Ranks_Input_Size_Comparison_With_STL.csv", header=TRUE, sep=",")
 # data <- read.csv(file="graph_plotter/ensemble_data/stl_comparison_tourism_mean_mase.csv", header=TRUE, sep=",")
 
@@ -33,14 +33,14 @@ data <- read.csv(file="graph_plotter/ensemble_data/error_comparison_stacked_rank
 #ggplot(data=data, aes(x=x, y=SMAPE, color=Model)) +  xlab("M4 Dataset") + ylab("Mean SMAPE") +  geom_point(size=4) + theme(text = element_text(size=20), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + scale_color_manual(values = c("red", "blue3"))
 
 #comparison with ETS
-# ggplot(data = data, aes(x = x, y = Median_SMAPE, group = Model_Name)) +
-#     xlab("M4 Other Category") +
-#     ylab("Median SMAPE") +
-#     geom_point(aes(color = Model_Name, shape = Model_Name, size= Model_Name)) +
-#     theme(text = element_text(size = 20), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-#     scale_color_manual(values = c("red", "gold1", "blue3")) +
-#     scale_shape_manual(values = c(15, 16, 17)) +
-#   scale_size_manual(values=c(4,3,2.5))
+ggplot(data = data, aes(x = x, y = MASE, group = Model_Name)) +
+    xlab("Wikipedia Web Traffic Dataset") +
+    ylab("Mean MASE") +
+    geom_point(aes(color = Model_Name, shape = Model_Name, size= Model_Name)) +
+    theme(text = element_text(size = 20), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+    scale_color_manual(values = c("red", "gold1", "blue3", "darkorchid1", "forestgreen", "gray0")) +
+    scale_shape_manual(values = c(15, 16, 17, 18, 8, 12)) +
+  scale_size_manual(values=c(4,3,2.5, 4, 5, 5))
 #geom_jitter(position=position_jitter(0.1))
 
 #box plots
@@ -55,9 +55,9 @@ data <- read.csv(file="graph_plotter/ensemble_data/error_comparison_stacked_rank
 #   xlab("Input Window Size With STL Decomposition") + ylab("Mean MASE Ranks") + theme(text = element_text(size=20), legend.position = "none")
 
 # stacked performance
-p <- ggplot(data, aes(factor(Model_Name), SMAPE))
-p + geom_violin() + geom_boxplot(width=0.1, aes(fill=Model_Name)) +
-   xlab("RNN Architecture Performance Comparison") + ylab("Rank MASE") + theme(text = element_text(size=20), legend.position = "none")
+# p <- ggplot(data, aes(factor(Model_Name), SMAPE))
+# p + geom_violin() + geom_boxplot(width=0.1, aes(fill=Model_Name)) +
+#    xlab("RNN Architecture Performance Comparison") + ylab("Rank SMAPE") + theme(text = element_text(size=20), legend.position = "none")
 
 #stl comparison
 # p <- ggplot(data, aes(factor(Model), MASE))

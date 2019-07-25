@@ -21,15 +21,6 @@ from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumula
 from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_tester import \
     Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
 
-# attention model
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.accumulated_error.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.accumulated_error.attention_model_tester import \
-    AttentionModelTester as AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError
 
 # import the cocob optimizer
 from external_packages import cocob_optimizer
@@ -167,17 +158,6 @@ def testing(args, config_dictionary):
                 model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
-    # elif model_type == "attention":
-    #     if without_stl_decomposition:
-    #         if with_accumulated_error:
-    #             model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
-    #         else:
-    #             model_tester = AttentionModelTesterNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
-    #     else:
-    #         if with_accumulated_error:
-    #             model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
-    #         else:
-    #             model_tester = AttentionModelTesterNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     if 'rate_of_learning' in config_dictionary:
         learning_rate = config_dictionary['rate_of_learning']

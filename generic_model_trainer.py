@@ -33,16 +33,6 @@ from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumula
 from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_trainer import \
     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerMovingWindow
 
-# attention model
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.with_stl_decomposition.non_moving_window.accumulated_error.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.unaccumulated_error.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError
-from rnn_architectures.attention_model.bahdanau_attention.without_stl_decomposition.non_moving_window.accumulated_error.attention_model_trainer import \
-    AttentionModelTrainer as AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError
-
 # import the cocob optimizer
 from external_packages import cocob_optimizer
 
@@ -210,7 +200,7 @@ if __name__ == '__main__':
     argument_parser.add_argument('--hyperparameter_tuning', required=True,
                                  help='The method for hyperparameter tuning(bayesian/smac)')
     argument_parser.add_argument('--model_type', required=True,
-                                 help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer/attention)')
+                                 help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer)')
     argument_parser.add_argument('--input_format', required=True, help='Input format(moving_window/non_moving_window)')
     argument_parser.add_argument('--without_stl_decomposition', required=False,
                                  help='Whether not to use stl decomposition(0/1). Default is 0')
@@ -330,112 +320,17 @@ if __name__ == '__main__':
                 model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
-    # elif model_type == "attention":
-    #     if without_stl_decomposition:
-    #         if with_accumulated_error:
-    #             model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityAccumulatedError(**model_kwargs)
-    #         else:
-    #             model_trainer = AttentionModelTrainerNonMovingWindowWithSeasonalityUnaccumulatedError(**model_kwargs)
-    #     else:
-    #         if with_accumulated_error:
-    #             model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityAccumulatedError(**model_kwargs)
-    #         else:
-    #             model_trainer = AttentionModelTrainerNonMovingWindowWithoutSeasonalityUnaccumulatedError(**model_kwargs)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values(initial_hyperparameter_values_file)
-
-    # select the hyperparameter tuning method
-    # if hyperparameter_tuning == "bayesian":
-    #     optimized_configuration = bayesian_optimization()
-    # elif hyperparameter_tuning == "smac":
     optimized_configuration = smac()
-
-    # NN5 configs
-    # optimized_configuration = {
-    #     "num_hidden_layers": 4,
-    #     "cell_dimension": 23,
-    #     "minibatch_size": 20,
-    #     "rate_of_learning": 0.2113262220421187676,
-    #     "max_epoch_size": 1,
-    #     "gaussian_noise_stdev": 0.00023780395225712772,
-    #     "l2_regularization": 0.00015753660121731034,
-    #     "max_num_epochs": 25,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717
-    # }
-
-    # NN3 configs
-    # optimized_configuration = {
-    #     "num_hidden_layers": 2,
-    #     "cell_dimension": 37,
-    #     "minibatch_size": 12,
-    #     "rate_of_learning": 0.0899410575928837,
-    #     "max_epoch_size": 4,
-    #     "gaussian_noise_stdev": 0.0004611126662003522,
-    #     "l2_regularization": 0.0001565549952121513,
-    #     "max_num_epochs": 22,
-    #     "random_normal_initializer_stdev": 0.0005065212074219607
-    #     # "tbptt_chunk_length": 5
-    # }
-
-    # CIF configs
-    # optimized_configuration = {
-    #     "num_hidden_layers": 1.075789638829622,
-    #     "cell_dimension": 29,
-    #     "minibatch_size": 20.846339868432239,
-    #     "rate_of_learning": 0.0043262220421187676,
-    #     "max_epoch_size": 1,
-    #     "gaussian_noise_stdev": 0.0008,
-    #     "l2_regularization": 0.0001,
-    #     "max_num_epochs": 19,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717,
-    #     'tbptt_chunk_length': 10
-    # }
-
-    # 0.0910382749239466
-    # CIF configs 2
-    # optimized_configuration = {
-    #     "num_hidden_layers": 1.075789638829622,
-    #     "cell_dimension": 22,
-    #     "minibatch_size": 20.846339868432239,
-    #     "rate_of_learning": 0.53262220421187676,
-    #     "max_epoch_size": 5,
-    #     "gaussian_noise_stdev": 0.0005539332088020351,
-    #     "l2_regularization": 0.0006101647564088497,
-    #     "max_num_epochs": 20,
-    #     "random_normal_initializer_stdev": 0.00027502494731703717
-    # }
-
-    # CIF configs 2
-    # optimized_configuration = {
-    #     "num_hidden_layers": 2,
-    #     "cell_dimension": 28,
-    #     "minibatch_size": 3,
-    #     "rate_of_learning": 0.26343183932470754,
-    #     "max_epoch_size": 3,
-    #     "gaussian_noise_stdev": 0.0007517656514955944,
-    #     "l2_regularization": 0.00022259525510874703,
-    #     "max_num_epochs": 1,
-    #     "random_normal_initializer_stdev": 0.0005827304210740794
-    # }
-
-    # cif
-    # optimized_configuration = {'num_hidden_layers': 5.0, 'cell_dimension': 28.471127262736434,
-    #                            'minibatch_size': 10.135034205224617, 'max_epoch_size': 9.1502825822926326,
-    #                            'max_num_epochs': 20.962475980675006, 'l2_regularization': 0.0006369387641617046,
-    #                            'gaussian_noise_stdev': 0.00057001364478555087,
-    #                            'random_normal_initializer_stdev': 0.00025797511482927632,
-    #                            'rate_of_learning': 0.20172634121590136}
 
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
 
-    # optimized_configuration = read_optimal_hyperparameter_values(optimized_config_directory + '/' + model_identifier + '.txt')
-
     # get the validation errors for the best hyperparameter configs
     smape_error, smape_error_list = train_model(optimized_configuration)
 
-    # print(smape_error_list)
 
     # write the final list of validation errors to a file
     validation_errors_file = model_training_configs.VALIDATION_ERRORS_DIRECTORY + model_identifier + ".csv"
@@ -450,5 +345,3 @@ if __name__ == '__main__':
     for i in range(1, 11):
         args.seed = i
         testing(args, optimized_configuration)
-
-    # testing(args, optimized_configuration)
