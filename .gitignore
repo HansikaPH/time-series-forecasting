@@ -39,7 +39,10 @@ nn_error_testing.Rmd
 preprocess_scripts/Electricity/*
 preprocess_scripts/NN3/*
 preprocess_scripts/Solar_Data/*
+preprocess_scripts/CIF_2016/moving_window/create_augmented_tfrecords.py
+
 **/*.RData
+
 
 
 
