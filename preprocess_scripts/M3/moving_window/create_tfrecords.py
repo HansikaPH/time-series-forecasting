@@ -1,4 +1,9 @@
 from tfrecords_handler.moving_window.tfrecord_writer import TFRecordWriter
+import os
+
+output_path = "../../../datasets/binary_data/M3/moving_window/"
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
 if __name__ == '__main__':
     # macro data
@@ -8,9 +13,9 @@ if __name__ == '__main__':
         train_file_path = '../../../datasets/text_data/M3/moving_window/m3_stl_monthly_macro_18i12.txt',
         validate_file_path = '../../../datasets/text_data/M3/moving_window/m3_stl_monthly_macro_18i12v.txt',
         test_file_path = '../../../datasets/text_data/M3/moving_window/m3_test_monthly_macro_18i12.txt',
-        binary_train_file_path = '../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_macro_18i12.tfrecords',
-        binary_validation_file_path = '../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_macro_18i12v.tfrecords',
-        binary_test_file_path = '../../../datasets/binary_data/M3/moving_window/m3_test_monthly_macro_18i12.tfrecords'
+        binary_train_file_path = output_path + 'm3_stl_monthly_macro_18i12.tfrecords',
+        binary_validation_file_path = output_path + 'm3_stl_monthly_macro_18i12v.tfrecords',
+        binary_test_file_path = output_path + 'm3_test_monthly_macro_18i12.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -25,9 +30,9 @@ if __name__ == '__main__':
         train_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_micro_18i13.txt',
         validate_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_micro_18i13v.txt',
         test_file_path='../../../datasets/text_data/M3/moving_window/m3_test_monthly_micro_18i13.txt',
-        binary_train_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_micro_18i13.tfrecords',
-        binary_validation_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_micro_18i13v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/M3/moving_window/m3_test_monthly_micro_18i13.tfrecords'
+        binary_train_file_path=output_path + 'm3_stl_monthly_micro_18i13.tfrecords',
+        binary_validation_file_path=output_path + 'm3_stl_monthly_micro_18i13v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_micro_18i13.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -42,9 +47,9 @@ if __name__ == '__main__':
         train_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_industry_18i13.txt',
         validate_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_industry_18i13v.txt',
         test_file_path='../../../datasets/text_data/M3/moving_window/m3_test_monthly_industry_18i13.txt',
-        binary_train_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_industry_18i13.tfrecords',
-        binary_validation_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_industry_18i13v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/M3/moving_window/m3_test_monthly_industry_18i13.tfrecords'
+        binary_train_file_path=output_path + 'm3_stl_monthly_industry_18i13.tfrecords',
+        binary_validation_file_path=output_path + 'm3_stl_monthly_industry_18i13v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_industry_18i13.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -59,9 +64,9 @@ if __name__ == '__main__':
         train_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_finance_18i13.txt',
         validate_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_finance_18i13v.txt',
         test_file_path='../../../datasets/text_data/M3/moving_window/m3_test_monthly_finance_18i13.txt',
-        binary_train_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_finance_18i13.tfrecords',
-        binary_validation_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_finance_18i13v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/M3/moving_window/m3_test_monthly_finance_18i13.tfrecords'
+        binary_train_file_path=output_path + 'm3_stl_monthly_finance_18i13.tfrecords',
+        binary_validation_file_path=output_path + 'm3_stl_monthly_finance_18i13v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_finance_18i13.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -76,9 +81,9 @@ if __name__ == '__main__':
         train_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_other_18i13.txt',
         validate_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_other_18i13v.txt',
         test_file_path='../../../datasets/text_data/M3/moving_window/m3_test_monthly_other_18i13.txt',
-        binary_train_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_other_18i13.tfrecords',
-        binary_validation_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_other_18i13v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/M3/moving_window/m3_test_monthly_other_18i13.tfrecords'
+        binary_train_file_path=output_path + 'm3_stl_monthly_other_18i13.tfrecords',
+        binary_validation_file_path=output_path + 'm3_stl_monthly_other_18i13v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_other_18i13.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -93,9 +98,9 @@ if __name__ == '__main__':
         train_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_demo_18i13.txt',
         validate_file_path='../../../datasets/text_data/M3/moving_window/m3_stl_monthly_demo_18i13v.txt',
         test_file_path='../../../datasets/text_data/M3/moving_window/m3_test_monthly_demo_18i13.txt',
-        binary_train_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_demo_18i13.tfrecords',
-        binary_validation_file_path='../../../datasets/binary_data/M3/moving_window/m3_stl_monthly_demo_18i13v.tfrecords',
-        binary_test_file_path='../../../datasets/binary_data/M3/moving_window/m3_test_monthly_demo_18i13.tfrecords'
+        binary_train_file_path=output_path + 'm3_stl_monthly_demo_18i13.tfrecords',
+        binary_validation_file_path=output_path + 'm3_stl_monthly_demo_18i13v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_demo_18i13.tfrecords'
     )
 
     tfrecord_writer.read_text_data()

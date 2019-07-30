@@ -9,7 +9,7 @@ address_near_zero_insability = args[5]
 seasonality_period = as.numeric(args[6])
 technique = args[7]
 
-base_dir = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/"
+base_dir = "./"
 errors_dir = paste(base_dir, "results/errors/", sep="")
 forecast_file = paste(base_dir, forecast_file, sep="")
 actual_forecasts_file = paste(base_dir, actual_forecasts_file, sep="")

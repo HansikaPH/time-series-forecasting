@@ -1,19 +1,19 @@
 library(forecast)
 # read the data
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/cif-dataset-o6.txt"
+file = "./datasets/text_data/CIF_2016/cif-dataset-o6.txt"
 cif_dataset_o6 <- readLines(file)
 cif_dataset_o6 <- strsplit(cif_dataset_o6, ',')
 
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/cif-dataset-o12.txt"
+file = "./datasets/text_data/CIF_2016/cif-dataset-o12.txt"
 cif_dataset_o12 <- readLines(file)
 cif_dataset_o12 <- strsplit(cif_dataset_o12, ',')
 
-output_file_name_o6 = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/arima_forecasts/cif2016_O6.txt"
-output_file_name_o12 = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/arima_forecasts/cif2016_O12.txt"
+output_file_name_o6 = "./results/arima_forecasts/cif2016_O6.txt"
+output_file_name_o12 = "./results/arima_forecasts/cif2016_O12.txt"
 
-# clear the file content
-close(file(output_file_name_o6, open = "w"))
-close(file(output_file_name_o12, open = "w"))
+# delete the files if existing
+unlink(output_file_name_o6)
+unlink(output_file_name_o12)
 
 # calculate the arima forecast
 for (i in 1 : length(cif_dataset_o6)) {

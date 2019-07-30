@@ -21,6 +21,12 @@ class StackingModelTrainer:
         self.__cell_type = kwargs["cell_type"]
         self.__without_stl_decomposition = kwargs["without_stl_decomposition"]
 
+        # define the metadata size based on the usage of stl decomposition
+        if self.__without_stl_decomposition:
+            self.__meta_data_size = 1
+        else:
+            self.__meta_data_size = self.__output_size + 1
+
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
         return loss
@@ -118,7 +124,7 @@ class StackingModelTrainer:
                                                      compression_type="ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
+        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size, self.__meta_data_size)
 
         # define the expected shapes of data after padding
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
@@ -159,7 +165,6 @@ class StackingModelTrainer:
         init_op = tf.global_variables_initializer()
 
         # define the GPU options
-        # gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
         gpu_options = tf.GPUOptions(allow_growth=True)
 
         with tf.Session(
@@ -218,28 +223,14 @@ class StackingModelTrainer:
                     last_validation_outputs = validation_output[array_first_dimension, last_indices]
                     actual_values = validation_data_batch_value[2][array_first_dimension, last_indices, :]
 
-                    if(self.__without_stl_decomposition):
-
-                    # converted_validation_output = np.exp(true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
+                    if self.__without_stl_decomposition:
                         converted_validation_output = np.exp(last_validation_outputs)
-                    # print(converted_validation_output)
-                    # converted_validation_output = np.exp(
-                    #     true_seasonality_values + (last_validation_outputs * level_values[:, np.newaxis]))
-                    # converted_validation_output = np.exp(
-                    #         true_seasonality_values + last_validation_outputs)
-                    # converted_validation_output = np.sign((true_seasonality_values  + last_validation_outputs) * lambda_val + 1) * np.abs((true_seasonality_values + last_validation_outputs) * lambda_val + 1) ** (1/lambda_val)
                         converted_actual_values = np.exp(actual_values)
 
                     else:
                         converted_validation_output = np.exp(
                             true_seasonality_values + level_values[:, np.newaxis] + last_validation_outputs)
                         converted_actual_values = np.exp(true_seasonality_values + level_values[:, np.newaxis] + actual_values)
-                    # print(converted_actual_values)
-                    # converted_actual_values = np.exp(
-                    #     true_seasonality_values + (actual_values * level_values[:, np.newaxis]))
-                    # converted_actual_values = np.exp(
-                    #     true_seasonality_values + actual_values)
-                    # converted_actual_values = np.sign((true_seasonality_values + actual_values) * lambda_val + 1) * np.abs((true_seasonality_values + actual_values) * lambda_val + 1) ** (1/lambda_val)
 
                     if self.__contain_zero_values:  # to compensate for 0 values in data
                         converted_validation_output = converted_validation_output - 1

@@ -3,22 +3,24 @@ library(MASS)
 
 args <- commandArgs(trailingOnly = TRUE)
 rnn_forecast_file_path = args[1]
-errors_file_name = args[2]
-txt_test_file_name = args[3]
-actual_results_file_name = args[4]
-original_data_file_name = args[5]
-input_size = as.numeric(args[6])
-output_size = as.numeric(args[7])
-contain_zero_values = as.numeric(args[8])
-address_near_zero_insability = as.numeric(args[9])
-integer_conversion = as.numeric(args[10])
-seasonality_period = as.numeric(args[11])
-without_stl_decomposition = as.numeric(args[12])
+errors_directory = args[2]
+processed_forecasts_directory = args[3]
+errors_file_name = args[4]
+txt_test_file_name = args[5]
+actual_results_file_name = args[6]
+original_data_file_name = args[7]
+input_size = as.numeric(args[8])
+output_size = as.numeric(args[9])
+contain_zero_values = as.numeric(args[10])
+address_near_zero_insability = as.numeric(args[11])
+integer_conversion = as.numeric(args[12])
+seasonality_period = as.numeric(args[13])
+without_stl_decomposition = as.numeric(args[14])
 
 root_directory = paste(dirname(getwd()), "time-series-forecasting", sep = "/")
 
 # errors file name
-errors_directory = paste(root_directory, "results/ensemble_errors", sep = "/")
+errors_directory = paste(root_directory, errors_directory, sep = "/")
 errors_file_name_mean_median = paste("mean_median", errors_file_name, sep = '_')
 SMAPE_file_name_all_errors = paste("all_smape_errors", errors_file_name, sep = '_')
 MASE_file_name_all_errors = paste("all_mase_errors", errors_file_name, sep = '_')
@@ -44,7 +46,7 @@ original_dataset <- readLines(original_data_file_full_name)
 original_dataset <- strsplit(original_dataset, ',')
 
 # persisting the final forecasts
-processed_forecasts_file <- paste(root_directory, "/results/ensemble_processed_rnn_forecasts/", errors_file_name, sep = "")
+processed_forecasts_file <- paste(root_directory, processed_forecasts_directory, errors_file_name, sep = "")
 
 names(actual_results)[1] = "Series"
 actual_results <- actual_results[, - 1]
@@ -70,11 +72,10 @@ for (k in 1 : nrow(forecasts_df)) {
     one_line_test_data = as.numeric(txt_test_df[finalindex,])
     level_value = one_line_test_data[input_size + 3]
 
-    seasonal_values = one_line_test_data[(input_size + 4) : (3 + input_size + output_size)]
-
     if (without_stl_decomposition == 1) {
         converted_forecasts_df = exp(one_ts_forecasts)
     }else {
+        seasonal_values = one_line_test_data[(input_size + 4) : (3 + input_size + output_size)]
         converted_forecasts_df = exp(one_ts_forecasts + level_value + seasonal_values)
     }
     #

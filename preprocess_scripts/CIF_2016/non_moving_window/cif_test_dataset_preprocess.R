@@ -1,4 +1,5 @@
 #Data preparation script
+library(forecast)
 output_dir = "./datasets/text_data/CIF_2016/non_moving_window/"
 suppressWarnings(dir.create(output_dir, recursive=TRUE)) # create the output directory if not existing
 input_file = "./datasets/text_data/CIF_2016/cif-dataset.txt"

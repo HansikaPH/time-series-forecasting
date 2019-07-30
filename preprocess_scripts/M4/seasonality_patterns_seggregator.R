@@ -1,5 +1,5 @@
-input_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016-/m4_seasonality.txt"
-OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/"
+input_file = "./datasets/text_data/CIF_2016-/m4_seasonality.txt"
+OUTPUT_DIR = "./datasets/text_data/M4/"
 m4_dataset <- readLines(input_file)
 m4_dataset <- strsplit(m4_dataset, ',')
 

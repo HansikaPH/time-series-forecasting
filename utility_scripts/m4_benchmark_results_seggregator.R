@@ -1,7 +1,7 @@
-OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ensemble_errors/"
+OUTPUT_DIR = "./results/ensemble_errors/"
 
-mase_ets_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ensemble_errors/merged_cluster_results/all_mase_errors_m4_ets.txt"
-smape_ets_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ensemble_errors/merged_cluster_results/all_smape_errors_m4_ets.txt"
+mase_ets_file = "./results/ensemble_errors/merged_cluster_results/all_mase_errors_m4_ets.txt"
+smape_ets_file = "./results/ensemble_errors/merged_cluster_results/all_smape_errors_m4_ets.txt"
 
 mase_ets <- readLines(mase_ets_file)
 smape_ets <- readLines(smape_ets_file)

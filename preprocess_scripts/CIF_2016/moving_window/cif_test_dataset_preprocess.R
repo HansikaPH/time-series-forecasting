@@ -1,7 +1,14 @@
 #Data preparation script
+library(forecast)
 output_dir = "./datasets/text_data/CIF_2016/moving_window/"
 suppressWarnings(dir.create(output_dir, recursive=TRUE)) # create the output directory if not existing
 input_file = "./datasets/text_data/CIF_2016/cif-dataset.txt"
+
+output_file_12 = paste(output_dir, "cif12test.txt", sep="")
+output_file_6 = paste(output_dir, "cif6test.txt", sep="")
+
+unlink(output_file_12)
+unlink(output_file_6)
 
 cif_df = read.csv(file = input_file, sep = ';', header = FALSE)
 
@@ -10,157 +17,65 @@ names(cif_df)[4:ncol(cif_df)] = paste('x', (1:(ncol(cif_df) - 3)), sep =
 names(cif_df)[1] = "Series"
 names(cif_df)[2] = "maxPredHorizon"
 
-forecast_6_input_size = 7
-
-#Select Time series with prediction horizon 12
-cif_df_12 = cif_df[cif_df$maxPredHorizon == 12, ]
-
-#Select Time series with prediction horizon 6
-cif_df_6 = cif_df[cif_df$maxPredHorizon == 6, ]
-
-maxForecastHorizon_12 = 12
-maxForecastHorizon_6 = 6
-INPUT_SIZE_MULTIP = 1.25
-
-save12_df = NULL
-save6_df = NULL
+input_size_multiple = 1.25
+input_size_6 = 7
+input_size_12 = input_size_multiple * 12
 
 #Processing for prediction horizon 12
-for (idr in 1:nrow(cif_df_12)) {
-  oneLine_df = cif_df_12[idr, ]
-  series = as.character(oneLine_df$Series)
-  y = as.numeric(oneLine_df[4:(ncol(oneLine_df))])
-  y = y[!is.na(y)]
-  ylog = log(y)
-  n = length(y)
+for (idr in 1:nrow(cif_df)) {
+  time_series = cif_df[idr, ]
+  max_forecast_horizon = cif_df[idr,]$maxPredHorizon
+  series_number = as.character(time_series$Series)
+  time_series = as.numeric(time_series[4:(ncol(time_series))])
+  time_series = time_series[!is.na(time_series)]
+  time_series_log = log(time_series)
+  time_series_length = length(time_series_log)
 
-  stlAdj = tryCatch({
-    sstl = stl(ts(ylog, frequency = 12), "period")
+  stl_result = tryCatch({
+    sstl = stl(ts(time_series_log, frequency = 12), "period")
     seasonal_vect = as.numeric(sstl$time.series[, 1])
-    nnLevels = as.numeric(sstl$time.series[, 2])
+    nn_levels = as.numeric(sstl$time.series[, 2])
     nn_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-    cbind(seasonal_vect, nnLevels, nn_vect)
+    cbind(seasonal_vect, nn_levels, nn_vect)
   }, error = function(e) {
-    seasonal_vect = rep(0, length(ylog))   #stl() may fail, and then we would go on with the seasonality vector=0
-    nnLevels = ylog
-    nn_vect = ylog
-    cbind(seasonal_vect, nnLevels, nn_vect)
+    seasonal_vect = rep(0, length(time_series_log))   #stl() may fail, and then we would go on with the seasonality vector=0
+    nn_levels = time_series_log
+    nn_vect = time_series_log
+    cbind(seasonal_vect, nn_levels, nn_vect)
   })
 
-  seasonality_12 = tryCatch({
-    forecast = stlf(ts(stlAdj[,1] , frequency = 12), "period", h = 12)
-    seasonality_12_vector = as.numeric(forecast$mean)
-    c(seasonality_12_vector)
+  seasonality = tryCatch({
+    forecast = stlf(ts(stl_result[,1] , frequency = 12), "period", h = max_forecast_horizon)
+    seasonality_vector = as.numeric(forecast$mean)
+    c(seasonality_vector)
   }, error = function(e) {
-      seasonality_12_vector = rep(0, 12)   #stl() may fail, and then we would go on with the seasonality vector=0
-      c(seasonality_12_vector)
+      seasonality_vector = rep(0, 12)   #stl() may fail, and then we would go on with the seasonality vector=0
+      c(seasonality_vector)
     })
-
-  inputSize = as.integer(INPUT_SIZE_MULTIP * maxForecastHorizon_12)
-
-  print(series)
-  for (inn in inputSize:(n)) {
-    level = stlAdj[inn, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
-    sav_df = data.frame(id = paste(idr, '|i', sep = ''))
-
-
-    for (ii in 1:inputSize) {
-      sav_df[, paste('r', ii, sep = '')] = stlAdj[inn - inputSize + ii, 3] - level  #inputs: past values normalized by the level
-    }
-
-    sav_df[, 'nyb'] = '|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
-    #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-
-    sav_df[, 'level'] = level
-
-    for (ii in 1:maxForecastHorizon_12) {
-      sav_df[, paste('s', ii, sep = '')] = seasonality_12[ii]
-    }
-
-
-    if (is.null(save12_df)) {
-    save12_df = sav_df
-    } else {
-    save12_df = rbind(save12_df, sav_df)
-    }
+  
+  if (max_forecast_horizon == 6){
+    input_size = input_size_6
+    output_file = output_file_6
+  }else{
+    input_size = input_size_12
+    output_file = output_file_12
   }
+
+  input_windows = embed(stl_result[1 : time_series_length , 3], input_size)[, input_size : 1]
+  level_values = stl_result[input_size : time_series_length, 2]
+  input_windows = input_windows - level_values
+  
+  sav_df = matrix(NA, ncol = (3 + input_size + max_forecast_horizon), nrow = length(level_values))
+  sav_df = as.data.frame(sav_df)
+  
+  sav_df[, 1] = paste(idr - 1, '|i', sep = '')
+  sav_df[, 2 : (input_size + 1)] = input_windows
+  
+  sav_df[, (input_size + 2)] = '|#'
+  sav_df[, (input_size + 3)] = level_values
+  
+  seasonality_windows = matrix(rep(t(seasonality), each = length(level_values)), nrow = length(level_values))
+  sav_df[(input_size + 4) : ncol(sav_df)] = seasonality_windows
+  
+  write.table(sav_df, file = output_file, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
 }
-
-#Processing for prediction horizon 6
-for (idr in 1:nrow(cif_df_6)) {
-  oneLine_df = cif_df_6[idr, ]
-  series = as.character(oneLine_df$Series)
-  y = as.numeric(oneLine_df[4:(ncol(oneLine_df))])
-  y = y[!is.na(y)]
-  ylog = log(y)
-  n = length(y)
-
-  stlAdj = tryCatch({
-    sstl = stl(ts(ylog, frequency = 12), "period")
-    seasonal_vect = as.numeric(sstl$time.series[, 1])
-    nnLevels = as.numeric(sstl$time.series[, 2])
-    nn_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3]) # this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
-    cbind(seasonal_vect, nnLevels, nn_vect)
-  }, error = function(e) {
-    seasonal_vect = rep(0, length(ylog))   #stl() may fail, and then we would go on with the seasonality vector=0
-    nnLevels = ylog
-    nn_vect = ylog
-    cbind(seasonal_vect, nnLevels, nn_vect)
-  })
-
-  seasonality_6 = tryCatch({
-    forecast = stlf(ts(stlAdj[,1] , frequency = 12), "period", h = 6)
-    seasonality_6_vector = as.numeric(forecast$mean)
-    c(seasonality_6_vector)
-  }, error = function(e) {
-    seasonality_6_vector = rep(0, 6)   #stl() may fail, and then we would go on with the seasonality vector=0
-    c(seasonality_6_vector)
-  })
-
-  inputSize = forecast_6_input_size
-
-  print(series)
-  for (inn in inputSize:(n)) {
-    level = stlAdj[inn, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
-    sav_df = data.frame(id = paste(idr, '|i', sep = ''))
-
-
-    for (ii in 1:inputSize) {
-      sav_df[, paste('r', ii, sep = '')] = stlAdj[inn - inputSize + ii, 3] - level  #inputs: past values normalized by the level
-    }
-
-    sav_df[, 'nyb'] = '|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
-    #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
-
-    sav_df[, 'level'] = level
-
-    for (ii in 1:maxForecastHorizon_6) {
-      sav_df[, paste('s', ii, sep = '')] = seasonality_6[ii]
-    }
-
-    if (is.null(save6_df)) {
-      save6_df = sav_df
-    } else {
-      save6_df = rbind(save6_df, sav_df)
-    }
-  }
-}
-
-
-write.table(
-  save12_df,
-  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/cif12test.txt",
-  row.names = F,
-  col.names = F,
-  sep = " ",
-  quote = F
-)
-
-write.table(
-  save6_df,
-  file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/CIF_2016/moving_window/cif6test.txt",
-  row.names = F,
-  col.names = F,
-  sep = " ",
-  quote = F
-)

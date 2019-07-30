@@ -1,26 +1,25 @@
 library(forecast)
 
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/kaggle_web_traffic/non_moving_window"
+output_dir = "./datasets/text_data/kaggle_web_traffic/non_moving_window/"
+suppressWarnings(dir.create(output_dir, recursive = TRUE)) # create the output directory if not existing
+input_file = "./datasets/text_data/kaggle_web_traffic/kaggle_web_traffic_dataset.txt"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/kaggle_web_traffic/kaggle_web_traffic_dataset.txt",sep=',',header = FALSE)
+file <-read.csv(file=input_file, sep=',',header = FALSE)
 kaggle_dataset <-as.data.frame(file)
 
 max_forecast_horizon=59
 
-OUTPUT_PATH=paste(OUTPUT_DIR,"kaggle_scaled_test_",sep='/')
-OUTPUT_PATH=paste(OUTPUT_PATH,max_forecast_horizon,sep='')
+output_path=paste(output_dir,"kaggle_scaled_test_",sep='/')
+output_path=paste(output_path,max_forecast_horizon,sep='')
 
-OUTPUT_PATH=paste(OUTPUT_PATH,'txt',sep='.')
-unlink(OUTPUT_PATH)
+output_path=paste(output_path,'txt',sep='.')
+unlink(output_path)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(kaggle_dataset, as.numeric)))
-numeric_dataset = numeric_dataset + 1
+numeric_dataset_log = log(numeric_dataset + 1)
+time_series_length = ncol(numeric_dataset_log)
 
-numeric_dataset_log = log(numeric_dataset)
-
-time_series_length = ncol(numeric_dataset)
-
-for (idr in 1: nrow(numeric_dataset)) {
+for (idr in 1: nrow(numeric_dataset_log)) {
   time_series_log = numeric_dataset_log[idr, ]
 
   stl_result= tryCatch({
@@ -45,21 +44,14 @@ for (idr in 1: nrow(numeric_dataset)) {
     cbind(seasonality_vector)
   })
 
-  scale = mean
-  level=stl_result[time_series_length, 2] #last "trend" point in the input window is the "level" (the value used for the normalization)
+  level=stl_result[time_series_length, 2] #last "trend" point in the whole series is the "level" (the value used for the normalization)
   sav_df=data.frame(id=paste(idr,'|i',sep=''));
   normalized_values = stl_result[,3]-level
 
   sav_df=cbind(sav_df, t(normalized_values[1: time_series_length])) #inputs: past values normalized by the level
-  sav_df[,'nyb']='|#' #Not Your Business :-) Anything after '|#' is treated as a comment by CNTK's (unitil next bar)
-  #What follows is data that CNTK is not supposed to "see". We will use it in the validation R script.
+  sav_df[,'nyb']='|#' 
   sav_df[,'level']=level
-  sav_df[,'scale']=scale
 
   sav_df = cbind(sav_df, t(seasonality))
-
-  write.table(sav_df, file=OUTPUT_PATH, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
-
-  print(idr)
-  through all series from one file
+  write.table(sav_df, file=output_path, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
 }

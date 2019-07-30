@@ -1,5 +1,10 @@
 from tfrecords_handler.moving_window.tfrecord_writer import TFRecordWriter
+import os
 
+output_path = "../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/"
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+    
 if __name__ == '__main__':
     tfrecord_writer = TFRecordWriter(
         input_size = 15,
@@ -7,10 +12,9 @@ if __name__ == '__main__':
         train_file_path = '../../../../datasets/text_data/CIF_2016/moving_window/without_stl_decomposition/cif_12i15.txt',
         validate_file_path = '../../../../datasets/text_data/CIF_2016/moving_window/without_stl_decomposition/cif_12i15v.txt',
         test_file_path = '../../../../datasets/text_data/CIF_2016/moving_window/without_stl_decomposition/cif12test.txt',
-        binary_train_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif_12i15.tfrecords',
-        binary_validation_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif_12i15v.tfrecords',
-        binary_test_file_path = '../../../../datasets/binary_data/CIF_2016/moving_window/without_stl_decomposition/cif12test.tfrecords',
-        without_stl_decomposition = False
+        binary_train_file_path = output_path + 'cif_12i15.tfrecords',
+        binary_validation_file_path = output_path + 'cif_12i15v.tfrecords',
+        binary_test_file_path = output_path + 'cif12test.tfrecords'
     )
 
     tfrecord_writer.read_text_data()

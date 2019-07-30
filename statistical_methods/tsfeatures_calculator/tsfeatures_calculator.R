@@ -1,14 +1,9 @@
 library('tsfeatures')
 library('dplyr')
 
-# args = commandArgs(trailingOnly=TRUE)
-# input_file = args[1]
-# output_file = args[2]
-# frequency = args[3]
-
-input_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/Solar_Data/df.csv"
+input_file = "./datasets/text_data/Solar_Data/df.csv"
 frequency = 12
-output_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/seasonality_strengths/electricity.txt"
+output_file = "./results/seasonality_strengths/electricity.txt"
 
 # read the data
 dataset <- readLines(input_file)

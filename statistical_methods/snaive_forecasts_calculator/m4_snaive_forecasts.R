@@ -1,14 +1,14 @@
 library(forecast)
 
 # read the data
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-train.csv"
+file = "./datasets/text_data/M4/Monthly-train.csv"
 m4_dataset <- readLines(file)
 m4_dataset <- strsplit(m4_dataset, ',')
 
-output_file_path = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/snaive_forecasts/"
-combined_snaive_forecasts_file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/snaive_forecasts/m4.txt"
-# clear the file content
-# close( file( output_file_name, open="w" ) )
+output_file_path = "./results/snaive_forecasts/"
+combined_snaive_forecasts_file = "./results/snaive_forecasts/m4.txt"
+
+unlink(combined_snaive_forecasts_file)
 
 # calculate the seasonal naive forecast
 for (i in 2 : length(m4_dataset)) {

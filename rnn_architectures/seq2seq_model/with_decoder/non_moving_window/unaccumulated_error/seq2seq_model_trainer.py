@@ -180,7 +180,6 @@ class Seq2SeqModelTrainer:
         init_op = tf.global_variables_initializer()
 
         # define the GPU options
-        # gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
         gpu_options = tf.GPUOptions(allow_growth=True)
 
         with tf.Session(
@@ -235,9 +234,6 @@ class Seq2SeqModelTrainer:
                     true_seasonality_values = validation_data_batch_value[3][:, 1:, 0]
                     level_values = validation_data_batch_value[3][:, 0, 0]
 
-                    # converted_validation_output = np.exp(
-                    #     true_seasonality_values + level_values[:, np.newaxis] + np.squeeze(validation_output,
-                    #                                                                        axis=2))
                     actual_values = validation_data_batch_value[2]
 
                     if self.__without_stl_decomposition:

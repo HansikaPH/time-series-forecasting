@@ -139,7 +139,8 @@ def testing(args, config_dictionary):
         'binary_train_file_path': binary_train_file_path_test_mode,
         'binary_test_file_path': binary_test_file_path_test_mode,
         'seed': seed,
-        'cell_type': cell_type
+        'cell_type': cell_type,
+        'without_stl_decomposition': without_stl_decomposition
     }
 
     # select the model type

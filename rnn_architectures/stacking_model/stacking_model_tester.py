@@ -16,6 +16,13 @@ class StackingModelTester:
         self.__binary_test_file_path = kwargs["binary_test_file_path"]
         self.__seed = kwargs["seed"]
         self.__cell_type = kwargs["cell_type"]
+        self.__without_stl_decomposition = kwargs["without_stl_decomposition"]
+
+        # define the metadata size based on the usage of stl decomposition
+        if self.__without_stl_decomposition:
+            self.__meta_data_size = 1
+        else:
+            self.__meta_data_size = self.__output_size + 1
 
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
@@ -113,7 +120,7 @@ class StackingModelTester:
         test_dataset = tf.data.TFRecordDataset([self.__binary_test_file_path], compression_type="ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
+        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size, self.__meta_data_size)
 
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset
@@ -155,7 +162,6 @@ class StackingModelTester:
         init_op = tf.global_variables_initializer()
 
         # define the GPU options
-        # gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
         gpu_options = tf.GPUOptions(allow_growth=True)
 
         with tf.Session(

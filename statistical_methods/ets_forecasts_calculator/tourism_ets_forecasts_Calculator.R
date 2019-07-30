@@ -1,13 +1,12 @@
 library(forecast)
 # read the data
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/Tourism/tourism_data.csv"
+file = "./datasets/text_data/Tourism/tourism_data.csv"
 tourism_dataset <- readLines(file)
 tourism_dataset <- strsplit(tourism_dataset, ',')
 
-output_file_name = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ets_forecasts/tourism.txt"
+output_file_name = "./results/ets_forecasts/tourism.txt"
 
-# clear the file content
-close(file(output_file_name, open = "w"))
+unlink(output_file_name)
 
 # calculate the ets forecasts
 for (i in 1 : length(tourism_dataset)) {

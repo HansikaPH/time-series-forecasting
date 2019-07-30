@@ -1,10 +1,10 @@
 library(forecast)
 # read the data
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/Electricity/original_electricity_data_validation.csv"
+file = "./datasets/text_data/Electricity/original_electricity_data_validation.csv"
 electricity_dataset <- readLines(file)
 electricity_dataset <- strsplit(electricity_dataset, ',')
 
-output_file_name = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ets_forecasts/electricity_validation.txt"
+output_file_name = "./results/ets_forecasts/electricity_validation.txt"
 
 # clear the file content
 close(file(output_file_name, open = "w"))

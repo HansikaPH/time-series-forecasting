@@ -13,13 +13,11 @@ output_path = '../results/ensemble_errors/merged_cluster_results/'
 # get the different cluster names as external arguments
 argument_parser = argparse.ArgumentParser("Concatenate different cluster results of the same dataset")
 argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
-# argument_parser.add_argument('--model_seed_number', required=True, help='In case there are multiple results of the same model with different seeds')
 
 # parse the user arguments
 args = argument_parser.parse_args()
 
 dataset_name = args.dataset_name
-# seed = int(args.model_seed_number)
 
 output_file_mean_median = output_path + "mean_median_" + dataset_name + "_"
 output_file_all_smape_errors = output_path + "all_smape_errors_" + dataset_name + "_"
@@ -50,13 +48,6 @@ for smape_errors_file, mase_errors_file in zip(sorted(all_smape_errors_files),
     filename_part = string_list[1]
     category = re.search(dataset_name + '_([a-zA-Z0-9]+)_', smape_errors_file).group(1)
 
-    # try:
-    #     model_seed = int(filename_part.rsplit('_', 1)[1].split('.')[0])
-    #     if model_seed != seed:
-    #         continue
-    # except:
-    #     pass
-
     # read the errors from both files
     all_smape_errors = []
     for num in filename_smape_object:
@@ -84,18 +75,6 @@ for (smape_key, smape_errors_dic), (mase_key, mase_errors_dic) in zip(all_smape_
     # open the all errors mase file
     output_file_all_mase_errors_object = open(output_file_all_mase_errors + mase_key, "a")
 
-    # open the mean errors file
-    # output_file_mean_median_object = open(output_file_mean_median + smape_key, "w")
-
-    # calculate smape mean, std
-    # smape_mean = np.mean(smape_errors, axis=0)
-    # smape_median = np.median(smape_errors, axis=0)
-    # smape_std = np.std(smape_errors, axis=0)
-
-    # calculate mase mean, std
-    # mase_mean = np.mean(mase_errors, axis=0)
-    # mase_median = np.median(mase_errors, axis=0)
-    # mase_std = np.std(mase_errors, axis=0)
 
     # sort the categories according to the given order
     for (category, index) in sorted(category_order_dic.items(), key=lambda item: item[1]):
@@ -107,18 +86,8 @@ for (smape_key, smape_errors_dic), (mase_key, mase_errors_dic) in zip(all_smape_
         output_file_all_smape_errors_object.writelines('\n')
         output_file_all_mase_errors_object.writelines('\n'.join(str(element) for element in category_mase_errors))
         output_file_all_mase_errors_object.writelines('\n')
-        # output_file_mean_median_object.writelines("mean_SMAPE:" + str(smape_mean) + "\n")
-        # output_file_mean_median_object.writelines("median_SMAPE:" + str(smape_median) + "\n")
-        # output_file_mean_median_object.writelines("std_SMAPE:" + str(smape_std) + "\n")
 
-        # output_file_mean_median_object.writelines("")
-        # output_file_mean_median_object.writelines("")
-
-        # output_file_mean_median_object.writelines("mean_MASE:" + str(mase_mean) + "\n")
-        # output_file_mean_median_object.writelines("median_MASE:" + str(mase_median) + "\n")
-        # output_file_mean_median_object.writelines("std_MASE:" + str(mase_std))
 
     # close the files
     output_file_all_smape_errors_object.close()
     output_file_all_mase_errors_object.close()
-    # output_file_mean_median_object.close()

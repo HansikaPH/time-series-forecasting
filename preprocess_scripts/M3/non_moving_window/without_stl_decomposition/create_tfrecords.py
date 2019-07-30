@@ -1,4 +1,9 @@
 from tfrecords_handler.non_moving_window.tfrecord_writer import TFRecordWriter
+import os
+
+output_path = "../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/"
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
 if __name__ == '__main__':
     # macro data
@@ -7,10 +12,9 @@ if __name__ == '__main__':
         train_file_path = '../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_macro_18.txt',
         validate_file_path = '../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_macro_18v.txt',
         test_file_path = '../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_macro_18.txt',
-        binary_train_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_macro_18.tfrecords',
-        binary_validation_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_macro_18v.tfrecords',
-        binary_test_file_path = '../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_macro_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path = output_path + 'm3_monthly_macro_18.tfrecords',
+        binary_validation_file_path = output_path + 'm3_monthly_macro_18v.tfrecords',
+        binary_test_file_path = output_path + 'm3_test_monthly_macro_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -24,10 +28,9 @@ if __name__ == '__main__':
         train_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_micro_18.txt',
         validate_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_micro_18v.txt',
         test_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_micro_18.txt',
-        binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_micro_18.tfrecords',
-        binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_micro_18v.tfrecords',
-        binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_micro_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path=output_path + 'm3_monthly_micro_18.tfrecords',
+        binary_validation_file_path=output_path + 'm3_monthly_micro_18v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_micro_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -41,10 +44,9 @@ if __name__ == '__main__':
         train_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_industry_18.txt',
         validate_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_industry_18v.txt',
         test_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_industry_18.txt',
-        binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_industry_18.tfrecords',
-        binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_industry_18v.tfrecords',
-        binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_industry_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path=output_path + 'm3_monthly_industry_18.tfrecords',
+        binary_validation_file_path=output_path + 'm3_monthly_industry_18v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_industry_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -58,10 +60,9 @@ if __name__ == '__main__':
         train_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_finance_18.txt',
         validate_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_finance_18v.txt',
         test_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_finance_18.txt',
-        binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_finance_18.tfrecords',
-        binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_finance_18v.tfrecords',
-        binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_finance_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path=output_path + 'm3_monthly_finance_18.tfrecords',
+        binary_validation_file_path=output_path + 'm3_monthly_finance_18v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_finance_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -75,10 +76,9 @@ if __name__ == '__main__':
         train_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_other_18.txt',
         validate_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_other_18v.txt',
         test_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_other_18.txt',
-        binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_other_18.tfrecords',
-        binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_other_18v.tfrecords',
-        binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_other_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path=output_path + 'm3_monthly_other_18.tfrecords',
+        binary_validation_file_path=output_path + 'm3_monthly_other_18v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_other_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()
@@ -92,10 +92,9 @@ if __name__ == '__main__':
         train_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_demo_18.txt',
         validate_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_demo_18v.txt',
         test_file_path='../../../../datasets/text_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_demo_18.txt',
-        binary_train_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_demo_18.tfrecords',
-        binary_validation_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_monthly_demo_18v.tfrecords',
-        binary_test_file_path='../../../../datasets/binary_data/M3/non_moving_window/without_stl_decomposition/m3_test_monthly_demo_18.tfrecords',
-        without_stl_decomposition=False
+        binary_train_file_path=output_path + 'm3_monthly_demo_18.tfrecords',
+        binary_validation_file_path=output_path + 'm3_monthly_demo_18v.tfrecords',
+        binary_test_file_path=output_path + 'm3_test_monthly_demo_18.tfrecords'
     )
 
     tfrecord_writer.read_text_data()

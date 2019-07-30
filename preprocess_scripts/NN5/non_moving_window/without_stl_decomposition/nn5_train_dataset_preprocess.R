@@ -1,15 +1,17 @@
-OUTPUT_DIR="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/non_moving_window/without_stl_decomposition"
+output_dir = "./datasets/text_data/NN5/non_moving_window/without_stl_decomposition/"
+suppressWarnings(dir.create(output_dir, recursive=TRUE)) # create the output directory if not existing
+input_file = "./datasets/text_data/NN5/nn5_dataset.txt"
 
-file <-read.csv(file="/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/NN5/nn5_dataset.txt",sep=',',header = FALSE)
+file <-read.csv(file=input_file,sep=',',header = FALSE)
 nn5_dataset <-as.data.frame(file)
 
 max_forecast_horizon=56
 
-OUTPUT_PATH56=paste(OUTPUT_DIR,"nn5_",sep='/')
-OUTPUT_PATH56=paste(OUTPUT_PATH56,max_forecast_horizon,sep='')
+output_path=paste(output_dir,"nn5_",sep='/')
+output_path=paste(output_path,max_forecast_horizon,sep='')
 
-OUTPUT_PATH56=paste(OUTPUT_PATH56,'txt',sep='.')
-unlink(OUTPUT_PATH56)
+output_path=paste(output_path,'txt',sep='.')
+unlink(output_path)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
 
@@ -30,7 +32,5 @@ for (idr in 1: nrow(numeric_dataset)) {
   sav_df[,'o']='|o'
   sav_df=cbind(sav_df, t(time_series_log[(time_series_length - max_forecast_horizon + 1) :length(time_series_log)])) #outputs: future values normalized by the level.
 
-  write.table(sav_df, file=OUTPUT_PATH56, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
-
-  print(idr)
+  write.table(sav_df, file=output_path, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
 }#through all series from one file

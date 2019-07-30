@@ -22,6 +22,12 @@ class Seq2SeqModelTrainerWithDenseLayer:
         self.__cell_type = kwargs["cell_type"]
         self.__without_stl_decomposition = kwargs['without_stl_decomposition']
 
+        # define the metadata size based on the usage of stl decomposition
+        if self.__without_stl_decomposition:
+            self.__meta_data_size = 1
+        else:
+            self.__meta_data_size = self.__output_size + 1
+
     def __l1_loss(self, z, t):
         loss = tf.reduce_mean(tf.abs(t - z))
         return loss
@@ -138,7 +144,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
                                                      compression_type="ZLIB")
 
         # parse the records
-        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size)
+        tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size, self.__meta_data_size)
 
         # define the expected shapes of data after padding
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
@@ -176,7 +182,6 @@ class Seq2SeqModelTrainerWithDenseLayer:
         init_op = tf.global_variables_initializer()
 
         # define the GPU options
-        # gpu_options = tf.GPUOptions(visible_device_list=gpu_configs.visible_device_list, allow_growth=True)
         gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(
                 config=tf.ConfigProto(log_device_placement=gpu_configs.log_device_placement, allow_soft_placement=True,

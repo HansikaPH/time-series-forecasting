@@ -1,41 +1,40 @@
-library(forecast)
+output_dir = "./datasets/text_data/M4/non_moving_window/"
+suppressWarnings(dir.create(output_dir, recursive=TRUE)) # create the output directory if not existing
+input_file = "./datasets/text_data/M4/Monthly-train.csv"
 
-OUTPUT_DIR = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/non_moving_window/"
-
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M4/Monthly-train.csv"
-m4_dataset <- readLines(file)
+m4_dataset <- readLines(input_file)
 m4_dataset <- strsplit(m4_dataset, ',')
 
 max_forecast_horizon = 18
 seasonality_period = 12
 
-# INPUT_SIZE_MULTIP = 1.25  # using some reasoning and backesting, I decided to make input size a bit (here by 25%) larger than the maximum prediction horizon
+unlink(paste(output_dir, "m4_stl_monthly_*", sep=""))
 
 for (validation in c(TRUE, FALSE)) {
     for (idr in 2 : length(m4_dataset)) {
         if (idr - 1 <= 10016 && idr - 1 >= 1) { #Macro Series
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_macro_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_macro_", sep = '/')
         }
         else if (idr - 1 <= 20991 && idr - 1 > 10016) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_micro_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_micro_", sep = '/')
         }
         else if (idr - 1 <= 26719 && idr - 1 > 20991) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_demo_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_demo_", sep = '/')
         }
         else if (idr - 1 <= 36736 && idr - 1 > 26719) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_industry_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_industry_", sep = '/')
         }
         else if (idr - 1 <= 47723 && idr - 1 > 36736) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_finance_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_finance_", sep = '/')
         }
         else if (idr - 1 > 47723) {
-            OUTPUT_PATH = paste(OUTPUT_DIR, "m4_stl_monthly_other_", sep = '/')
+            output_path = paste(output_dir, "m4_stl_monthly_other_", sep = '/')
         }
-        OUTPUT_PATH = paste(OUTPUT_PATH, max_forecast_horizon, sep = '')
+        output_path = paste(output_path, max_forecast_horizon, sep = '')
         if (validation) {
-            OUTPUT_PATH = paste(OUTPUT_PATH, 'v', sep = '')
+            output_path = paste(output_path, 'v', sep = '')
         }
-        OUTPUT_PATH = paste(OUTPUT_PATH, 'txt', sep = '.')
+        output_path = paste(output_path, 'txt', sep = '.')
 
         time_series = unlist(m4_dataset[idr], use.names = FALSE)
         time_series_log = log(as.numeric(time_series[2 : length(time_series)]))
@@ -54,7 +53,7 @@ for (validation in c(TRUE, FALSE)) {
             values_vect = as.numeric(sstl$time.series[, 2] + sstl$time.series[, 3])# this is what we are going to work on: sum of the smooth trend and the random component (the seasonality removed)
             cbind(seasonal_vect, levels_vect, values_vect)
         }, error = function(e) {
-            seasonal_vect = rep(0, length(time_series_length))#stl() may fail, and then we would go on with the seasonality vector=0
+            seasonal_vect = rep(0, time_series_length)#stl() may fail, and then we would go on with the seasonality vector=0
             levels_vect = time_series_log
             values_vect = time_series_log
             cbind(seasonal_vect, levels_vect, values_vect)
@@ -86,6 +85,6 @@ for (validation in c(TRUE, FALSE)) {
 
         sav_df[, (3 + time_series_length - max_forecast_horizon) : (2 + time_series_length)] = normalized_values[(length(normalized_values) - max_forecast_horizon + 1) : length(normalized_values)]
 
-        write.table(sav_df, file = OUTPUT_PATH, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
+        write.table(sav_df, file = output_path, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
     }
 }

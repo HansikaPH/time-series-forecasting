@@ -1,11 +1,13 @@
 library(forecast)
 
 # read the data
-file = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/datasets/text_data/M3/Train_Dataset.csv"
+file = "./datasets/text_data/M3/Train_Dataset.csv"
 m3_dataset <- readLines(file)
 m3_dataset <- strsplit(m3_dataset, ',')
 
-output_file_name = "/media/hhew0002/f0df6edb-45fe-4416-8076-34757a0abceb/hhew0002/Academic/Monash University/Research Project/Codes/time-series-forecasting/results/ets_forecasts/m3.txt"
+output_file_name = "./results/ets_forecasts/m3.txt"
+
+unlink(output_file_name)
 
 # calculate the ets forecast
 for (i in 1 : length(m3_dataset)) {
