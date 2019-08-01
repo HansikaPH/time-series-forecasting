@@ -6,10 +6,11 @@
 | `Tensorflow`  | `1.12.0`  |
 | `smac`  | `0.8.0` |
 
-## Env Variables ##
+## Path Variables ##
 
 Set the `PYTHONPATH` env variable of the system. Append absolute paths of both the project root directory and the directory of the `external_packages/cocob_optimizer` into the `PYTHONPATH`  
 
+For R scripts, make sure to set the working directory to the project root folder.
 
 ## Preprocessing the Data ##
 
