@@ -1,0 +1,23 @@
+library(forecast)
+
+# read the data
+file = "./datasets/text_data/M3/Train_Dataset.csv"
+m3_dataset <- readLines(file)
+m3_dataset <- strsplit(m3_dataset, ',')
+
+output_file_name = "./results/ets_forecasts/m3.txt"
+
+unlink(output_file_name)
+
+# calculate the ets forecast
+for (i in 1 : length(m3_dataset)) {
+    time_series = unlist(m3_dataset[i], use.names = FALSE)
+    time_series = as.numeric(time_series[2 : length(time_series)])
+
+    forecasts = forecast(ets(ts(time_series, frequency=12)), h = 18)$mean
+
+    forecasts[forecasts < 0] = 0
+    # write the ets forecasts to file
+    write.table(t(forecasts), file=output_file_name, row.names = F, col.names=F, sep=",", quote=F, append = TRUE)
+}
+
