@@ -15,6 +15,7 @@ for (i in 1 : length(m3_dataset)) {
     time_series = unlist(m3_dataset[i], use.names = FALSE)
     time_series = as.numeric(time_series[2 : length(time_series)])
     fit = NULL
+    forecasts = NULL
     
     tryCatch({
         fit = auto.arima(ts(time_series, frequency = 12), lambda = 0)
@@ -23,7 +24,15 @@ for (i in 1 : length(m3_dataset)) {
     })
     
     if(is.null(fit)){
-      fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
+      tryCatch({
+        fit = auto.arima(ts(time_series, frequency = 12))
+      }, warning = function(e) {
+        print(e)
+      })
+      if(is.null(fit)){
+        fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
+      }
+      
     }
     forecasts = forecast(fit, h=18)$mean
 

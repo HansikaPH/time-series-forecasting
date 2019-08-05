@@ -1,14 +1,14 @@
 library(ggplot2)
 library(reshape2)
 
-# data <- read.csv(file="graph_plotter/ensemble_data/All_MASE_Ranks_Output_Comparison.csv", header=TRUE, sep=",")
-# data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Input_Comparison.csv", header=TRUE, sep=",")
-# data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Cell_Comparison.csv", header=TRUE, sep=",")
-# data <- read.csv(file="graph_plotter/ensemble_data/All_SMAPE_Ranks_Optimizer_Comparison.csv", header=TRUE, sep=",")
-data <- read.csv(file = "graph_plotter/ensemble_data/error_comparison_kaggle_mean_mase.csv", header = TRUE, sep = ",")
-#data <- read.csv(file="graph_plotter/ensemble_data/error_comparison_stacked_rank_smape.csv", header=TRUE, sep=",")
-# data <- read.csv(file="graph_plotter/ensemble_data/All_MASE_Ranks_Input_Size_Comparison_With_STL.csv", header=TRUE, sep=",")
-# data <- read.csv(file="graph_plotter/ensemble_data/stl_comparison_tourism_mean_mase.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/All_MASE_Ranks_Output_Comparison.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/All_MASE_Ranks_Input_Comparison.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/All_SMAPE_Ranks_Cell_Comparison.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/All_SMAPE_Ranks_Optimizer_Comparison.csv", header=TRUE, sep=",")
+data <- read.csv(file = "results/plotting_results/ensemble_data/error_comparison_m4_median_smape.csv", header = TRUE, sep = ",")
+#data <- read.csv(file="results/plotting_results/ensemble_data/error_comparison_stacked_rank_smape.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/All_MASE_Ranks_Input_Size_Comparison_With_STL.csv", header=TRUE, sep=",")
+# data <- read.csv(file="results/plotting_results/ensemble_data/stl_comparison_tourism_mean_mase.csv", header=TRUE, sep=",")
 
 # ggplot(data=cif, aes(x=x, y=Mean_SMAPE_Rank, color=RNN_Unit)) + xlab("RNN Unit Comparison - CIF Dataset") + ylab("Mean SMAPE Ranks") +  theme(text = element_text(size=20), axis.text.x=element_blank(),
 #                                                                                                                                                                     axis.ticks.x=element_blank())
@@ -33,9 +33,9 @@ data <- read.csv(file = "graph_plotter/ensemble_data/error_comparison_kaggle_mea
 #ggplot(data=data, aes(x=x, y=SMAPE, color=Model)) +  xlab("M4 Dataset") + ylab("Mean SMAPE") +  geom_point(size=4) + theme(text = element_text(size=20), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + scale_color_manual(values = c("red", "blue3"))
 
 #comparison with ETS
-ggplot(data = data, aes(x = x, y = MASE, group = Model_Name)) +
-    xlab("Wikipedia Web Traffic Dataset") +
-    ylab("Mean MASE") +
+ggplot(data = data, aes(x = x, y = SMAPE, group = Model_Name)) +
+    xlab("M4 Dataset") +
+    ylab("Median SMAPE") +
     geom_point(aes(color = Model_Name, shape = Model_Name, size= Model_Name)) +
     theme(text = element_text(size = 20), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
     scale_color_manual(values = c("red", "gold1", "blue3", "darkorchid1", "forestgreen", "gray0")) +
@@ -79,7 +79,7 @@ ggplot(data = data, aes(x = x, y = MASE, group = Model_Name)) +
 # p + geom_violin() + geom_boxplot(width=0.1, aes(fill=Optimizer)) +
 #  xlab("Optimizer") + ylab("Mean SMAPE Ranks") + theme(text = element_text(size=20), legend.position = "none")
 
-# input component
-#p <- ggplot(data, aes(factor(Input_Format), Mean_SMAPE_Rank))
-#p + geom_violin() + geom_boxplot(width=0.1, aes(fill=Input_Format)) +
-#  xlab("Input Format for S2SD Architecture") + ylab("Mean SMAPE Ranks") + theme(text = element_text(size=20), legend.position = "none")
+# input format
+# p <- ggplot(data, aes(factor(Input_Format), Mean_SMAPE_Rank))
+# p + geom_violin() + geom_boxplot(width=0.1, aes(fill=Input_Format)) +
+#  xlab("Input Format for S2SD Architecture") + ylab("Mean MASE Ranks") + theme(text = element_text(size=20), legend.position = "none")

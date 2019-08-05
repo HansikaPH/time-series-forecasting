@@ -13,6 +13,7 @@ for (i in 1 : nrow(nn5_dataset)) {
 
     time_series = nn5_dataset[i,]
     fit = NULL
+    forecasts = NULL
      
     tryCatch({
         fit = auto.arima(ts(time_series, frequency = 7), lambda = 0)
@@ -21,7 +22,15 @@ for (i in 1 : nrow(nn5_dataset)) {
     })
     
     if(is.null(fit)){
-      fit = auto.arima(ts(time_series, frequency = 7), seasonal = FALSE)
+      tryCatch({
+        fit = auto.arima(ts(time_series, frequency = 7))
+      }, warning = function(e) {
+        print(e)
+      })
+      if(is.null(fit)){
+        fit = auto.arima(ts(time_series, frequency = 7), seasonal = FALSE)
+      }
+      
     }
     forecasts = forecast(fit, h=56)$mean
 

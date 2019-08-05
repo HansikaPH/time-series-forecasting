@@ -10,7 +10,7 @@ seasonality_period = as.numeric(args[6])
 technique = args[7]
 
 base_dir = "./"
-errors_dir = paste(base_dir, "results/errors/", sep="")
+errors_dir = paste(base_dir, "results/ensemble_errors/", sep="")
 forecast_file = paste(base_dir, forecast_file, sep="")
 actual_forecasts_file = paste(base_dir, actual_forecasts_file, sep="")
 

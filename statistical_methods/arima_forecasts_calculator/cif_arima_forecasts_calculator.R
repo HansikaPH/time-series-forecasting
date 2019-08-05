@@ -21,6 +21,8 @@ for (i in 1 : length(cif_dataset_o6)) {
     time_series = as.numeric(time_series[1 : length(time_series)])
 
     fit = NULL
+    forecasts = NULL
+    
     if (length(time_series) < 24) {
         fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
     }else {
@@ -29,10 +31,17 @@ for (i in 1 : length(cif_dataset_o6)) {
         }, warning = function(e) {
           print(e)
         })
-    }
-    
-    if(is.null(fit)){
-      fit = auto.arima(ts(time_series, frequency = 12), stationary = TRUE)
+        if(is.null(fit)){
+          tryCatch({
+            fit = auto.arima(ts(time_series, frequency = 12))
+          }, warning = function(e) {
+            print(e)
+          })
+          if(is.null(fit)){
+            fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
+          }
+            
+        }
     }
     
     forecasts = forecast(fit, h=6)$mean
@@ -47,6 +56,8 @@ for (i in 1 : length(cif_dataset_o12)) {
     time_series = as.numeric(time_series[1 : length(time_series)])
 
     fit = NULL
+    forecasts = NULL
+    
     if (length(time_series) < 24) {
         fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
     }else {
@@ -55,10 +66,16 @@ for (i in 1 : length(cif_dataset_o12)) {
         }, warning = function(e) {
           print(e)
         })
-    }
-    
-    if(is.null(fit)){
-      fit = auto.arima(ts(time_series, frequency = 12), stationary = TRUE)
+      if(is.null(fit)){
+        tryCatch({
+          fit = auto.arima(ts(time_series, frequency = 12))
+        }, warning = function(e) {
+          print(e)
+        })
+        if(is.null(fit)){
+          fit = auto.arima(ts(time_series, frequency = 12), seasonal = FALSE)
+        }
+      }
     }
     
     forecasts = forecast(fit, h=12)$mean
