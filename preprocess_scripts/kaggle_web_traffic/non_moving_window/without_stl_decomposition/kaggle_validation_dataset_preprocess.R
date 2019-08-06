@@ -32,5 +32,5 @@ for (idr in 1: nrow(numeric_dataset)) {
   sav_df[,'nyb']='|#' 
   sav_df[,'level']=level
   
-  # write.table(sav_df, file=output_path, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
+  write.table(sav_df, file=output_path, row.names = F, col.names=F, sep=" ", quote=F, append = TRUE)
 }#through all series from one file

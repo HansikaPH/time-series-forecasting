@@ -8,7 +8,7 @@ nn5_dataset <-as.data.frame(file)
 max_forecast_horizon=56
 seasonality_period=7
 input_size_multiple=1.25
-input_size = round(max_forecast_horizon * input_size_multiple)
+input_size = round(seasonality_period * input_size_multiple)
 
 output_path=paste(output_dir,"nn5_",sep='/')
 output_path=paste(output_path,max_forecast_horizon,sep='')
