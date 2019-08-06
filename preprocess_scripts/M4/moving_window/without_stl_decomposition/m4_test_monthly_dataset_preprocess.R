@@ -13,27 +13,27 @@ unlink(paste(output_dir, "m4_test_monthly_*", sep=""))
 for (idr in 2 : length(m4_dataset)) {
     if (idr - 1 <= 10016 && idr - 1 >= 1) { #Macro Series
         input_size = 15
-        output_path = paste(output_dir, "m4_test_monthly_macro", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_macro_", sep = '/')
     }
     else if (idr - 1 <= 20991 && idr - 1 > 10016) {
         input_size = 15
-        output_path = paste(output_dir, "m4_test_monthly_micro", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_micro_", sep = '/')
     }
     else if (idr - 1 <= 26719 && idr - 1 > 20991) {
         input_size = 15
-        output_path = paste(output_dir, "m4_test_monthly_demo", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_demo_", sep = '/')
     }
     else if (idr - 1 <= 36736 && idr - 1 > 26719) {
         input_size = 15
-        output_path = paste(output_dir, "m4_test_monthly_industry", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_industry_", sep = '/')
     }
     else if (idr - 1 <= 47723 && idr - 1 > 36736) {
         input_size = 15
-        output_path = paste(output_dir, "m4_test_monthly_finance", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_finance_", sep = '/')
     }
     else if (idr - 1 > 47723) {
         input_size = 5
-        output_path = paste(output_dir, "m4_test_monthly_other", sep = '/')
+        output_path = paste(output_dir, "m4_test_monthly_other_", sep = '/')
     }
 
     output_path = paste(output_path, max_forecast_horizon, sep = '')
