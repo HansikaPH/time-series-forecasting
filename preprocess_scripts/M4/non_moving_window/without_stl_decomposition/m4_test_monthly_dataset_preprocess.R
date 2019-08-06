@@ -2,7 +2,7 @@ output_dir = "./datasets/text_data/M4/non_moving_window/without_stl_decompositio
 suppressWarnings(dir.create(output_dir, recursive=TRUE)) # create the output directory if not existing
 input_file = "./datasets/text_data/M4/Monthly-train.csv"
 
-m4_dataset <- readLines(file)
+m4_dataset <- readLines(input_file)
 m4_dataset <- strsplit(m4_dataset, ',')
 
 max_forecast_horizon = 18
