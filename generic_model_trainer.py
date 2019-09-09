@@ -22,14 +22,10 @@ from rnn_architectures.stacking_model.stacking_model_trainer import \
 # seq2seq model with decoder
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
     Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.accumulated_error.seq2seq_model_trainer import \
-    Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError
 
 # seq2seq model with dense layer
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumulated_error.seq2seq_model_trainer import \
-    Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError
 from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_trainer import \
     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerMovingWindow
 
@@ -308,16 +304,10 @@ if __name__ == '__main__':
     if model_type == "stacking":
         model_trainer = StackingModelTrainer(**model_kwargs)
     elif model_type == "seq2seq":
-        if with_accumulated_error:
-            model_trainer = Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError(**model_kwargs)
-        else:
-            model_trainer = Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError(**model_kwargs)
+        model_trainer = Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            if with_accumulated_error:
-                model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError(**model_kwargs)
-            else:
-                model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
+            model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
 

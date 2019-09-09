@@ -10,14 +10,10 @@ from rnn_architectures.stacking_model.stacking_model_tester import \
 # seq2seq model with decoder
 from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.unaccumulated_error.seq2seq_model_tester import \
     Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindowUnaccumulatedError
-from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.accumulated_error.seq2seq_model_tester import \
-    Seq2SeqModelTester as Seq2SeqModelTesterWithNonMovingWindowAccumulatedError
 
 # seq2seq model with dense layer
 from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.unaccumulated_error.seq2seq_model_tester import \
     Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError
-from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumulated_error.seq2seq_model_tester import \
-    Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerNonMovingWindowAccumulatedError
 from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_tester import \
     Seq2SeqModelTesterWithDenseLayer as Seq2SeqModelTesterWithDenseLayerMovingWindow
 
@@ -147,16 +143,10 @@ def testing(args, config_dictionary):
     if model_type == "stacking":
         model_tester = StackingModelTester(**model_kwargs)
     elif model_type == "seq2seq":
-        if with_accumulated_error:
-            model_tester = Seq2SeqModelTesterWithNonMovingWindowAccumulatedError(**model_kwargs)
-        else:
-            model_tester = Seq2SeqModelTesterWithNonMovingWindowUnaccumulatedError(**model_kwargs)
+        model_tester = Seq2SeqModelTesterWithNonMovingWindowUnaccumulatedError(**model_kwargs)
     elif model_type == "seq2seqwithdenselayer":
         if input_format == "non_moving_window":
-            if with_accumulated_error:
-                model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowAccumulatedError(**model_kwargs)
-            else:
-                model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
+            model_tester = Seq2SeqModelTesterWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
         elif input_format == "moving_window":
             model_tester = Seq2SeqModelTesterWithDenseLayerMovingWindow(**model_kwargs)
 
