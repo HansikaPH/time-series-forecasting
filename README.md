@@ -90,6 +90,9 @@ For datasets that have different clusters such as the M3, M4 and CIF 2016, the `
 #### Generating the Error Summaries ####
 The `utility_scripts/error_summary_scripts/error_summary_generator.py` script creates the error summaries given the name of the dataset. Calculates the mean, median and ranked error values.
 
+## Experiment Results ##
+
+The results from our experiments are available as csv files in the Google Drive folder at this [link](https://drive.google.com/drive/folders/1MrIRsNeIUHt3C9zsy0XvBbKWISRQa-S7?usp=sharing)
 ## Citing Our Work ##
 
 When using this repository, please cite:
