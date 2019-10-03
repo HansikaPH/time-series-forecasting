@@ -136,7 +136,7 @@ class StackingModelTester:
                                                                      padded_shapes=(
                                                                          [], [tf.Dimension(None), self.__input_size],
                                                                          [tf.Dimension(None), self.__output_size],
-                                                                         [tf.Dimension(None), self.__output_size + 1]))
+                                                                         [tf.Dimension(None), self.__meta_data_size]))
 
         # get an iterator to the batches
         training_data_batch_iterator = padded_training_data_batches.make_initializable_iterator()
@@ -150,7 +150,7 @@ class StackingModelTester:
         # create a single batch from all the test time series by padding the datasets to make the variable sequence lengths fixed
         padded_test_input_data = test_dataset.padded_batch(batch_size=int(minibatch_size),
                                                            padded_shapes=([], [tf.Dimension(None), self.__input_size],
-                                                                          [tf.Dimension(None), self.__output_size + 1]))
+                                                                          [tf.Dimension(None), self.__meta_data_size]))
 
         # get an iterator to the test input data batch
         test_input_iterator = padded_test_input_data.make_one_shot_iterator()

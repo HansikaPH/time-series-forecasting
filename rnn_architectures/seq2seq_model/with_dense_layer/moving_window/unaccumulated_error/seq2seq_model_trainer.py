@@ -150,7 +150,7 @@ class Seq2SeqModelTrainerWithDenseLayer:
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
         validation_padded_shapes = (
             [], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size],
-            [tf.Dimension(None), self.__output_size + 1])
+            [tf.Dimension(None), self.__meta_data_size])
 
         # preparing the training data
         shuffle_seed = tf.placeholder(dtype=tf.int64, shape=[])
