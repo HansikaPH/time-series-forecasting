@@ -41,6 +41,8 @@ preprocess_scripts/NN3/*
 preprocess_scripts/Solar_Data/*
 preprocess_scripts/CIF_2016/moving_window/create_augmented_tfrecords.py
 
+utility_scripts/execution_scripts/cif2016_augmented_experiments.sh
+
 
 
 
