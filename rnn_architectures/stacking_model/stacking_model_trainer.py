@@ -130,7 +130,7 @@ class StackingModelTrainer:
         train_padded_shapes = ([], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size])
         validation_padded_shapes = (
         [], [tf.Dimension(None), self.__input_size], [tf.Dimension(None), self.__output_size],
-        [tf.Dimension(None), self.__output_size + 1])
+        [tf.Dimension(None), self.__meta_data_size])
 
         # prepare the training data into batches
         # randomly shuffle the time series within the dataset and repeat for the value of the epoch size
