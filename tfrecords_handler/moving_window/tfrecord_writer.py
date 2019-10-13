@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -87,12 +88,13 @@ class TFRecordWriter:
     # write the train and validation text data into tfrecord file
     def write_train_data_to_tfrecord_file(self):
 
-        writer = tf.python_io.TFRecordWriter(self.__binary_train_file_path, tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB))
+        writer = tf.io.TFRecordWriter(self.__binary_train_file_path, tf.io.TFRecordOptions(compression_type="ZLIB"))
 
         # write the training data file in tfrecords format
         for input, output in zip(self.__list_of_training_inputs, self.__list_of_training_outputs):
 
             sequence_length = input.shape[0]
+
             sequence_example = tf.train.SequenceExample(
                 context=tf.train.Features(feature={
                     "sequence_length" : tf.train.Feature(int64_list=tf.train.Int64List(value=[sequence_length]))
@@ -112,8 +114,7 @@ class TFRecordWriter:
     # write the train and validation text data into tfrecord file
     def write_validation_data_to_tfrecord_file(self):
 
-        writer = tf.python_io.TFRecordWriter(self.__binary_validation_file_path, tf.python_io.TFRecordOptions(
-            tf.python_io.TFRecordCompressionType.ZLIB))
+        writer = tf.io.TFRecordWriter(self.__binary_validation_file_path, tf.io.TFRecordOptions(compression_type="ZLIB"))
 
         # write the training data file in tfrecords format
         for input, output, metadata in zip(self.__list_of_validation_inputs, self.__list_of_validation_outputs, self.__list_of_validation_metadata):
@@ -141,7 +142,7 @@ class TFRecordWriter:
     # write the test text data into tfrecord file
     def write_test_data_to_tfrecord_file(self):
 
-        writer = tf.python_io.TFRecordWriter(self.__binary_test_file_path, tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB))
+        writer = tf.io.TFRecordWriter(self.__binary_test_file_path, tf.io.TFRecordOptions(compression_type="ZLIB"))
 
         # write the training data file in tfrecords format
         for input, metadata in zip(self.__list_of_test_inputs, self.__list_of_test_metadata):

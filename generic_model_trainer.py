@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 import argparse
 from utility_scripts.persist_optimized_config_results import persist_results
-from generic_model_tester import testing
+from utility_scripts.hyperparameter_scripts.hyperparameter_config_reader import read_optimal_hyperparameter_values
+# from generic_model_tester import testing
 from utility_scripts.hyperparameter_scripts.hyperparameter_config_reader import read_initial_hyperparameter_values
 
 # import the config space and the different types of parameters
@@ -16,7 +17,7 @@ from smac.facade.smac_facade import SMAC
 ## import the different model architectures
 
 # stacking model
-from rnn_architectures.stacking_model.stacking_model_trainer import \
+from rnn_architectures.stacking_model_tf2.stacking_model_trainer import \
     StackingModelTrainer as StackingModelTrainer
 
 # seq2seq model with decoder
@@ -37,9 +38,11 @@ from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulate
 from external_packages import cocob_optimizer
 
 from configs.global_configs import hyperparameter_tuning_configs
-from configs.global_configs import model_training_configs
+from configs.global_configs import model_testing_configs
 
 import csv
+
+from utility_scripts.invoke_r_final_evaluation import invoke_r_script
 
 LSTM_USE_PEEPHOLES = True
 BIAS = False
@@ -62,15 +65,13 @@ def cocob_optimizer_fn(total_loss):
 
 # Training the time series
 def train_model_smac(configs):
-    error, _ = train_model(configs)
-    return error
+    error = train_model(configs)
+    return error.item()
 
 # final execution with the optimized config
 def train_model(configs):
     if "rate_of_learning" in configs.keys():
         rate_of_learning = configs["rate_of_learning"]
-        global learning_rate
-        learning_rate = rate_of_learning
     cell_dimension = configs["cell_dimension"]
     num_hidden_layers = configs["num_hidden_layers"]
     minibatch_size = configs["minibatch_size"]
@@ -83,7 +84,17 @@ def train_model(configs):
     print(configs)
 
     # select the appropriate type of optimizer
-    error, error_list = model_trainer.train_model(num_hidden_layers=num_hidden_layers,
+    # error, error_list = model_trainer.train_model(num_hidden_layers=num_hidden_layers,
+    #                                   cell_dimension=cell_dimension,
+    #                                   minibatch_size=minibatch_size,
+    #                                   max_epoch_size=max_epoch_size,
+    #                                   max_num_epochs=max_num_epochs,
+    #                                   l2_regularization=l2_regularization,
+    #                                   gaussian_noise_stdev=gaussian_noise_stdev,
+    #                                   random_normal_initializer_stdev=random_normal_initializer_stdev,
+    #                                   optimizer_fn=optimizer_fn)
+
+    error = model_trainer.build_model(num_hidden_layers=num_hidden_layers,
                                       cell_dimension=cell_dimension,
                                       minibatch_size=minibatch_size,
                                       max_epoch_size=max_epoch_size,
@@ -91,10 +102,12 @@ def train_model(configs):
                                       l2_regularization=l2_regularization,
                                       gaussian_noise_stdev=gaussian_noise_stdev,
                                       random_normal_initializer_stdev=random_normal_initializer_stdev,
-                                      optimizer_fn=optimizer_fn)
-
+                                      optimizer=optimizer
+                                      # ,initial_learning_rate = rate_of_learning
+    )
     print(model_identifier)
-    return error, error_list
+    print(error)
+    return error
 
 def smac():
     # Build Configuration Space which defines all parameters and their ranges
@@ -217,6 +230,7 @@ if __name__ == '__main__':
     initial_hyperparameter_values_file = args.initial_hyperparameter_values_file
     binary_train_file_path_train_mode = args.binary_train_file_train_mode
     binary_validation_file_path_train_mode = args.binary_valid_file_train_mode
+    binary_test_file_path_test_mode = args.binary_test_file_test_mode
     contain_zero_values = int(args.contain_zero_values)
 
     if args.input_size:
@@ -229,6 +243,10 @@ if __name__ == '__main__':
     hyperparameter_tuning = args.hyperparameter_tuning
     model_type = args.model_type
     input_format = args.input_format
+    txt_test_file_path = args.txt_test_file
+    actual_results_file_path = args.actual_results_file
+    original_data_file_path = args.original_data_file
+    seasonality_period = int(args.seasonality_period)
     seed = int(args.seed)
 
     if args.without_stl_decomposition:
@@ -276,8 +294,7 @@ if __name__ == '__main__':
     else:
         accumulated_error_identifier = "without_accumulated_error"
 
-    model_identifier = dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + accumulated_error_identifier + "_" + str(
-        seed)
+    model_identifier = "tf2" + dataset_name + "_" + model_type + "_" + cell_type + "cell" + "_" + input_format + "_" + stl_decomposition_identifier + "_" + hyperparameter_tuning + "_" + optimizer + "_" + tbptt_identifier + "_" + accumulated_error_identifier
     print("Model Training Started for {}".format(model_identifier))
 
     # select the optimizer
@@ -295,6 +312,7 @@ if __name__ == '__main__':
         'input_size': input_size,
         'output_size': output_size,
         'binary_train_file_path': binary_train_file_path_train_mode,
+        'binary_test_file_path': binary_test_file_path_test_mode,
         'binary_validation_file_path': binary_validation_file_path_train_mode,
         'contain_zero_values': contain_zero_values,
         'address_near_zero_instability': address_near_zero_instability,
@@ -321,27 +339,54 @@ if __name__ == '__main__':
         elif input_format == "moving_window":
             model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
 
-    # read the initial hyperparamter configurations from the file
+    # # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values(initial_hyperparameter_values_file)
+    # model_trainer.create_datasets()
     optimized_configuration = smac()
 
-    # persist the optimized configuration to a file
-    persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
-
-    # get the validation errors for the best hyperparameter configs
-    smape_error, smape_error_list = train_model(optimized_configuration)
-
-
-    # write the final list of validation errors to a file
-    validation_errors_file = model_training_configs.VALIDATION_ERRORS_DIRECTORY + model_identifier + ".csv"
-    with open(validation_errors_file, "w") as output:
-        writer = csv.writer(output, lineterminator='\n')
-        writer.writerow(smape_error_list)
-
-    print("Optimized configuration: {}".format(optimized_configuration))
-    print("Optimized Value: {}\n".format(smape_error))
-
+    # # persist the optimized configuration to a file
+    # persist_results(optimized_configuration, optimized_config_directory + '/' + model_identifier + '.txt')
+    #
+    # # get the validation errors for the best hyperparameter configs
+    # smape_error, smape_error_list = train_model(optimized_configuration)
+    #
+    #
+    # # write the final list of validation errors to a file
+    # validation_errors_file = model_training_configs.VALIDATION_ERRORS_DIRECTORY + model_identifier + ".csv"
+    # with open(validation_errors_file, "w") as output:
+    #     writer = csv.writer(output, lineterminator='\n')
+    #     writer.writerow(smape_error_list)
+    #
+    # print("Optimized configuration: {}".format(optimized_configuration))
+    # print("Optimized Value: {}\n".format(smape_error))
+    #
     # test the model
+    # for i in range(1, 11):
+    #     model_identifier_1 = model_identifier + str(i)
+    #     args.seed = i
+    # optimized_configuration = read_optimal_hyperparameter_values("results/optimized_configurations/" + model_identifier + ".txt")
+    print(optimized_configuration)
+    optimized_configuration["optimizer"] = "cocob"
+    # for i in range(1,5):
+    #     model_trainer.build_model(optimized_configuration)
+
     for i in range(1, 11):
-        args.seed = i
-        testing(args, optimized_configuration)
+        forecasts = model_trainer.test_model(optimized_configuration, i)
+
+        model_identifier_1 = model_identifier + "_" + str(i)
+        rnn_forecasts_file_path = model_testing_configs.RNN_FORECASTS_DIRECTORY + model_identifier_1 + '.txt'
+        print(rnn_forecasts_file_path)
+
+        with open(rnn_forecasts_file_path, "w") as output:
+            writer = csv.writer(output, lineterminator='\n')
+            writer.writerows(forecasts)
+
+        # invoke the final evaluation R script
+        error_file_name = model_identifier_1 + '.txt'
+
+        invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
+                         actual_results_file_path, original_data_file_path, str(input_size), str(output_size),
+                         str(contain_zero_values), str(int(address_near_zero_instability)),
+                         str(int(integer_conversion)), str(int(seasonality_period)),
+                         str(int(without_stl_decomposition))), True)
+
