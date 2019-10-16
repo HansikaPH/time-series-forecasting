@@ -29,6 +29,7 @@ generic_model_tester_3.py
 **/tbptt*/*
 
 datasets/
+results/
 
 **/attention*/*
 rnn_architectures/seq2seq_model/with_dense_layer/non_moving_window/accumulated_error/*
