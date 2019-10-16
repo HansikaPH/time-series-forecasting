@@ -80,9 +80,12 @@ Then the found optimal hyperparameter combination is used on the respective mode
 #### Ensembling Forecasts ####
 The forecasts from the 10 seeds are ensembled by taking the median. The `utility_scripts/error_summary_scripts/ensembling_forecasts.py` script does this. The ensembled forecasts are written to the directory `results/ensemble_rnn_forecasts`.
 
-#### Error Calculation ####
-The SMAPE and MASE errors are calculated per each series for each model using the error calcualtion scripts in the directory `error_calculator`. The script perform the post processing of the forecasts to reverse initial preprocessing. The errors of the ensembles are written to the directory `results/ensemble_errors`. 
+Example: `python ensembling_forecasts.py --dataset_name nn5_adam`
 
+#### Error Calculation ####
+The SMAPE and MASE errors are calculated per each series for each model using the error calcualtion scripts in the directory `error_calculator`. The script perform the post processing of the forecasts to reverse initial preprocessing. The errors of the ensembles are written to the directory `results/ensemble_errors`.
+
+Example: `Rscript error_calculator/moving_window/final_evaluation.R results/ensemble_rnn_forecasts/nn5_ensemble /results/ensemble_errors/ /results/ensemble_processed_rnn_forecasts/ nn5_ensemble_error datasets/text_data/NN5/moving_window/nn5_test12i15.txt datasets/text_data/NN5/nn5_test.txt datasets/text_data/NN5/nn5_train.txt 70 56 0 0 1 7 0`
 
 #### Merging Cluster Results ####
 For datasets that have different clusters such as the M3, M4 and CIF 2016, the `utility_scripts/error_summary_scripts/cluster_results_merger.py` script merges the results from different clusters into one file.
