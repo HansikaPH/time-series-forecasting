@@ -24,7 +24,7 @@ num_hidden_layers - 1, 2
 # 0.5 - 0.9 for stacking and 0.003 - 0.008 for other models
 
 ## for adagrad 0.0001, 0.0008
-initial_learning_rate - 0.01, 0.9
+rate_of_learning - 0.01, 0.9
 
 rate_of_decay - 0.7, 1
 

@@ -123,8 +123,30 @@ class StackingModel:
     def __build_model(self, random_normal_initializer_stdev, num_hidden_layers, cell_dimension, l2_regularization, optimizer):
         initializer = tf.keras.initializers.TruncatedNormal(stddev=random_normal_initializer_stdev)
 
-        self.__model = tf.keras.models.Sequential()
-        self.__model.add(tf.keras.layers.Masking(mask_value = 0.0, input_shape=(None, self.__input_size)))
+        # model from the functional API
+        input = tf.keras.Input(shape=(None, self.__input_size), name='inputs')
+        masked_output = tf.keras.layers.Masking(mask_value=0.0)(input)
+
+        # lstm stack
+        next_input = masked_output
+        for i in range(num_hidden_layers):
+            lstm_output = tf.keras.layers.RNN(tf.keras.experimental.PeepholeLSTMCell(cell_dimension, kernel_initializer=initializer), return_sequences=True) (next_input)
+            next_input = lstm_output
+
+        # dense layer to make the dimensions equal for the residual connection
+        # dense_layer_output_1 = tf.keras.layers.Dense(self.__input_size, use_bias=self.__use_bias,
+        #                                            kernel_initializer=initializer)(next_input)
+
+        # dense layer
+        # dense_layer_output = tf.keras.layers.Dense(self.__output_size, use_bias=self.__use_bias, kernel_initializer=initializer) (dense_layer_output_1 + masked_output)
+        dense_layer_output = tf.keras.layers.Dense(self.__output_size, use_bias=self.__use_bias, kernel_initializer=initializer) (masked_output)
+
+        # build the model
+        self.__model = tf.keras.Model(inputs=input, outputs=dense_layer_output, name='stacking_model')
+
+        # model from the sequential API
+        # self.__model = tf.keras.models.Sequential()
+        # self.__model.add(tf.keras.layers.Masking(mask_value = 0.0, input_shape=(None, self.__input_size)))
 
         # for normal lstm cells
         # for i in range(num_hidden_layers):
@@ -132,17 +154,21 @@ class StackingModel:
         #     model.add(lstm_layer)
 
         # for lstm cells with peephole connections
-        lstm_stacks = []
-        for layers in range(num_hidden_layers):
-            lstm_stacks.append(tf.keras.experimental.PeepholeLSTMCell(cell_dimension,
-                                                                      kernel_initializer=initializer
-                                                                      ))
+        # lstm_stacks = []
+        # for layers in range(num_hidden_layers):
+        #     lstm_stacks.append(tf.keras.experimental.PeepholeLSTMCell(cell_dimension,
+        #                                                               kernel_initializer=initializer
+        #                                                               ))
 
         # create RNN layer from lstm stacks
-        rnn_layer = tf.keras.layers.RNN(lstm_stacks, return_sequences=True)
-        self.__model.add(rnn_layer)
+        # rnn_layer = tf.keras.layers.RNN(lstm_stacks, return_sequences=True)
+        # self.__model.add(rnn_layer)
 
-        self.__model.add( tf.keras.layers.Dense(self.__output_size, use_bias = self.__use_bias, kernel_initializer=initializer))
+        # self.__model.add( tf.keras.layers.Dense(self.__output_size, use_bias = self.__use_bias, kernel_initializer=initializer))
+
+        # plot the model to validate
+        self.__model.summary()
+        # tf.keras.utils.plot_model(self.__model)
 
         def custom_mae(y_true, y_pred):
             error = tf.keras.losses.mae(y_true, y_pred)
