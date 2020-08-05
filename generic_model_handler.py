@@ -1,40 +1,27 @@
 import numpy as np
 import argparse
 import csv
-
+import glob
+import os
 
 from utility_scripts.persist_optimized_config_results import persist_results
 # from utility_scripts.hyperparameter_scripts.hyperparameter_config_reader import read_optimal_hyperparameter_values
 from utility_scripts.hyperparameter_scripts.hyperparameter_config_reader import read_initial_hyperparameter_values
 from configs.global_configs import hyperparameter_tuning_configs
 from configs.global_configs import model_testing_configs
-from utility_scripts.invoke_r_final_evaluation import invoke_r_script
+from utility_scripts.invoke_final_evaluation import invoke_script
+from utility_scripts.ensembling_forecasts import ensembling_forecasts
 
 # import SMAC utilities
 # import the config space and the different types of parameters
 from smac.configspace import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
 from smac.scenario.scenario import Scenario
-from smac.facade.smac_facade import SMAC
-
-## import the different model architectures
+from smac.facade.smac_hpo_facade import SMAC4HPO
 
 # stacking model
 from rnn_architectures.stacking_model import StackingModel
 
-# # seq2seq model with decoder
-# from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
-#     Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError
-# from rnn_architectures.seq2seq_model.with_decoder.non_moving_window.accumulated_error.seq2seq_model_trainer import \
-#     Seq2SeqModelTrainer as Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError
-#
-# # seq2seq model with dense layer
-# from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.unaccumulated_error.seq2seq_model_trainer import \
-#     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError
-# from rnn_architectures.seq2seq_model.with_dense_layer.non_moving_window.accumulated_error.seq2seq_model_trainer import \
-#     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError
-# from rnn_architectures.seq2seq_model.with_dense_layer.moving_window.unaccumulated_error.seq2seq_model_trainer import \
-#     Seq2SeqModelTrainerWithDenseLayer as Seq2SeqModelTrainerWithDenseLayerMovingWindow
 
 LSTM_USE_PEEPHOLES = True
 BIAS = False
@@ -128,14 +115,13 @@ def smac():
     })
 
     # optimize using an SMAC object
-    smac = SMAC(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model)
+    smac = SMAC4HPO(scenario=scenario, rng=np.random.RandomState(seed), tae_runner=train_model)
 
     incumbent = smac.optimize()
     return incumbent.get_dictionary()
 
 
 if __name__ == '__main__':
-
     argument_parser = argparse.ArgumentParser("Train different forecasting models")
     argument_parser.add_argument('--dataset_name', required=True, help='Unique string for the name of the dataset')
     argument_parser.add_argument('--contain_zero_values', required=False,
@@ -166,13 +152,8 @@ if __name__ == '__main__':
     argument_parser.add_argument('--seasonality_period', required=True, help='The seasonality period of the time series')
     argument_parser.add_argument('--forecast_horizon', required=True, help='The forecast horizon of the dataset')
     argument_parser.add_argument('--optimizer', required=False, help='The type of the optimizer(cocob/adam/adagrad...). Default is cocob')
-    argument_parser.add_argument('--model_type', required=False,
-                                 help='The type of the model(stacking/seq2seq/seq2seqwithdenselayer). Default is stacking')
-    argument_parser.add_argument('--input_format', required=False, help='Input format(moving_window/non_moving_window). Default is moving_window')
     argument_parser.add_argument('--without_stl_decomposition', required=False,
                                  help='Whether not to use stl decomposition(0/1). Default is 0')
-    argument_parser.add_argument('--with_accumulated_error', required=False,
-                                 help='Whether not to use accumulated error when calculating the loss(0/1). Default is 0')
 
     # parse the user arguments
     args = argument_parser.parse_args()
@@ -207,16 +188,6 @@ if __name__ == '__main__':
     else:
         optimizer = "cocob"
 
-    if args.model_type:
-        model_type = args.model_type
-    else:
-        model_type = "stacking"
-
-    if args.input_format:
-        input_format = args.input_format
-    else:
-        input_format = "moving_window"
-
     if args.without_stl_decomposition:
         without_stl_decomposition = bool(int(args.without_stl_decomposition))
     else:
@@ -237,24 +208,14 @@ if __name__ == '__main__':
     else:
         integer_conversion = False
 
-    if args.with_accumulated_error:
-        with_accumulated_error = bool(int(args.with_accumulated_error))
-    else:
-        with_accumulated_error = False
-
     if without_stl_decomposition:
         stl_decomposition_identifier = "without_stl_decomposition"
     else:
         stl_decomposition_identifier = "with_stl_decomposition"
 
-    if with_accumulated_error:
-        accumulated_error_identifier = "with_accumulated_error"
-    else:
-        accumulated_error_identifier = "without_accumulated_error"
 
-
-    model_identifier = dataset_name + "_" + model_type + "_" + input_format + "_" + cell_type + "cell" + "_" +  optimizer + "_" + \
-                       stl_decomposition_identifier + "_" + accumulated_error_identifier
+    model_identifier = dataset_name + "_" + cell_type + "cell" + "_" +  optimizer + "_" + \
+                       stl_decomposition_identifier
     print("Model Training Started for {}".format(model_identifier))
 
 
@@ -278,21 +239,11 @@ if __name__ == '__main__':
     }
 
     # select the model type
-    if model_type == "stacking":
-        model = StackingModel(**model_kwargs)
-    # elif model_type == "seq2seq":
-    #     if with_accumulated_error:
-    #         model_trainer = Seq2SeqModelTrainerWithNonMovingWindowAccumulatedError(**model_kwargs)
-    #     else:
-    #         model_trainer = Seq2SeqModelTrainerWithNonMovingWindowUnaccumulatedError(**model_kwargs)
-    # elif model_type == "seq2seqwithdenselayer":
-    #     if input_format == "non_moving_window":
-    #         if with_accumulated_error:
-    #             model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowAccumulatedError(**model_kwargs)
-    #         else:
-    #             model_trainer = Seq2SeqModelTrainerWithDenseLayerNonMovingWindowUnaccumulatedError(**model_kwargs)
-    #     elif input_format == "moving_window":
-    #         model_trainer = Seq2SeqModelTrainerWithDenseLayerMovingWindow(**model_kwargs)
+    model = StackingModel(**model_kwargs)
+
+    # delete hyperparameter configs files if existing
+    for file in glob.glob(hyperparameter_tuning_configs.OPTIMIZED_CONFIG_DIRECTORY + model_identifier + "*"):
+        os.remove(file)
 
     # read the initial hyperparamter configurations from the file
     hyperparameter_values_dic = read_initial_hyperparameter_values(initial_hyperparameter_values_file)
@@ -302,24 +253,40 @@ if __name__ == '__main__':
     # persist the optimized configuration to a file
     persist_results(optimized_configuration, hyperparameter_tuning_configs.OPTIMIZED_CONFIG_DIRECTORY + '/' + model_identifier + '.txt')
 
+    # delete the forecast files if existing
+    for file in glob.glob(
+            model_testing_configs.FORECASTS_DIRECTORY + model_identifier + "*"):
+        os.remove(file)
+
     # optimized_configuration = read_optimal_hyperparameter_values("results/optimized_configurations/" + model_identifier + ".txt")
 
     for seed in range(1, 11):
         forecasts = model.test_model(optimized_configuration, seed)
 
         model_identifier_extended = model_identifier + "_" + str(seed)
-        rnn_forecasts_file_path = model_testing_configs.RNN_FORECASTS_DIRECTORY + model_identifier_extended + '.txt'
+        rnn_forecasts_file_path = model_testing_configs.FORECASTS_DIRECTORY + model_identifier_extended + '.txt'
 
         with open(rnn_forecasts_file_path, "w") as output:
             writer = csv.writer(output, lineterminator='\n')
             writer.writerows(forecasts)
 
-        # invoke the final evaluation R script
-        error_file_name = model_identifier_extended + '.txt'
+    # ensemble the forecasts
+    ensembling_forecasts(model_identifier, model_testing_configs.FORECASTS_DIRECTORY,
+                         model_testing_configs.ENSEMBLE_FORECASTS_DIRECTORY)
 
-        invoke_r_script((rnn_forecasts_file_path, error_file_name, txt_test_file_path,
-                         actual_results_file_path, original_data_file_path, str(input_size), str(output_size),
-                         str(int(contain_zero_values)), str(int(address_near_zero_instability)),
-                         str(int(integer_conversion)), str(int(seasonality_period)),
-                         str(int(without_stl_decomposition))), True)
 
+    # invoke the final error calculation
+    invoke_script([model_testing_configs.ENSEMBLE_FORECASTS_DIRECTORY + model_identifier + ".txt",
+                   model_testing_configs.ENSEMBLE_ERRORS_DIRECTORY,
+                   model_testing_configs.PROCESSED_ENSEMBLE_FORECASTS_DIRECTORY,
+                   model_identifier,
+                   txt_test_file_path,
+                   actual_results_file_path,
+                   original_data_file_path,
+                   str(input_size),
+                   str(output_size),
+                   str(int(contain_zero_values)),
+                   str(int(address_near_zero_instability)),
+                   str(int(integer_conversion)),
+                   str(seasonality_period),
+                   str(int(without_stl_decomposition))])

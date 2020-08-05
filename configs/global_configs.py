@@ -1,22 +1,38 @@
+import os
+
 # configs for the model training
-# class model_training_configs:
-#     VALIDATION_ERRORS_DIRECTORY = 'results/validation_errors/'
-#     OPTIMIZED_CONFIG_DIRECTORY = 'results/optimized_configurations/'
-#     INFO_FREQ = 1
+class data_configs:
+    TXT_DATA_ROOT_FOLDER = "text_data/"
+    BINARY_DATA_ROOT_FOLDER = "binary_data/"
+
+class preprocess_configs:
+    PREPROCESS_SCRIPTS_FOLDER = "preprocess_scripts/"
+
+class model_training_configs:
+    VALIDATION_ERROR_CALCULATOR_MODULE_PATH = 'error_calculator.validation'
 
 # configs for the model testing
 class model_testing_configs:
-    RNN_FORECASTS_DIRECTORY = 'results/rnn_forecasts/'
-    RNN_ERRORS_DIRECTORY = 'results/errors'
-    PROCESSED_RNN_FORECASTS_DIRECTORY = '/results/processed_rnn_forecasts/'
+    TESTING_ERROR_CALCULATOR_DIRECTORY = './error_calculator/final_evaluation.R'
+    ERRORS_DIRECTORY = './results/errors/'
+
+    # RNN related
+    FORECASTS_DIRECTORY = './results/nn_model_results/rnn/forecasts/'
+    ENSEMBLE_FORECASTS_DIRECTORY = './results/nn_model_results/rnn/ensemble_forecasts/'
+    ENSEMBLE_ERRORS_DIRECTORY = './results/nn_model_results/rnn/ensemble_errors/'
+    PROCESSED_ENSEMBLE_FORECASTS_DIRECTORY = './results/nn_model_results/rnn/processed_ensemble_forecasts/'
+    AGGREGATED_ENSEMBLE_ERRORS_DIRECTORY = './results/nn_model_results/rnn/ensemble_errors/aggregate_errors/'
+
+    # aggregated general errors
+    AGGREGATED_ERRORS_DIRECTORY = './results/errors/aggregate_errors/'
 
 # configs for hyperparameter tuning(SMAC3)
 class hyperparameter_tuning_configs:
     SMAC_RUNCOUNT_LIMIT = 50
-    OPTIMIZED_CONFIG_DIRECTORY = 'results/optimized_configurations/'
+    SMAC_RUNCOUNT_LIMIT_PER_SEQ = 50
+
+    # RNN related
+    OPTIMIZED_CONFIG_DIRECTORY = './results/nn_model_results/rnn/optimized_configurations/'
 
 class training_data_configs:
     SHUFFLE_BUFFER_SIZE = 1000
-
-class gpu_configs:
-    log_device_placement = False

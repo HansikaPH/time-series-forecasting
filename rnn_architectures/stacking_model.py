@@ -133,42 +133,13 @@ class StackingModel:
             lstm_output = tf.keras.layers.RNN(tf.keras.experimental.PeepholeLSTMCell(cell_dimension, kernel_initializer=initializer), return_sequences=True) (next_input)
             next_input = lstm_output
 
-        # dense layer to make the dimensions equal for the residual connection
-        # dense_layer_output_1 = tf.keras.layers.Dense(self.__input_size, use_bias=self.__use_bias,
-        #                                            kernel_initializer=initializer)(next_input)
-
-        # dense layer
-        # dense_layer_output = tf.keras.layers.Dense(self.__output_size, use_bias=self.__use_bias, kernel_initializer=initializer) (dense_layer_output_1 + masked_output)
         dense_layer_output = tf.keras.layers.Dense(self.__output_size, use_bias=self.__use_bias, kernel_initializer=initializer) (masked_output)
 
         # build the model
         self.__model = tf.keras.Model(inputs=input, outputs=dense_layer_output, name='stacking_model')
 
-        # model from the sequential API
-        # self.__model = tf.keras.models.Sequential()
-        # self.__model.add(tf.keras.layers.Masking(mask_value = 0.0, input_shape=(None, self.__input_size)))
-
-        # for normal lstm cells
-        # for i in range(num_hidden_layers):
-        #     lstm_layer = tf.keras.layers.LSTM(cell_dimension, kernel_initializer = initializer, return_sequences=True)
-        #     model.add(lstm_layer)
-
-        # for lstm cells with peephole connections
-        # lstm_stacks = []
-        # for layers in range(num_hidden_layers):
-        #     lstm_stacks.append(tf.keras.experimental.PeepholeLSTMCell(cell_dimension,
-        #                                                               kernel_initializer=initializer
-        #                                                               ))
-
-        # create RNN layer from lstm stacks
-        # rnn_layer = tf.keras.layers.RNN(lstm_stacks, return_sequences=True)
-        # self.__model.add(rnn_layer)
-
-        # self.__model.add( tf.keras.layers.Dense(self.__output_size, use_bias = self.__use_bias, kernel_initializer=initializer))
-
         # plot the model to validate
         self.__model.summary()
-        # tf.keras.utils.plot_model(self.__model)
 
         def custom_mae(y_true, y_pred):
             error = tf.keras.losses.mae(y_true, y_pred)
@@ -183,10 +154,6 @@ class StackingModel:
 
         self.__model.compile(loss=custom_mae,
                       optimizer=optimizer)
-        # # callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True,
-        # #                                             mode='min')
-        # # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=7, mode='min',
-        # #                                                  cooldown=15)
 
     def tune_hyperparameters(self, **kwargs):
         num_hidden_layers = int(kwargs['num_hidden_layers'])
@@ -220,9 +187,7 @@ class StackingModel:
         self.__build_model(random_normal_initializer_stdev, num_hidden_layers, cell_dimension, l2_regularization, optimizer)
 
         # training
-        self.__model.fit(train_dataset, epochs=max_num_epochs, shuffle=True
-                            # ,callbacks=[callback, reduce_lr]
-        )
+        self.__model.fit(train_dataset, epochs=max_num_epochs, shuffle=True)
 
         # get the validation predictions
         validation_prediction = self.__model.predict(self.__validation_dataset_input_padded)
@@ -306,9 +271,7 @@ class StackingModel:
         self.__build_model(random_normal_initializer_stdev, num_hidden_layers, cell_dimension, l2_regularization, optimizer)
 
         # training
-        self.__model.fit(train_dataset, epochs=max_num_epochs, shuffle=True
-                            # ,callbacks=[callback, reduce_lr]
-                            )
+        self.__model.fit(train_dataset, epochs=max_num_epochs, shuffle=True)
 
         # testing
         test_prediction = self.__model.predict(self.__testing_dataset_input_padded)

@@ -1,10 +1,16 @@
 ## Software Requirements ##
 
+### Python Packages ###
 | Software  | Version |
 | ------------- | ------------- |
 | `Python`  |  `>=3.6`  |
-| `Tensorflow`  | `1.12.0`  |
-| `smac`  | `0.8.0` |
+| `Tensorflow`  | `2.0.0`  |
+| `smac`  | `0.11.1` |
+
+### R Packages ###
+* smooth
+* MASS
+* forecast
 
 ## Path Variables ##
 
@@ -64,44 +70,18 @@ The model expects a number of arguments.
 15. seasonality_period - The seasonality period of the time series
 16. forecast_horizon - The forecast horizon of the dataset
 17. optimizer - The type of the optimizer(cocob/adam/adagrad)
-18. model_type - The type of the model(stacking/seq2seq/seq2seqwithdenselayer)
-19. input_format - Input format(moving_window/non_moving_window)
-20. without_stl_decomposition - Whether not to use stl decomposition(0/1). Default is 0
-21. seed - Integer seed to use as the random seed for hyperparameter tuning
+18. without_stl_decomposition - Whether not to use stl decomposition(0/1). Default is 0
+19. no_of_series - The number of series of the dataset.
 
 #### Execution Flow ####
 
-The first point of invoking the models is the `generic_model_trainer.py`. The `generic_model_trainer.py` parses the external arguments and identifies the required type of model, optimizer, cell etc... The actual models are inside the directory `rnn_architectures`. 
-First, the hyperparameter tuning is carried out using the validation errors of the respective model trainer. Example initial hyperparameter ranges can be found inside the directory `configs/initial_hyperparameter_values`. The found optimal hyperparameter combination is  written to a file in the directory `results/optimized_configurations`. 
-Then the found optimal hyperparameter combination is used on the respective model tester to generate the final forecasts. Every model is run on 10 Tensorflow graph seeds (from 1 to 10). The forecasts are written to 10 files inside the directory `results/rnn_forecasts`.
-  
-## Post Execution Steps ##
+##### Invoking the Script #####
+The first point of invoking the models is the `generic_model_handler.py`. The `generic_model_handler.py` parses the external arguments and identifies the required type of optimizer, cell etc... The actual stacking model is inside the directory `rnn_architectures`. 
+First, the hyperparameter tuning is carried out using the validation errors of the stacking model. Example initial hyperparameter ranges can be found inside the directory `configs/initial_hyperparameter_values`. The found optimal hyperparameter combination is  written to a file in the directory `results/nn_model_results/rnn/optimized_configurations`. 
+Then the found optimal hyperparameter combination is used on the respective model to generate the final forecasts. Every model is run on 10 Tensorflow graph seeds (from 1 to 10). The forecasts are written to 10 files inside the directory `results/nn_model_results/rnn/forecasts`.
 
-#### Ensembling Forecasts ####
-The forecasts from the 10 seeds are ensembled by taking the median. The `utility_scripts/error_summary_scripts/ensembling_forecasts.py` script does this. The ensembled forecasts are written to the directory `results/ensemble_rnn_forecasts`.
+##### Ensembling Forecasts #####
+The forecasts from the 10 seeds are ensembled by taking the median. The `utility_scripts/ensembling_forecasts.py` script does this. This script is invoked implicitly inside the `generic_model_handler.py`. The ensembled forecasts are written to the directory `results/nn_model_results/rnn/ensemble_forecasts`.
 
-#### Error Calculation ####
-The SMAPE and MASE errors are calculated per each series for each model using the error calcualtion scripts in the directory `error_calculator`. The script perform the post processing of the forecasts to reverse initial preprocessing. The errors of the ensembles are written to the directory `results/ensemble_errors`. 
-
-
-#### Merging Cluster Results ####
-For datasets that have different clusters such as the M3, M4 and CIF 2016, the `utility_scripts/error_summary_scripts/cluster_results_merger.py` script merges the results from different clusters into one file.
-
-#### Generating the Error Summaries ####
-The `utility_scripts/error_summary_scripts/error_summary_generator.py` script creates the error summaries given the name of the dataset. Calculates the mean, median and ranked error values.
-
-## Experiment Results ##
-
-The results from our experiments are available as csv files in the Google Drive folder at this [link](https://drive.google.com/drive/folders/1MrIRsNeIUHt3C9zsy0XvBbKWISRQa-S7?usp=sharing)
-## Citing Our Work ##
-
-When using this repository, please cite:
-
-```
-@article{hewamalage2019recurrent,
-  title={Recurrent Neural Networks for Time Series Forecasting: Current Status and Future Directions},
-  author={Hewamalage, Hansika and Bergmeir, Christoph and Bandara, Kasun},
-  journal={arXiv preprint arXiv:1909.00590},
-  year={2019}
-}
-```
+##### Error Calculation #####
+The SMAPE and MASE errors are calculated per each series for each model using the error calcualtion scripts in the directory `error_calculator`. The name of the script is `final_evaluation.R`. This script is also implicitly invoked inside the `generic_model_handler.py`. The script perform the post processing of the forecasts to reverse initial preprocessing. The errors of the ensembles are written to the directory `results/nn_model_results/rnn/ensemble_errors`. 
