@@ -112,9 +112,9 @@ class StackingModel:
 
 
     def __get_optimizer(self, initial_learning_rate = 0.0):
-        if self.__optimizer == "Adam":
+        if self.__optimizer == "adam":
             optimizer = tf.keras.optimizers.Adam(learning_rate = initial_learning_rate)
-        elif self.__optimizer == "Adagrad":
+        elif self.__optimizer == "adagrad":
             optimizer = tf.keras.optimizers.Adagrad(learning_rate=initial_learning_rate)
         elif self.__optimizer == "cocob":
             optimizer = cocob_optimizer.COCOB()
