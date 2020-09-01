@@ -29,9 +29,9 @@ class StackingModel:
 
         # define the metadata size based on the usage of stl decomposition
         if self.__without_stl_decomposition:
-            self.__meta_data_size = 1
+            self.__meta_data_size = 2
         else:
-            self.__meta_data_size = self.__output_size + 1
+            self.__meta_data_size = self.__output_size + 2
 
         # create tf_record_reader for parsing records
         self.tfrecord_reader = TFRecordReader(self.__input_size, self.__output_size, self.__meta_data_size)
