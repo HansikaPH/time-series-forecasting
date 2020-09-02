@@ -83,7 +83,7 @@ class StackingModel:
         self.__true_seasonality_values = self.__validation_metadata[self.__array_first_dimension,
                                          self.__last_indices, 1:]
 
-        self.__level_values = self.__validation_metadata[self.__array_first_dimension, self.__last_indices, 0]
+        self.__validation_metadata = self.__validation_metadata[self.__array_first_dimension, self.__last_indices, :]
 
     def __create_testing_datasets(self, gaussian_noise_stdev):
 
@@ -196,23 +196,30 @@ class StackingModel:
         last_validation_outputs = validation_prediction[self.__array_first_dimension, self.__last_indices]
         actual_values = self.__validation_dataset_output_padded[self.__array_first_dimension, self.__last_indices, :]
 
+        mean_values = self.__validation_metadata[:, 0]
+        mean_values = mean_values[:, np.newaxis]
+
+        level_values = self.__validation_metadata[:, 1]
+        level_values = level_values[:, np.newaxis]
 
         if self.__without_stl_decomposition:
-            converted_validation_output = np.exp(last_validation_outputs)
-            converted_actual_values = np.exp(actual_values)
+
+            converted_validation_output = np.exp(last_validation_outputs + level_values)
+            converted_actual_values = np.exp(actual_values + level_values)
 
         else:
+            true_seasonality_values = self.__validation_metadata[:, 2:]
             converted_validation_output = np.exp(
-                self.__true_seasonality_values + self.__level_values[:, np.newaxis] + last_validation_outputs)
-            converted_actual_values = np.exp(self.__true_seasonality_values + self.__level_values[:, np.newaxis] + actual_values)
+                true_seasonality_values + level_values + last_validation_outputs)
+            converted_actual_values = np.exp(
+                true_seasonality_values + level_values + actual_values)
 
         if self.__contain_zero_values:  # to compensate for 0 values in data
             converted_validation_output = converted_validation_output - 1
             converted_actual_values = converted_actual_values - 1
 
-        if self.__without_stl_decomposition:
-            converted_validation_output = converted_validation_output * self.__level_values[:, np.newaxis]
-            converted_actual_values = converted_actual_values * self.__level_values[:, np.newaxis]
+        converted_validation_output = converted_validation_output * mean_values
+        converted_actual_values = converted_actual_values * mean_values
 
         if self.__integer_conversion:
             converted_validation_output = np.round(converted_validation_output)

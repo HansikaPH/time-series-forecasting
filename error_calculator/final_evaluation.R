@@ -70,29 +70,27 @@ for (k in 1 : nrow(forecasts_df)) {
     one_ts_forecasts = as.numeric(forecasts_df[k,])
     finalindex <- uniqueindexes[k]
     one_line_test_data = as.numeric(txt_test_df[finalindex,])
-    level_value = one_line_test_data[input_size + 3]
+    mean_value = one_line_test_data[input_size + 3]
+    level_value = one_line_test_data[input_size + 4]
 
-    if (without_stl_decomposition) {
-        converted_forecasts_df = exp(one_ts_forecasts)
+     if (without_stl_decomposition) {
+        converted_forecasts_df = exp(one_ts_forecasts + level_value)
     }else {
-        seasonal_values = one_line_test_data[(input_size + 4) : (3 + input_size + output_size)]
+        seasonal_values = one_line_test_data[(input_size + 5) : (4 + input_size + output_size)]
         converted_forecasts_df = exp(one_ts_forecasts + level_value + seasonal_values)
     }
-    #
 
     if (contain_zero_values) {
         converted_forecasts_df = converted_forecasts_df - 1
     }
 
-    if (without_stl_decomposition) {
-        converted_forecasts_df = converted_forecasts_df * level_value
-    }
+    # reverse mean scaling
+    converted_forecasts_df = mean_value * converted_forecasts_df
+    converted_forecasts_df[converted_forecasts_df < 0] = 0 # to make all forecasts positive
 
     if (integer_conversion) {
         converted_forecasts_df = round(converted_forecasts_df)
     }
-
-    converted_forecasts_df[converted_forecasts_df < 0] = 0 # to make all forecasts positive
 
     converted_forecasts_matrix[k,] = converted_forecasts_df
 
