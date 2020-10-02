@@ -101,10 +101,15 @@ The results from our experiments are available as csv files in the Google Drive 
 When using this repository, please cite:
 
 ```
-@article{hewamalage2019recurrent,
-  title={Recurrent Neural Networks for Time Series Forecasting: Current Status and Future Directions},
-  author={Hewamalage, Hansika and Bergmeir, Christoph and Bandara, Kasun},
-  journal={arXiv preprint arXiv:1909.00590},
-  year={2019}
+@article{HEWAMALAGE2020,
+title = "Recurrent Neural Networks for Time Series Forecasting: Current status and future directions",
+journal = "International Journal of Forecasting",
+year = "2020",
+issn = "0169-2070",
+doi = "https://doi.org/10.1016/j.ijforecast.2020.06.008",
+url = "http://www.sciencedirect.com/science/article/pii/S0169207020300996",
+author = "Hansika Hewamalage and Christoph Bergmeir and Kasun Bandara",
+keywords = "Big data, Forecasting, Best practices, Framework",
+abstract = "Recurrent Neural Networks (RNNs) have become competitive forecasting methods, as most notably shown in the winning method of the recent M4 competition. However, established statistical models such as exponential smoothing (ETS) and the autoregressive integrated moving average (ARIMA) gain their popularity not only from their high accuracy, but also because they are suitable for non-expert users in that they are robust, efficient, and automatic. In these areas, RNNs have still a long way to go. We present an extensive empirical study and an open-source software framework of existing RNN architectures for forecasting, and we develop guidelines and best practices for their use. For example, we conclude that RNNs are capable of modelling seasonality directly if the series in the dataset possess homogeneous seasonal patterns; otherwise, we recommend a deseasonalisation step. Comparisons against ETS and ARIMA demonstrate that (semi-) automatic RNN models are not silver bullets, but they are nevertheless competitive alternatives in many situations."
 }
 ```
