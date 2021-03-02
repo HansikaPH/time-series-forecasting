@@ -18,6 +18,11 @@ output_path=paste(output_path,'txt',sep='.')
 unlink(output_path)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
+
+# mean scaling of the data
+means = rowMeans(numeric_dataset)
+mean_scaled_df = numeric_dataset/means
+
 numeric_dataset = numeric_dataset + 1
 
 numeric_dataset_log = log(numeric_dataset)

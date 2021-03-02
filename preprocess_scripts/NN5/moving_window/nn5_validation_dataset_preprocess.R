@@ -18,7 +18,13 @@ output_path=paste(output_path,'txt',sep='.')
 unlink(output_path)
 
 numeric_dataset = as.matrix(as.data.frame(lapply(nn5_dataset, as.numeric)))
-numeric_dataset = numeric_dataset + 1
+
+# mean scaling of the data
+means = rowMeans(numeric_dataset)
+mean_scaled_df = numeric_dataset/means
+
+
+numeric_dataset = mean_scaled_df + 1
 
 numeric_dataset_log = log(numeric_dataset)
 
@@ -48,11 +54,12 @@ for (idr in 1: nrow(numeric_dataset_log)) {
   
   # create the seasonality metadata
   seasonality_windows = embed(stl_result[- (1 : input_size) , 1], max_forecast_horizon)[, max_forecast_horizon : 1]
-  sav_df = matrix(NA, ncol = (4 + input_size + max_forecast_horizon * 2), nrow = length(level_values))
+  sav_df = matrix(NA, ncol = (5 + input_size + max_forecast_horizon * 2), nrow = length(level_values))
   sav_df = as.data.frame(sav_df)
   sav_df[, (input_size + max_forecast_horizon + 3)] = '|#'
-  sav_df[, (input_size + max_forecast_horizon + 4)] = level_values
-  sav_df[, (input_size + max_forecast_horizon + 5) : ncol(sav_df)] = seasonality_windows
+  sav_df[, (input_size + max_forecast_horizon + 4)] = rep(means[idr], length(level_values))
+  sav_df[, (input_size + max_forecast_horizon + 5)] = level_values
+  sav_df[, (input_size + max_forecast_horizon + 6) : ncol(sav_df)] = seasonality_windows
 
   
   sav_df[, 1] = paste(idr, '|i', sep = '')

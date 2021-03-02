@@ -20,8 +20,6 @@ For R scripts, make sure to set the working directory to the project root folder
 
 ## Preprocessing the Data ##
 
-The data files used for the experiments are available as a Google Drive folder at this [link](https://drive.google.com/drive/folders/1OthbAxru4ghG8EH681PrYLMj1bc9cktA?usp=sharing).
-
 #### Create the text files of the data ####
 
 Three files need to be created for every model, one per training, validation and testing. Example preprocessing scripts to create text data files are in `preprocess_scripts` directory.
