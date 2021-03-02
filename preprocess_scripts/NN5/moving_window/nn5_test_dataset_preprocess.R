@@ -62,17 +62,18 @@ for (idr in 1: nrow(numeric_dataset_log)) {
   level_values = stl_result[input_size : time_series_length, 2]
   input_windows = input_windows - level_values
   
-  sav_df = matrix(NA, ncol = (3 + input_size + max_forecast_horizon), nrow = length(level_values))
+  sav_df = matrix(NA, ncol = (4 + input_size + max_forecast_horizon), nrow = length(level_values))
   sav_df = as.data.frame(sav_df)
   
   sav_df[, 1] = paste(idr, '|i', sep = '')
   sav_df[, 2 : (input_size + 1)] = input_windows
   
   sav_df[, (input_size + 2)] = '|#'
-  sav_df[, (input_size + 3)] = level_values
+  sav_df[, (input_size + 3)] = rep(means[idr], length(level_values))
+  sav_df[, (input_size + 4)] = level_values
   
   seasonality_windows = matrix(rep(t(seasonality), each = length(level_values)), nrow = length(level_values))
-  sav_df[(input_size + 4) : ncol(sav_df)] = seasonality_windows
+  sav_df[(input_size + 5) : ncol(sav_df)] = seasonality_windows
   
   write.table(sav_df, file = output_path, row.names = F, col.names = F, sep = " ", quote = F, append = TRUE)
 }#through all series from one file
