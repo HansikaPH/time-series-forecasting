@@ -16,6 +16,8 @@ smac3-*/
 .Rhistory
 **/*.RData
 logs/
+datasets/
+results/
 
 
 
