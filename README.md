@@ -19,6 +19,7 @@ Set the `PYTHONPATH` env variable of the system. Append absolute paths of both t
 For R scripts, make sure to set the working directory to the project root folder.
 
 ## Preprocessing the Data ##
+The data files used for the NN5 experiments are available as a Google Drive folder at this [link](https://drive.google.com/drive/folders/1kp--LAlG6kXbcjjkUYgJGfFsGowkXzF_?usp=sharing)
 
 #### Create the text files of the data ####
 
